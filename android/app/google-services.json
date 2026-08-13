@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "546088011555",
+    "project_id": "medcare-a5507",
+    "storage_bucket": "medcare-a5507.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546088011555:android:942513983e17ec3f6f2e96",
+        "android_client_info": {
+          "package_name": "com.medcare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "546088011555-5lbv5qp2ls67apqutl3tn5sel8turc3o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqaV0ttPooEZQK8YfHbnEoB1E-bhSfFIs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "546088011555-5lbv5qp2ls67apqutl3tn5sel8turc3o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "546088011555-js39e2gko07fdinoltb5r8fdgemnluln.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.medCare"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

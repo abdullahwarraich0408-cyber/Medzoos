@@ -1,0 +1,215 @@
+import React, { useMemo } from 'react';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import type { UnifiedOrder } from '../../../lib/mappers/order';
+import type { LabBooking } from '../../../lib/mappers/labTest';
+import { colors, spacing, radius, shadows } from '../../../theme';
+
+type ScheduleItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  when: string;
+  image?: string;
+  icon: string;
+  onPress: () => void;
+};
+
+type HomeCheckupScheduleProps = {
+  doctorOrders: UnifiedOrder[];
+  labBookings: LabBooking[];
+  onSeeAll: () => void;
+  onItemPress: (item: ScheduleItem) => void;
+};
+
+function formatWhen(dateStr?: string, slot?: string) {
+  if (!dateStr && !slot) return 'Upcoming';
+  const date = dateStr ? new Date(dateStr) : null;
+  const dateLabel =
+    date && !Number.isNaN(date.getTime())
+      ? date.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        })
+      : null;
+  if (dateLabel && slot) return `${dateLabel} • ${slot}`;
+  return dateLabel || slot || 'Upcoming';
+}
+
+export function HomeCheckupSchedule({
+  doctorOrders,
+  labBookings,
+  onSeeAll,
+  onItemPress,
+}: HomeCheckupScheduleProps) {
+  const items = useMemo((): ScheduleItem[] => {
+    const fromDoctors: ScheduleItem[] = doctorOrders
+      .filter(o => o.status === 'pending' || o.status === 'processing')
+      .slice(0, 3)
+      .map(order => ({
+        id: order.id,
+        title: order.vendor || order.items?.[0]?.name || 'Doctor visit',
+        subtitle:
+          order.consultationMode === 'online'
+            ? 'Online consultation'
+            : 'Clinic visit',
+        when: formatWhen(order.date, order.slot),
+        image: order.items?.[0]?.img,
+        icon: 'calendar-month',
+        onPress: () => {},
+      }));
+
+    const fromLabs: ScheduleItem[] = labBookings.slice(0, 3).map(booking => ({
+      id: booking.id,
+      title: booking.testName || 'Lab test',
+      subtitle: booking.lab || 'Home collection',
+      when: formatWhen(booking.collectionDate, booking.timeSlot),
+      icon: 'calendar-month',
+      onPress: () => {},
+    }));
+
+    const merged = [...fromDoctors, ...fromLabs].slice(0, 3);
+    if (merged.length > 0) return merged;
+
+    return [
+      {
+        id: 'demo-1',
+        title: 'Dr. Ayesha Khan',
+        subtitle: 'Cardiology checkup',
+        when: 'Tomorrow • 10:30 AM',
+        image:
+          'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200',
+        icon: 'calendar-month',
+        onPress: () => {},
+      },
+      {
+        id: 'demo-2',
+        title: 'Complete Blood Count',
+        subtitle: 'Lab sample collection',
+        when: 'Fri • 09:00 AM',
+        icon: 'calendar-month',
+        onPress: () => {},
+      },
+    ];
+  }, [doctorOrders, labBookings]);
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.header}>
+        <Text style={styles.title}>My Checkup Schedule</Text>
+        <Pressable onPress={onSeeAll} hitSlop={8}>
+          <Text style={styles.seeAll}>See All</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.list}>
+        {items.map(item => (
+          <Pressable
+            key={item.id}
+            style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+            onPress={() => onItemPress(item)}>
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.avatar} />
+            ) : (
+              <View style={styles.iconWrap}>
+                <Icon name={item.icon} size={22} color={colors.iconPrimary} />
+              </View>
+            )}
+            <View style={styles.body}>
+              <Text style={styles.itemTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+              <Text style={styles.itemSub} numberOfLines={1}>
+                {item.subtitle}
+              </Text>
+              <Text style={styles.when}>{item.when}</Text>
+            </View>
+            <View style={styles.chevron}>
+              <Icon name="chevron-right" size={20} color={colors.iconMuted} />
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: {
+    gap: spacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary700,
+  },
+  list: {
+    gap: spacing.sm,
+  },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    ...shadows.cardSoft,
+  },
+  pressed: {
+    opacity: 0.94,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.primary100,
+  },
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: {
+    flex: 1,
+    gap: 2,
+  },
+  itemTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  itemSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  when: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textMuted,
+  },
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
