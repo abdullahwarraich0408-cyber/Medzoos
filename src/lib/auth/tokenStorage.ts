@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const ACCESS_TOKEN_KEY = 'medzoos_access_token';
 const REFRESH_TOKEN_KEY = 'medzoos_refresh_token';
 const USER_KEY = 'medzoos_user';
 const DEVICE_ID_KEY = 'medzoos_device_id';
 
-/** Access token kept in memory only — never persisted to disk. */
+/** Access token kept in memory and persisted for session recovery. */
 let memoryAccessToken: string | null = null;
 
 export type StoredUser = {
@@ -34,7 +35,16 @@ export function setMemoryAccessToken(token: string | null) {
 }
 
 export async function getAccessToken(): Promise<string | null> {
-  return memoryAccessToken;
+  if (memoryAccessToken) return memoryAccessToken;
+  try {
+    const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+    if (token) {
+      memoryAccessToken = token;
+    }
+    return token;
+  } catch {
+    return null;
+  }
 }
 
 export async function getRefreshToken(): Promise<string | null> {
@@ -60,6 +70,7 @@ export async function persistAuthSession(
 ) {
   if (tokens?.accessToken) {
     memoryAccessToken = tokens.accessToken;
+    await AsyncStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
   }
 
   if (tokens?.refreshToken) {
@@ -73,13 +84,22 @@ export async function persistAuthSession(
 
 export async function clearAuthSession() {
   memoryAccessToken = null;
-  await AsyncStorage.multiRemove([REFRESH_TOKEN_KEY, USER_KEY]);
+  try {
+    await Promise.all([
+      AsyncStorage.removeItem(ACCESS_TOKEN_KEY),
+      AsyncStorage.removeItem(REFRESH_TOKEN_KEY),
+      AsyncStorage.removeItem(USER_KEY),
+    ]);
+  } catch {
+    // Ignore storage clear errors
+  }
 }
 
 export async function hasAuthSession(): Promise<boolean> {
   const refresh = await getRefreshToken();
+  const access = await getAccessToken();
   const user = await getStoredUser();
-  return Boolean(refresh || user || memoryAccessToken);
+  return Boolean(refresh || access || user);
 }
 
 export async function getDeviceId(): Promise<string> {

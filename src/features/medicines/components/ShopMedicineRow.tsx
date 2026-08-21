@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { Medicine } from '../../../lib/mappers/product';
 import { useCartContext } from '../../../lib/cart/CartContext';
-import { colors, spacing, radius, appIcons, appIconTile } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../theme';
 
 type ShopMedicineRowProps = {
   medicine: Medicine;
@@ -23,7 +29,10 @@ export function ShopMedicineRow({ medicine, onPress }: ShopMedicineRowProps) {
       await addMedicineToCart(medicine, 1);
       Alert.alert('Added', `${medicine.name} added to cart.`);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Could not add.');
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Could not add.',
+      );
     } finally {
       setAdding(false);
     }
@@ -34,17 +43,16 @@ export function ShopMedicineRow({ medicine, onPress }: ShopMedicineRowProps) {
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
       onPress={onPress}>
       <View style={styles.iconWrap}>
-        <Icon name="pill" size={appIcons.size.md} color={appIcons.color} />
+        <Icon name="pill" size={18} color={colors.primary700} />
       </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
           {medicine.name}
         </Text>
-        <Text style={styles.generic} numberOfLines={1}>
-          {medicine.generic}
+        <Text style={styles.meta} numberOfLines={1}>
+          PKR {medicine.price.toLocaleString()}
+          {medicine.generic ? ` · ${medicine.generic}` : ''}
         </Text>
-        <Text style={styles.vendor}>{medicine.vendor}</Text>
-        <Text style={styles.price}>PKR {medicine.price.toLocaleString()}</Text>
       </View>
       <Pressable
         style={({ pressed }) => [
@@ -69,43 +77,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  rowPressed: { backgroundColor: colors.brandMist },
-  iconWrap: appIconTile('md'),
-  body: { flex: 1, gap: 2 },
+  rowPressed: { backgroundColor: colors.primary100 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: { flex: 1, gap: 2, minWidth: 0 },
   name: {
-    ...healthOsTypography.messageTitle,
     fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
-  generic: {
+  meta: {
     fontSize: 12,
-    color: colors.neutral500,
-  },
-  vendor: {
-    fontSize: 11,
-    color: colors.neutral500,
-  },
-  price: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.brandPrimary,
-    marginTop: 2,
+    color: colors.textMuted,
   },
   addBtn: {
-    minWidth: 56,
+    minWidth: 52,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: colors.primary700,
   },
   addBtnDisabled: {
-    backgroundColor: colors.neutral300,
+    backgroundColor: colors.textDisabled,
   },
-  addBtnPressed: { opacity: 0.9 },
+  addBtnPressed: { opacity: 0.88 },
   addBtnText: {
     fontSize: 12,
     fontWeight: '700',

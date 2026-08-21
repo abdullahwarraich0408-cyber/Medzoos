@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { PatientMedicine } from '../data/medicineModel';
-import { colors, spacing, radius, appIcons, appIconTile } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../theme';
 
 type RefillMedicineRowProps = {
   medicine: PatientMedicine;
@@ -13,26 +12,32 @@ type RefillMedicineRowProps = {
 export function RefillMedicineRow({ medicine, onRefill }: RefillMedicineRowProps) {
   const remainingLabel =
     medicine.remainingDays === 0
-      ? 'Refill due today'
+      ? 'Due today'
       : medicine.remainingDays === 1
-        ? '1 day remaining'
-        : `${medicine.remainingDays ?? 0} days remaining`;
+        ? '1 day left'
+        : `${medicine.remainingDays ?? 0} days left`;
 
   return (
     <View style={styles.row}>
       <View style={styles.iconWrap}>
-        <Icon name="pill" size={appIcons.size.md} color={appIcons.color} />
+        <Icon name="pill" size={18} color={colors.primary700} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.name}>{medicine.medicineName}</Text>
-        <Text style={styles.generic}>{medicine.genericName}</Text>
-        <Text style={styles.remaining}>{remainingLabel}</Text>
-        <Text style={styles.price}>
-          PKR {(medicine.price ?? 0).toLocaleString()} · {medicine.pharmacyName || 'Pharmacy'}
+        <Text style={styles.name} numberOfLines={1}>
+          {medicine.medicineName}
+        </Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {remainingLabel}
+          {medicine.price != null
+            ? ` · PKR ${medicine.price.toLocaleString()}`
+            : ''}
         </Text>
       </View>
       <Pressable
-        style={({ pressed }) => [styles.refillBtn, pressed && styles.refillBtnPressed]}
+        style={({ pressed }) => [
+          styles.refillBtn,
+          pressed && styles.refillBtnPressed,
+        ]}
         onPress={onRefill}>
         <Text style={styles.refillBtnText}>Refill</Text>
       </Pressable>
@@ -45,36 +50,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  iconWrap: appIconTile('md'),
-  body: { flex: 1, gap: 2 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: { flex: 1, gap: 2, minWidth: 0 },
   name: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 15,
-  },
-  generic: {
-    fontSize: 13,
-    color: colors.neutral500,
-  },
-  remaining: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.brandPrimary,
-    marginTop: 2,
+    color: colors.textPrimary,
   },
-  price: {
+  meta: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: colors.textMuted,
   },
   refillBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: colors.primary700,
   },
-  refillBtnPressed: { opacity: 0.9 },
+  refillBtnPressed: { opacity: 0.88 },
   refillBtnText: {
     fontSize: 12,
     fontWeight: '700',

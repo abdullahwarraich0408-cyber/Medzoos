@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { useAuth } from '../../../lib/auth/AuthContext';
-import { navigateToSignIn } from '../../../lib/auth/navigation';
+import { navigateToSignIn, navigateToOrders } from '../../../lib/auth/navigation';
 import { useCart, useCreateOrder } from '../../../lib/hooks/useApi';
 import {
   clearGuestCart,
@@ -151,11 +151,7 @@ export function CheckoutScreen() {
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() =>
-              navigation.getParent()?.navigate('You' as never, {
-                screen: 'OrdersList',
-              } as never)
-            }
+            onPress={() => navigateToOrders(navigation)}
             activeOpacity={0.85}>
             <Text style={styles.primaryBtnText}>View Orders</Text>
           </TouchableOpacity>

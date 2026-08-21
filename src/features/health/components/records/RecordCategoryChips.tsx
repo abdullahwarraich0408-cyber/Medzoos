@@ -11,8 +11,8 @@ import { RECORD_CATEGORIES, type RecordCategoryId } from '../../data/healthData'
 import { colors, spacing, radius, shadows } from '../../../../theme';
 
 type RecordCategoryChipsProps = {
-  active: RecordCategoryId;
-  onChange: (id: RecordCategoryId) => void;
+  active: RecordCategoryId | 'all';
+  onChange: (id: RecordCategoryId | 'all') => void;
 };
 
 export function RecordCategoryChips({

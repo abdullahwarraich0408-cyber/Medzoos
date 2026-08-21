@@ -7,24 +7,42 @@ import {
   Text,
   TextInput,
   RefreshControl,
-  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
 import { HomeGreeting } from './components/HomeGreeting';
-import { HomeDiscountBanner } from './components/HomeDiscountBanner';
+import { HomePromoCarousel } from './components/HomePromoCarousel';
 import { HomeCategoriesRow } from './components/HomeCategoriesRow';
-import { HomeRecentVisits } from './components/HomeRecentVisits';
+import {
+  HomeRecentVisits,
+  type HomeRecentVisit,
+} from './components/HomeRecentVisits';
 import { HomeCheckupSchedule } from './components/HomeCheckupSchedule';
+import { HomeCareActions } from './components/HomeCareActions';
+import { HomeCampaignBanners } from './components/HomeCampaignBanners';
 import { useNotifications } from '../../lib/notifications';
 import { useHomeNavigation } from './hooks/useHomeNavigation';
 import { useHomeDashboardData } from './hooks/useHomeDashboardData';
+import { useHomePromoSlides } from './hooks/useHomePromoSlides';
 import { openAppDrawer } from '../../lib/auth/navigation';
+import type { HomePromoSlide } from '../home/data/homeData';
 import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
 
+function formatVisitDate(value?: string) {
+  if (!value) return 'Recent visit';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function HealthDashboardPage() {
-  const { user, firstName, health, homeData, refetchAll } = useHomeDashboardData();
+  const { user, firstName, health, refetchAll } = useHomeDashboardData();
+  const { slides, refetch: refetchSlides } = useHomePromoSlides();
   const nav = useHomeNavigation();
   const { unreadCount } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
@@ -33,30 +51,134 @@ export function HealthDashboardPage() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetchAll();
+      await Promise.all([refetchAll(), refetchSlides()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchAll]);
+  }, [refetchAll, refetchSlides]);
 
   const doctorOrders = useMemo(
     () => (health.allOrders || []).filter(order => order.type === 'doctor'),
     [health.allOrders],
   );
 
+  const upcomingDoctorOrders = useMemo(
+    () =>
+      doctorOrders.filter(
+        order =>
+          order.status === 'pending' ||
+          order.status === 'processing' ||
+          order.rawStatus === 'confirmed' ||
+          order.rawStatus === 'in_progress',
+      ),
+    [doctorOrders],
+  );
+
+  const recentVisits = useMemo((): HomeRecentVisit[] => {
+    return doctorOrders
+      .filter(order => {
+        if (order.status === 'cancelled' || order.rawStatus === 'cancelled') {
+          return false;
+        }
+        if (
+          order.status === 'pending' ||
+          order.status === 'processing' ||
+          order.rawStatus === 'confirmed' ||
+          order.rawStatus === 'in_progress'
+        ) {
+          return false;
+        }
+        return (
+          order.status === 'delivered' ||
+          order.rawStatus === 'completed' ||
+          Boolean(order.sortDate || order.date)
+        );
+      })
+      .sort((a, b) => {
+        const ta = new Date(a.sortDate || a.date || 0).getTime();
+        const tb = new Date(b.sortDate || b.date || 0).getTime();
+        return tb - ta;
+      })
+      .slice(0, 4)
+      .map(order => ({
+        id: order.id,
+        name: order.vendor || 'Doctor visit',
+        specialty: order.specialty || order.title || 'Consultation',
+        image: order.items?.[0]?.img,
+        dateLabel: formatVisitDate(order.sortDate || order.date),
+        modeLabel:
+          order.consultationMode === 'online' || order.isOnline
+            ? 'Online consultation'
+            : 'Clinic visit',
+      }));
+  }, [doctorOrders]);
+
   const handleSearch = () => {
-    nav.goToServicesScreen('DoctorsList');
+    if (searchQuery.trim()) {
+      nav.goToServicesScreen('DoctorsList', { screenTitle: `Search: ${searchQuery.trim()}` });
+    } else {
+      nav.goToServicesScreen('DoctorsList');
+    }
+  };
+
+  const handleContentAction = (action: string) => {
+    switch (action) {
+      case 'prescription':
+        nav.goToDrawer('Prescriptions');
+        break;
+      case 'doctors':
+        nav.goToServicesScreen('DoctorsList', { consultType: 'online' });
+        break;
+      case 'clinic':
+        nav.goToServicesScreen('DoctorsList', { consultType: 'in_person' });
+        break;
+      case 'meds':
+      case 'medicines':
+        nav.goToHealth('MedicinesList');
+        break;
+      case 'pharmacy':
+      case 'pharmacies':
+        nav.goToPharmacies();
+        break;
+      case 'labs':
+      case 'lab_tests':
+      case 'lab':
+        nav.goToServicesScreen('LabTestsList');
+        break;
+      case 'packages':
+      case 'health_packages':
+        nav.goToServicesScreen('HealthPackages');
+        break;
+      case 'hospitals':
+        nav.goToHospitals();
+        break;
+      case 'copilot':
+        nav.goToCopilot();
+        break;
+      case 'orders':
+        nav.goToOrders();
+        break;
+      case 'family':
+      case 'family_health':
+        nav.goToHealth('FamilyProfiles');
+        break;
+      case 'records':
+      case 'medical_records':
+        nav.goToHealth('MedicalRecords');
+        break;
+      default:
+        nav.goToServicesScreen('DoctorsList');
+        break;
+    }
+  };
+
+  const handleHeroSlide = (slide: HomePromoSlide) => {
+    handleContentAction(slide.action);
   };
 
   return (
     <ScreenLayout hideHeader>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+      <View style={styles.topBar}>
         <HomeGreeting
           firstName={firstName}
           fullName={user?.name}
@@ -68,26 +190,37 @@ export function HealthDashboardPage() {
           onMenuPress={() => openAppDrawer(nav.navigation)}
           onNotificationsPress={() => nav.goToNotifications()}
         />
+      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <View style={styles.heroBlock}>
+          <View style={styles.searchBlock}>
+            <Text style={styles.searchLabel}>Looking for Doctors?</Text>
+            <Pressable style={styles.searchBar} onPress={handleSearch}>
+              <Icon name="magnify" size={18} color={colors.textSecondary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by name or department"
+                placeholderTextColor={colors.textDisabled}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+              />
+            </Pressable>
+          </View>
 
-        <View style={styles.searchBlock}>
-          <Text style={styles.searchLabel}>Looking for Doctors?</Text>
-          <Pressable style={styles.searchBar} onPress={handleSearch}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name or department"
-              placeholderTextColor={colors.textDisabled}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-            />
-            <Icon name="magnify" size={22} color={colors.textSecondary} />
-          </Pressable>
+          <HomePromoCarousel slides={slides} onPressSlide={handleHeroSlide} />
         </View>
 
-        <HomeDiscountBanner
-          onPress={() => nav.goToServicesScreen('DoctorsList')}
-        />
+        <HomeCareActions onAction={handleContentAction} />
+        <HomeCampaignBanners onAction={handleContentAction} />
 
         <HomeCategoriesRow
           onPressCategory={category =>
@@ -98,14 +231,14 @@ export function HealthDashboardPage() {
         />
 
         <HomeRecentVisits
-          doctors={homeData.featuredDoctors}
-          onSeeAll={() => nav.goToServicesScreen('DoctorsList')}
-          onDoctorPress={id => nav.goToDoctorProfile(id)}
-          onBookPress={id => nav.goToDoctorBooking(id)}
+          visits={recentVisits}
+          onSeeAll={nav.goToAppointments}
+          onVisitPress={() => nav.goToAppointments()}
+          onEmptyCta={() => nav.goToServicesScreen('DoctorsList')}
         />
 
         <HomeCheckupSchedule
-          doctorOrders={doctorOrders}
+          doctorOrders={upcomingDoctorOrders}
           labBookings={health.upcomingBookings}
           onSeeAll={nav.goToAppointments}
           onItemPress={() => nav.goToAppointments()}
@@ -116,18 +249,26 @@ export function HealthDashboardPage() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    paddingHorizontal: calmLayout.screenPadding,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
     paddingHorizontal: calmLayout.screenPadding,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.sm,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
     gap: calmLayout.sectionGap,
   },
+  heroBlock: {
+    gap: 0,
+  },
   searchBlock: {
-    gap: spacing.sm,
+    gap: 6,
   },
   searchLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -135,17 +276,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    height: 44,
     backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: Platform.OS === 'ios' ? spacing.lg : spacing.md,
+    paddingHorizontal: spacing.md,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     color: colors.textPrimary,
     padding: 0,
+    margin: 0,
   },
 });

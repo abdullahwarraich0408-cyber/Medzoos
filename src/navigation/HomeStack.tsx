@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { iosStackScreenOptions } from './iosStackOptions';
 import { HealthDashboardPage } from '../features/dashboard/HealthDashboardPage';
 import { ServicesHubScreen } from '../features/services/ServicesHubScreen';
 import { ServicesStack } from './ServicesStack';
@@ -9,7 +10,7 @@ const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export function HomeStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={iosStackScreenOptions}>
       <Stack.Screen name="Dashboard" component={HealthDashboardPage} />
       <Stack.Screen name="ServicesHub" component={ServicesHubScreen} />
       <Stack.Screen name="Services" component={ServicesStack} />

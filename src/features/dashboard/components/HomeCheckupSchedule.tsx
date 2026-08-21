@@ -20,6 +20,8 @@ type HomeCheckupScheduleProps = {
   labBookings: LabBooking[];
   onSeeAll: () => void;
   onItemPress: (item: ScheduleItem) => void;
+  onBookDoctor?: () => void;
+  onBookLab?: () => void;
 };
 
 function formatWhen(dateStr?: string, slot?: string) {
@@ -42,6 +44,8 @@ export function HomeCheckupSchedule({
   labBookings,
   onSeeAll,
   onItemPress,
+  onBookDoctor,
+  onBookLab,
 }: HomeCheckupScheduleProps) {
   const items = useMemo((): ScheduleItem[] => {
     const fromDoctors: ScheduleItem[] = doctorOrders
@@ -69,30 +73,10 @@ export function HomeCheckupSchedule({
       onPress: () => {},
     }));
 
-    const merged = [...fromDoctors, ...fromLabs].slice(0, 3);
-    if (merged.length > 0) return merged;
-
-    return [
-      {
-        id: 'demo-1',
-        title: 'Dr. Ayesha Khan',
-        subtitle: 'Cardiology checkup',
-        when: 'Tomorrow • 10:30 AM',
-        image:
-          'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200',
-        icon: 'calendar-month',
-        onPress: () => {},
-      },
-      {
-        id: 'demo-2',
-        title: 'Complete Blood Count',
-        subtitle: 'Lab sample collection',
-        when: 'Fri • 09:00 AM',
-        icon: 'calendar-month',
-        onPress: () => {},
-      },
-    ];
+    return [...fromDoctors, ...fromLabs].slice(0, 3);
   }, [doctorOrders, labBookings]);
+
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.section}>

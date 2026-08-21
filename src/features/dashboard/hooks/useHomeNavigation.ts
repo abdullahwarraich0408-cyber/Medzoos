@@ -42,7 +42,7 @@ export function useHomeNavigation() {
 
   const goToServicesScreen = useCallback(
     (screen: ServiceScreen, params?: object) => {
-      navigation.navigate('Services', { screen, params });
+      navigation.navigate('Services', { screen, params } as any);
     },
     [navigation],
   );

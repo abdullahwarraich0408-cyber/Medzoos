@@ -67,20 +67,20 @@ export function HomePage() {
   };
 
   const goToHealth = (
-    screen: 'MedicinesList' | 'HealthHome',
+    screen: string,
     params?: object,
   ) => {
     navigation.navigate('Health', { screen, params } as never);
   };
 
   const goToConsult = (
-    screen: keyof Pick<
-      DoctorsStackParamList,
-      'LabTestsList' | 'LabTestBooking' | 'HealthPackages' | 'ConsultHome'
-    >,
+    screen: string,
     params?: object,
   ) => {
-    navigation.navigate('Consult', { screen, params } as never);
+    navigation.navigate('Home', {
+      screen: 'Services',
+      params: { screen, params },
+    } as never);
   };
 
   const goToDrawer = (screen: keyof DrawerParamList) => {
@@ -89,12 +89,9 @@ export function HomePage() {
 
   const goToDoctor = (doctorId?: string) => {
     if (doctorId) {
-      navigation.navigate('Consult', {
-        screen: 'DoctorBooking',
-        params: { doctorId, consultType: 'online' },
-      });
+      goToConsult('DoctorBooking', { doctorId, consultType: 'online' });
     } else {
-      goToTab('Consult');
+      goToConsult('DoctorsList');
     }
   };
 
@@ -110,42 +107,44 @@ export function HomePage() {
     goToHealth('MedicinesList');
   };
 
-  const handleServicePress = (card: (typeof SERVICE_CARDS)[number]) => {
-    if ('healthScreen' in card && card.healthScreen) {
+  const handleServicePress = (card: any) => {
+    if (card.healthScreen) {
       goToHealth(card.healthScreen);
       return;
     }
-    if ('servicesScreen' in card && card.servicesScreen) {
+    if (card.servicesScreen) {
       goToConsult(card.servicesScreen);
       return;
     }
-    if ('consultScreen' in card && card.consultScreen) {
+    if (card.consultScreen) {
       goToConsult(card.consultScreen);
       return;
     }
-    if ('tab' in card && card.tab) {
+    if (card.tab) {
       goToTab(card.tab);
       return;
     }
-    if ('drawer' in card && card.drawer) {
+    if (card.drawer) {
       goToDrawer(card.drawer);
     }
   };
 
-  const handlePromoPress = (banner: (typeof PROMO_BANNERS)[number]) => {
-    if ('healthScreen' in banner && banner.healthScreen) {
+  const handlePromoPress = (banner: any) => {
+    if (banner.healthScreen) {
       goToHealth(banner.healthScreen);
       return;
     }
-    if ('servicesScreen' in banner && banner.servicesScreen) {
+    if (banner.servicesScreen) {
       goToConsult(banner.servicesScreen);
       return;
     }
-    if ('consultScreen' in banner && banner.consultScreen) {
+    if (banner.consultScreen) {
       goToConsult(banner.consultScreen);
       return;
     }
-    goToTab(banner.tab);
+    if (banner.tab) {
+      goToTab(banner.tab);
+    }
   };
 
   return (

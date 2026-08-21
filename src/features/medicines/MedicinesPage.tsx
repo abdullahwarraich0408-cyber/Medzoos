@@ -5,17 +5,14 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
 import { useCartContext } from '../../lib/cart/CartContext';
-import { navigateToDrawerScreen } from '../../lib/auth/navigation';
 import type { HealthStackParamList } from '../../navigation/types';
 import { HealthSearchBar } from '../health/components/shared/HealthSearchBar';
 import { HealthEmptyState } from '../health/components/shared/HealthEmptyState';
-import { TodayMedicinesCard } from './components/TodayMedicinesCard';
 import { PrescriptionUploadCard } from './components/PrescriptionUploadCard';
 import { MedicineHubTabs } from './components/MedicineHubTabs';
 import { ActiveMedicineRow } from './components/ActiveMedicineRow';
@@ -25,8 +22,7 @@ import { ShopCategoryChips } from './components/ShopCategoryChips';
 import { ShopMedicineRow } from './components/ShopMedicineRow';
 import { useMedicinesHub } from './hooks/useMedicinesHub';
 import type { MedicineHubTabId } from './data/medicineModel';
-import { colors, spacing, TAB_BAR_CLEARANCE, cardStyles } from '../../theme';
-import { healthOsTypography } from '../../theme/healthOs';
+import { colors, spacing, TAB_BAR_CLEARANCE } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
 
 type Nav = NativeStackNavigationProp<HealthStackParamList>;
@@ -39,14 +35,12 @@ export function MedicinesPage() {
   const { refreshCartCount } = useCartContext();
 
   const {
-    todayReminders,
     activeMedicines,
     refillMedicines,
     filteredPrescriptions,
     filteredShop,
     shopCategory,
     setShopCategory,
-    markTaken,
     productsLoading,
   } = useMedicinesHub(search);
 
@@ -63,7 +57,7 @@ export function MedicinesPage() {
   }, [refreshCartCount]);
 
   const handleUpload = () => {
-    navigateToDrawerScreen(navigation, 'Prescriptions');
+    navigation.navigate('UploadMedicalDocument');
   };
 
   const handleRefill = (medicineId: string) => {
@@ -77,29 +71,24 @@ export function MedicinesPage() {
           return (
             <HealthEmptyState
               icon="pill"
-              title="No active medicines"
-              subtitle="Upload a prescription or order from Shop."
+              title="No medicines yet"
+              subtitle="Upload a prescription or shop below."
             />
           );
         }
         return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active medicines</Text>
-            <View style={styles.listCard}>
-              {activeMedicines.map((medicine, index) => (
-                <React.Fragment key={medicine.medicineId}>
-                  {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-                  <ActiveMedicineRow
-                    medicine={medicine}
-                    onPress={() =>
-                      navigation.navigate('MedicineDetail', {
-                        medicineId: medicine.medicineId,
-                      })
-                    }
-                  />
-                </React.Fragment>
-              ))}
-            </View>
+          <View style={styles.list}>
+            {activeMedicines.map(medicine => (
+              <ActiveMedicineRow
+                key={medicine.medicineId}
+                medicine={medicine}
+                onPress={() =>
+                  navigation.navigate('MedicineDetail', {
+                    medicineId: medicine.medicineId,
+                  })
+                }
+              />
+            ))}
           </View>
         );
 
@@ -109,24 +98,22 @@ export function MedicinesPage() {
             <HealthEmptyState
               icon="file-document-outline"
               title="No prescriptions"
-              subtitle="Upload a prescription to get started."
+              subtitle="Upload one to get started."
             />
           );
         }
         return (
-          <View style={styles.listCard}>
-            {filteredPrescriptions.map((prescription, index) => (
-              <React.Fragment key={prescription.prescriptionId}>
-                {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-                <PrescriptionHubCard
-                  prescription={prescription}
-                  onPress={() =>
-                    navigation.navigate('PrescriptionDetail', {
-                      prescriptionId: prescription.prescriptionId,
-                    })
-                  }
-                />
-              </React.Fragment>
+          <View style={styles.list}>
+            {filteredPrescriptions.map(prescription => (
+              <PrescriptionHubCard
+                key={prescription.prescriptionId}
+                prescription={prescription}
+                onPress={() =>
+                  navigation.navigate('PrescriptionDetail', {
+                    prescriptionId: prescription.prescriptionId,
+                  })
+                }
+              />
             ))}
           </View>
         );
@@ -136,49 +123,47 @@ export function MedicinesPage() {
           return (
             <HealthEmptyState
               icon="refresh"
-              title="No refills needed"
-              subtitle="Medicines running low will appear here."
+              title="All stocked"
+              subtitle="Nothing needs a refill right now."
             />
           );
         }
         return (
-          <View style={styles.listCard}>
-            {refillMedicines.map((medicine, index) => (
-              <React.Fragment key={medicine.medicineId}>
-                {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-                <RefillMedicineRow
-                  medicine={medicine}
-                  onRefill={() => handleRefill(medicine.medicineId)}
-                />
-              </React.Fragment>
+          <View style={styles.list}>
+            {refillMedicines.map(medicine => (
+              <RefillMedicineRow
+                key={medicine.medicineId}
+                medicine={medicine}
+                onRefill={() => handleRefill(medicine.medicineId)}
+              />
             ))}
           </View>
         );
 
       case 'shop':
         return (
-          <View style={styles.section}>
+          <View style={styles.shopSection}>
             <ShopCategoryChips active={shopCategory} onChange={setShopCategory} />
             {productsLoading ? (
-              <Text style={styles.loadingText}>Loading medicines...</Text>
+              <Text style={styles.loadingText}>Loading…</Text>
             ) : filteredShop.length === 0 ? (
               <HealthEmptyState
                 icon="store-outline"
                 title="No products found"
-                subtitle="Try another category or search term."
+                subtitle="Try another category or search."
               />
             ) : (
-              <View style={styles.listCard}>
-                {filteredShop.map((product, index) => (
-                  <React.Fragment key={product.id}>
-                    {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-                    <ShopMedicineRow
-                      medicine={product}
-                      onPress={() =>
-                        navigation.navigate('ProductDetail', { productId: product.id })
-                      }
-                    />
-                  </React.Fragment>
+              <View style={styles.list}>
+                {filteredShop.map(product => (
+                  <ShopMedicineRow
+                    key={product.id}
+                    medicine={product}
+                    onPress={() =>
+                      navigation.navigate('ProductDetail', {
+                        productId: product.id,
+                      })
+                    }
+                  />
                 ))}
               </View>
             )}
@@ -193,44 +178,29 @@ export function MedicinesPage() {
   return (
     <ScreenLayout
       headerMode="stack"
-      title="Prescriptions & Medicines"
+      title="Medicines"
       showSearch={false}
       showCart
       onCartPress={() => navigation.navigate('Cart')}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: TAB_BAR_CLEARANCE + spacing.xxl },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.brandPrimary}
+            tintColor={colors.primary700}
+            colors={[colors.primary700]}
           />
         }>
-        <Text style={styles.subtitle}>
-          Manage your prescriptions, medicines, and refills.
-        </Text>
-
-        <TodayMedicinesCard
-          reminders={todayReminders}
-          onMarkTaken={markTaken}
-          onViewAll={() =>
-            Alert.alert('Reminders', 'Full reminder schedule coming soon.')
-          }
-        />
-
         <PrescriptionUploadCard onUpload={handleUpload} />
 
         <HealthSearchBar
           value={search}
           onChangeText={setSearch}
-          placeholder="Search medicines or prescriptions..."
-          large
+          placeholder="Search medicines or prescriptions"
         />
 
         <MedicineHubTabs active={tab} onChange={setTab} />
@@ -245,24 +215,14 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
     padding: calmLayout.screenPadding,
-    gap: calmLayout.sectionGap,
+    paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
+    gap: 20,
   },
-  subtitle: {
-    ...healthOsTypography.sectionHint,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  section: { gap: spacing.sm },
-  sectionTitle: {
-    ...healthOsTypography.sectionTitle,
-    fontSize: 15,
-  },
-  listCard: {
-    ...cardStyles.grouped,
-  },
+  list: { gap: spacing.sm },
+  shopSection: { gap: spacing.md },
   loadingText: {
     fontSize: 13,
-    color: colors.neutral500,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: spacing.xl,
   },

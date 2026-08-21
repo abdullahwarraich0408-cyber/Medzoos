@@ -1,5 +1,143 @@
+import { ImageSourcePropType } from 'react-native';
 import { iconScheme } from '../../../theme';
 
+export type HomeSlideAction =
+  | 'prescription'
+  | 'doctors'
+  | 'pharmacy'
+  | 'medicines'
+  | 'meds'
+  | 'labs'
+  | 'packages'
+  | 'hospitals';
+
+export type HomePromoSlide = {
+  id: string;
+  title: string;
+  cta: string;
+  action: HomeSlideAction;
+  bg: string;
+  image: ImageSourcePropType;
+  label?: string;
+  description?: string;
+  badge?: string;
+};
+
+const IMAGE_BY_ACTION: Record<string, ImageSourcePropType> = {
+  prescription: require('../../../assets/home/poster-3d-prescription.png'),
+  doctors: require('../../../assets/home/poster-3d-stethoscope.png'),
+  pharmacy: require('../../../assets/home/poster-3d-pills.png'),
+  medicines: require('../../../assets/home/poster-3d-pills.png'),
+  meds: require('../../../assets/home/poster-3d-pills.png'),
+  labs: require('../../../assets/home/poster-3d-lab.png'),
+  hospitals: require('../../../assets/home/poster-3d-stethoscope.png'),
+  packages: require('../../../assets/home/poster-3d-lab.png'),
+};
+
+export function fallbackImageForAction(
+  action: string,
+): ImageSourcePropType {
+  return IMAGE_BY_ACTION[action] || IMAGE_BY_ACTION.pharmacy;
+}
+
+/** First-time home posters */
+export const HOME_HERO_SLIDES: HomePromoSlide[] = [
+  {
+    id: 'prescription',
+    label: 'Easy Medicine Ordering',
+    title: 'Upload a prescription, get your medicines',
+    description:
+      'Have a prescription? Upload it securely and continue your medicine order.',
+    cta: 'Upload Prescription',
+    bg: '#156A96',
+    action: 'prescription',
+    image: IMAGE_BY_ACTION.prescription,
+  },
+  {
+    id: 'consult',
+    label: 'Doctor Consultations',
+    title: 'Consult a doctor from wherever you are',
+    description:
+      'Book an online or in-clinic consultation with healthcare professionals.',
+    cta: 'Find a Doctor',
+    bg: '#0E7A72',
+    action: 'doctors',
+    image: IMAGE_BY_ACTION.doctors,
+  },
+  {
+    id: 'medicines',
+    label: 'Online Pharmacy',
+    title: 'Find and order the medicines you need',
+    description:
+      'Search medicines and healthcare products from pharmacies on Medzoos.',
+    cta: 'Shop Medicines',
+    bg: '#124362',
+    action: 'medicines',
+    image: IMAGE_BY_ACTION.medicines,
+  },
+  {
+    id: 'labs',
+    label: 'Diagnostic Services',
+    title: 'Book lab tests with home sampling',
+    description:
+      'Find diagnostic tests and request home sample collection where available.',
+    cta: 'Book a Lab Test',
+    bg: '#1A7A88',
+    action: 'labs',
+    badge: 'Home Sampling Available',
+    image: IMAGE_BY_ACTION.labs,
+  },
+];
+
+/** Returning-user offer posters */
+export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
+  {
+    id: 'offer-meds',
+    label: 'Limited offer',
+    title: 'Flat 25% off on medicines',
+    description: 'Save on medicines from pharmacies on Medzoos.',
+    cta: 'Shop now',
+    bg: '#156A96',
+    action: 'medicines',
+    badge: '25% OFF',
+    image: IMAGE_BY_ACTION.medicines,
+  },
+  {
+    id: 'offer-doctors',
+    label: 'Doctor offer',
+    title: 'First consult from the comfort of home',
+    description: 'Book an online consultation with a Medzoos doctor.',
+    cta: 'Book now',
+    bg: '#0E7A72',
+    action: 'doctors',
+    image: IMAGE_BY_ACTION.doctors,
+  },
+  {
+    id: 'offer-labs',
+    label: 'Lab offer',
+    title: 'Lab tests with home sampling',
+    description: 'Book diagnostic tests with home sample collection.',
+    cta: 'Book test',
+    bg: '#1A7A88',
+    action: 'labs',
+    badge: 'Home sampling',
+    image: IMAGE_BY_ACTION.labs,
+  },
+  {
+    id: 'offer-hospitals',
+    label: 'Hospital offer',
+    title: 'Hospital care, booked in minutes',
+    description: 'Book visits at leading hospitals on Medzoos.',
+    cta: 'Find hospitals',
+    bg: '#124362',
+    action: 'hospitals',
+    image: IMAGE_BY_ACTION.hospitals,
+  },
+];
+
+export type HomeHeroSlide = HomePromoSlide;
+
+/** @deprecated Prefer HOME_HERO_SLIDES */
 export const PROMO_BANNERS = [
   {
     id: 'promo-meds',

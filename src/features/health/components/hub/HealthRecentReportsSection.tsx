@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { LabBooking } from '../../../../lib/mappers/labTest';
-import { colors, spacing, radius, shadows } from '../../../../theme';
+import { colors, spacing, radius } from '../../../../theme';
 import { healthOsTypography } from '../../../../theme/healthOs';
 
 type HealthRecentReportsSectionProps = {
@@ -39,7 +39,9 @@ export function HealthRecentReportsSection({
 
       {reports.length === 0 ? (
         <Pressable style={styles.emptyCard} onPress={onSeeAll}>
-          <Icon name="file-chart-outline" size={22} color={colors.primary700} />
+          <View style={styles.iconWrap}>
+            <Icon name="file-chart-outline" size={18} color={colors.primary700} />
+          </View>
           <View style={styles.emptyCopy}>
             <Text style={styles.emptyTitle}>No reports yet</Text>
             <Text style={styles.emptyHint}>
@@ -49,35 +51,45 @@ export function HealthRecentReportsSection({
           <Icon name="chevron-right" size={18} color={colors.textMuted} />
         </Pressable>
       ) : (
-        <View style={styles.list}>
-          {reports.map(report => {
+        <View style={styles.card}>
+          {reports.map((report, index) => {
             const ready = Boolean(report.reportUrl);
             return (
-              <Pressable
-                key={String(report.id)}
-                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-                onPress={() => onReportPress?.(report) ?? onSeeAll()}>
-                <View style={[styles.iconWrap, ready && styles.iconReady]}>
-                  <Icon
-                    name={ready ? 'file-check-outline' : 'file-clock-outline'}
-                    size={18}
-                    color={ready ? colors.success : colors.primary700}
-                  />
-                </View>
-                <View style={styles.body}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {report.testName || 'Lab report'}
-                  </Text>
-                  <Text style={styles.meta}>
-                    {formatDate(report.collectionDate)}
-                  </Text>
-                </View>
-                <View style={[styles.statusPill, ready ? styles.ready : styles.pending]}>
-                  <Text style={[styles.statusText, ready ? styles.readyText : styles.pendingText]}>
-                    {ready ? 'Ready' : 'Pending'}
-                  </Text>
-                </View>
-              </Pressable>
+              <React.Fragment key={String(report.id)}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <Pressable
+                  style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+                  onPress={() => onReportPress?.(report) ?? onSeeAll()}>
+                  <View style={[styles.iconWrap, ready && styles.iconReady]}>
+                    <Icon
+                      name={ready ? 'file-check-outline' : 'file-clock-outline'}
+                      size={18}
+                      color={ready ? colors.successText : colors.primary700}
+                    />
+                  </View>
+                  <View style={styles.body}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {report.testName || 'Lab report'}
+                    </Text>
+                    <Text style={styles.meta}>
+                      {formatDate(report.collectionDate)}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusPill,
+                      ready ? styles.ready : styles.pending,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        ready ? styles.readyText : styles.pendingText,
+                      ]}>
+                      {ready ? 'Ready' : 'Pending'}
+                    </Text>
+                  </View>
+                </Pressable>
+              </React.Fragment>
             );
           })}
         </View>
@@ -101,31 +113,38 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary700,
   },
-  list: { gap: spacing.sm },
   card: {
+    backgroundColor: colors.white,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: 68,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    ...shadows.cardSoft,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
-  pressed: { opacity: 0.92 },
+  pressed: { backgroundColor: colors.primary100 },
   iconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 20,
     backgroundColor: colors.primary100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconReady: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.successBg,
   },
-  body: { flex: 1, gap: 2 },
+  body: { flex: 1, gap: 2, minWidth: 0 },
   name: {
     fontSize: 14,
     fontWeight: '700',
@@ -140,19 +159,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.pill,
   },
-  ready: { backgroundColor: '#DCFCE7' },
+  ready: { backgroundColor: colors.successBg },
   pending: { backgroundColor: colors.primary100 },
   statusText: { fontSize: 11, fontWeight: '700' },
-  readyText: { color: '#15803D' },
+  readyText: { color: colors.successText },
   pendingText: { color: colors.primary800 },
   emptyCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    backgroundColor: colors.white,
+    borderRadius: radius.xxl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
     padding: spacing.lg,
   },
   emptyCopy: { flex: 1, gap: 2 },

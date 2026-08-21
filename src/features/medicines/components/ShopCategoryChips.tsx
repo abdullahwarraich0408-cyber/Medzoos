@@ -1,15 +1,23 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Pressable, StyleSheet, Text, ScrollView } from 'react-native';
 import { SHOP_CATEGORIES, type ShopCategoryId } from '../data/medicineModel';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { colors, spacing, radius } from '../../../theme';
 
 type ShopCategoryChipsProps = {
   active: ShopCategoryId | 'all';
   onChange: (id: ShopCategoryId | 'all') => void;
 };
 
+const LABELS: Record<string, string> = {
+  all: 'All',
+  prescription: 'Rx',
+  otc: 'OTC',
+  supplements: 'Supplements',
+  first_aid: 'First aid',
+};
+
 export function ShopCategoryChips({ active, onChange }: ShopCategoryChipsProps) {
-  const items = [{ id: 'all' as const, label: 'All' }, ...SHOP_CATEGORIES];
+  const items = [{ id: 'all' as const }, ...SHOP_CATEGORIES];
 
   return (
     <ScrollView
@@ -21,14 +29,10 @@ export function ShopCategoryChips({ active, onChange }: ShopCategoryChipsProps) 
         return (
           <Pressable
             key={item.id}
-            style={({ pressed }) => [
-              styles.chip,
-              isActive && styles.chipActive,
-              pressed && !isActive && styles.chipPressed,
-            ]}
+            style={[styles.chip, isActive && styles.chipActive]}
             onPress={() => onChange(item.id)}>
             <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-              {item.label}
+              {LABELS[item.id] ?? item.id}
             </Text>
           </Pressable>
         );
@@ -38,27 +42,25 @@ export function ShopCategoryChips({ active, onChange }: ShopCategoryChipsProps) 
 }
 
 const styles = StyleSheet.create({
-  row: { gap: spacing.sm, paddingBottom: spacing.xs },
+  row: { gap: spacing.sm },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-    ...shadows.cardSoft,
+    borderColor: colors.borderLight,
   },
   chipActive: {
-    backgroundColor: colors.brandLight,
-    borderColor: 'rgba(17, 61, 99, 0.2)',
+    backgroundColor: colors.primary100,
+    borderColor: colors.primary300,
   },
-  chipPressed: { backgroundColor: colors.brandMist },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: colors.textMuted,
   },
   chipTextActive: {
-    color: colors.brandPrimary,
+    color: colors.primary800,
   },
 });

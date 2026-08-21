@@ -11,7 +11,12 @@ export type HealthQuickAction = {
   tileBg: string;
   screen: keyof Pick<
     HealthStackParamList,
-    'LabReports' | 'MedicalRecords' | 'MedicinesList' | 'FamilyProfiles'
+    | 'LabReports'
+    | 'MedicalRecords'
+    | 'MedicinesList'
+    | 'FamilyProfiles'
+    | 'HealthHistory'
+    | 'UploadMedicalDocument'
   >;
   badgeKey?: 'reports' | 'prescriptions' | 'family' | null;
   badgeFallback?: string;
@@ -19,10 +24,34 @@ export type HealthQuickAction = {
 
 export const HEALTH_QUICK_ACTIONS: HealthQuickAction[] = [
   {
+    id: 'prescriptions',
+    title: 'Prescriptions',
+    subtitle: 'Issued and uploaded',
+    icon: 'file-document-outline',
+    iconColor: iconScheme.color,
+    iconBg: iconScheme.bg,
+    tileBg: '#F0F7FF',
+    screen: 'MedicinesList',
+    badgeKey: 'prescriptions',
+    badgeFallback: 'View Rx',
+  },
+  {
+    id: 'medicines',
+    title: 'Medicines',
+    subtitle: 'Active and refills',
+    icon: 'pill',
+    iconColor: iconScheme.color,
+    iconBg: iconScheme.bg,
+    tileBg: '#EAF4FB',
+    screen: 'MedicinesList',
+    badgeKey: null,
+    badgeFallback: 'Manage meds',
+  },
+  {
     id: 'reports',
-    title: 'Reports',
-    subtitle: 'Lab results & trends',
-    icon: 'file-chart-outline',
+    title: 'Lab reports',
+    subtitle: 'Results and trends',
+    icon: 'flask-outline',
     iconColor: iconScheme.color,
     iconBg: iconScheme.bg,
     tileBg: '#EAF4FB',
@@ -31,40 +60,40 @@ export const HEALTH_QUICK_ACTIONS: HealthQuickAction[] = [
     badgeFallback: 'View labs',
   },
   {
-    id: 'records',
-    title: 'Medical Records',
-    subtitle: 'All your documents',
-    icon: 'folder-outline',
+    id: 'consults',
+    title: 'Consultations',
+    subtitle: 'Visits and notes',
+    icon: 'stethoscope',
     iconColor: iconScheme.color,
     iconBg: iconScheme.bg,
     tileBg: '#E8F4FF',
     screen: 'MedicalRecords',
     badgeKey: null,
-    badgeFallback: 'Secure vault',
+    badgeFallback: 'Your visits',
   },
   {
-    id: 'prescriptions',
-    title: 'Prescriptions',
-    subtitle: 'Active medicines & refills',
-    icon: 'pill',
+    id: 'documents',
+    title: 'Documents',
+    subtitle: 'Upload records',
+    icon: 'folder-outline',
     iconColor: iconScheme.color,
     iconBg: iconScheme.bg,
-    tileBg: '#F0F7FF',
-    screen: 'MedicinesList',
-    badgeKey: 'prescriptions',
-    badgeFallback: 'Manage meds',
+    tileBg: '#E8F4FF',
+    screen: 'UploadMedicalDocument',
+    badgeKey: null,
+    badgeFallback: 'Add record',
   },
   {
-    id: 'family',
-    title: 'Family Vault',
-    subtitle: 'Shared family health',
-    icon: 'account-group-outline',
+    id: 'timeline',
+    title: 'Health timeline',
+    subtitle: 'Full journey',
+    icon: 'timeline-clock-outline',
     iconColor: iconScheme.color,
     iconBg: iconScheme.bg,
     tileBg: '#DEEEF9',
-    screen: 'FamilyProfiles',
-    badgeKey: 'family',
-    badgeFallback: 'Family care',
+    screen: 'HealthHistory',
+    badgeKey: null,
+    badgeFallback: 'Chronology',
   },
 ];
 

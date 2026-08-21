@@ -11,7 +11,6 @@ import { useNavigation } from '@react-navigation/native';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import {
-  navigateToPhoneSignIn,
   navigateToSignIn,
 } from '../../../lib/auth/navigation';
 import { colors, spacing, radius } from '../../../theme';
@@ -32,7 +31,6 @@ export function RequireAuthGate({
   const navigation = useNavigation();
   const { isAuthenticated, isLoading } = useAuth();
 
-  const goToPhoneSignIn = () => navigateToPhoneSignIn(navigation);
   const goToSignIn = () => navigateToSignIn(navigation);
 
   if (isLoading) {
@@ -54,12 +52,9 @@ export function RequireAuthGate({
         </View>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
-        <TouchableOpacity style={styles.btn} onPress={goToPhoneSignIn} activeOpacity={0.85}>
-          <Icon name="phone" size={18} color={colors.white} />
-          <Text style={styles.btnText}>Continue with Phone OTP</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={goToSignIn} activeOpacity={0.7} style={styles.secondaryBtn}>
-          <Text style={styles.link}>Sign in with email</Text>
+        <TouchableOpacity style={styles.btn} onPress={goToSignIn} activeOpacity={0.85}>
+          <Icon name="login" size={18} color={colors.white} />
+          <Text style={styles.btnText}>Sign in</Text>
         </TouchableOpacity>
         </View>
       </ScreenLayout>

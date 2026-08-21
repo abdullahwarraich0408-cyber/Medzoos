@@ -7,33 +7,42 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius } from '../../../theme';
+import { colors, spacing } from '../../../theme';
 
 type AuthPrimaryButtonProps = {
   label: string;
   loading?: boolean;
+  loadingLabel?: string;
   disabled?: boolean;
   onPress: () => void;
+  showArrow?: boolean;
 };
 
 export function AuthPrimaryButton({
   label,
   loading,
+  loadingLabel,
   disabled,
   onPress,
+  showArrow = true,
 }: AuthPrimaryButtonProps) {
   return (
     <TouchableOpacity
       style={[styles.btn, (disabled || loading) && styles.btnDisabled]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.85}>
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(disabled || loading), busy: Boolean(loading) }}>
       {loading ? (
-        <ActivityIndicator color={colors.white} />
+        <>
+          <ActivityIndicator color={colors.white} />
+          <Text style={styles.btnText}>{loadingLabel || label}</Text>
+        </>
       ) : (
         <>
           <Text style={styles.btnText}>{label}</Text>
-          <Icon name="arrow-right" size={18} color={colors.white} />
+          {showArrow ? <Icon name="arrow-right" size={18} color={colors.white} /> : null}
         </>
       )}
     </TouchableOpacity>
@@ -47,7 +56,7 @@ type AuthLinkProps = {
 
 export function AuthLink({ children, onPress }: AuthLinkProps) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} accessibilityRole="button">
       <Text style={styles.link}>{children}</Text>
     </TouchableOpacity>
   );
@@ -57,7 +66,7 @@ export function AuthDivider() {
   return (
     <View style={styles.dividerWrap}>
       <View style={styles.dividerLine} />
-      <Text style={styles.dividerText}>OR</Text>
+      <Text style={styles.dividerText}>or continue with</Text>
       <View style={styles.dividerLine} />
     </View>
   );
@@ -69,22 +78,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    height: 48,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary700,
-    marginTop: spacing.sm,
+    minHeight: 54,
+    borderRadius: 16,
+    backgroundColor: colors.brandPrimary,
+    marginTop: 6,
   },
   btnDisabled: {
     opacity: 0.6,
   },
   btnText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.white,
+    letterSpacing: -0.2,
   },
   link: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.brandPrimary,
   },
   dividerWrap: {
@@ -95,13 +105,14 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: colors.neutral200,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
   },
   dividerText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.neutral500,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
 });

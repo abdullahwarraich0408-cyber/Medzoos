@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { iosStackScreenOptions } from './iosStackOptions';
 import { ConsultHomePage } from '../features/consult/ConsultHomePage';
 import { ConsultHospitalsScreen } from '../features/consult/ConsultHospitalsScreen';
 import { HospitalDetailScreen } from '../features/hospitals/screens/HospitalDetailScreen';
@@ -20,7 +21,7 @@ const Stack = createNativeStackNavigator<DoctorsStackParamList>();
 
 export function DoctorsStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={iosStackScreenOptions}>
       <Stack.Screen name="ConsultHome" component={ConsultHomePage} />
       <Stack.Screen name="DoctorsList" component={DoctorsPage} />
       <Stack.Screen name="HospitalsList" component={ConsultHospitalsScreen} />

@@ -79,8 +79,8 @@ function GuestAccountHome({ navigation, drawerNavigation }: GuestAccountHomeProp
         <View style={styles.actions}>
           <PrimaryAction
             icon="login"
-            title="Sign in with phone"
-            onPress={() => navigation.navigate('PhoneSignIn')}
+            title="Sign in"
+            onPress={() => navigation.navigate('SignIn')}
           />
           <PrimaryAction
             icon="account-plus-outline"

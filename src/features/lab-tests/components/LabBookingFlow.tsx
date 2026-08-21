@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../../lib/auth/AuthContext';
-import { navigateToSignIn } from '../../../lib/auth/navigation';
+import { navigateToSignIn, navigateToOrders } from '../../../lib/auth/navigation';
 import {
   useBookLabTest,
   useLabTestTimeSlots,
@@ -394,9 +394,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
             style={styles.primaryBtn}
             onPress={() => {
               onDone?.();
-              navigation.getParent()?.getParent()?.navigate('You' as never, {
-                screen: 'OrdersList',
-              } as never);
+              navigateToOrders(navigation);
             }}
             activeOpacity={0.85}>
             <Text style={styles.primaryBtnText}>View Orders</Text>

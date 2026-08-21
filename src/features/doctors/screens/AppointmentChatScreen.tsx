@@ -365,7 +365,7 @@ function LiveChatContent() {
       videoAccess?.joinUrl ||
       data?.appointment?.meeting_url ||
       (data?.appointment?.meeting_id
-        ? `https://medmarket.asrar.dev/consultation/${data.appointment.meeting_id}?appointment=${appointmentId}`
+        ? `https://medzoos.com/consultation/${data.appointment.meeting_id}?appointment=${appointmentId}`
         : null);
     if (url) Linking.openURL(url);
   };

@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   mediaImage: { width: '100%', height: '100%' },
   playOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(8,43,63,0.25)',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { iosStackScreenOptions } from './iosStackOptions';
 import { AccountHomeScreen } from '../features/account/screens/AccountHomeScreen';
 import { ProfileScreen } from '../features/account/screens/ProfileScreen';
 import { AddressesScreen } from '../features/account/screens/AddressesScreen';
@@ -10,6 +11,7 @@ import { SupportScreen } from '../features/account/screens/SupportScreen';
 import { SignInScreen } from '../features/auth/screens/SignInScreen';
 import { PhoneSignInScreen } from '../features/auth/screens/PhoneSignInScreen';
 import { OtpVerifyScreen } from '../features/auth/screens/OtpVerifyScreen';
+import { CompleteProfileScreen } from '../features/auth/screens/CompleteProfileScreen';
 import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen';
 import { OrdersListScreen } from '../features/orders/screens/OrdersListScreen';
@@ -24,7 +26,7 @@ const Stack = createNativeStackNavigator<YouStackParamList>();
 
 export function YouStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={iosStackScreenOptions}>
       <Stack.Screen name="YouHome" component={AccountHomeScreen} />
       <Stack.Screen name="OrdersList" component={OrdersListScreen} />
       <Stack.Screen name="Appointments" component={AppointmentsScreen} />
@@ -40,6 +42,7 @@ export function YouStack() {
       <Stack.Screen name="Support" component={SupportScreen} />
       <Stack.Screen name="PhoneSignIn" component={PhoneSignInScreen} />
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
+      <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

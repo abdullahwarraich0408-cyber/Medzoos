@@ -1,7 +1,7 @@
 import { Alert } from 'react-native';
-import { navigateToPhoneSignIn } from '../../../lib/auth/navigation';
+import { navigateToSignIn } from '../../../lib/auth/navigation';
 
-type NavLike = Parameters<typeof navigateToPhoneSignIn>[0];
+type NavLike = Parameters<typeof navigateToSignIn>[0];
 
 /** Shared auth gate for community join / buddy actions. */
 export function requireCommunityAuth(
@@ -19,7 +19,7 @@ export function requireCommunityAuth(
     { text: 'Cancel', style: 'cancel' },
     {
       text: 'Sign in',
-      onPress: () => navigateToPhoneSignIn(navigation),
+      onPress: () => navigateToSignIn(navigation),
     },
   ]);
 }
@@ -34,7 +34,7 @@ export function showJoinResult(
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign in',
-        onPress: () => navigateToPhoneSignIn(navigation),
+        onPress: () => navigateToSignIn(navigation),
       },
     ]);
     return;

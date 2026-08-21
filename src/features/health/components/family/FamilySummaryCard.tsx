@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { FamilyVaultView } from '../../data/familyVaultModel';
-import { colors, spacing, radius, cardStyles } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../../theme';
 
 type FamilySummaryCardProps = {
   family: FamilyVaultView;
@@ -14,18 +13,18 @@ export function FamilySummaryCard({ family, onAddMember }: FamilySummaryCardProp
   return (
     <View style={styles.card}>
       <View style={styles.copy}>
-        <Text style={styles.name}>{family.familyName}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {family.familyName}
+        </Text>
         <Text style={styles.meta}>
           {family.memberCount} member{family.memberCount === 1 ? '' : 's'}
+          {family.familyScore != null ? ` · Score ${family.familyScore}` : ''}
         </Text>
-        <Text style={styles.status}>{family.overallStatus}</Text>
-        {family.familyScore != null ? (
-          <Text style={styles.score}>Family score {family.familyScore}</Text>
-        ) : null}
       </View>
-      <Pressable style={styles.addBtn} onPress={onAddMember}>
-        <Icon name="account-plus-outline" size={16} color={colors.white} />
-        <Text style={styles.addBtnText}>Add member</Text>
+      <Pressable
+        style={({ pressed }) => [styles.addBtn, pressed && styles.addPressed]}
+        onPress={onAddMember}>
+        <Icon name="plus" size={18} color={colors.primary700} />
       </Pressable>
     </View>
   );
@@ -33,45 +32,34 @@ export function FamilySummaryCard({ family, onAddMember }: FamilySummaryCardProp
 
 const styles = StyleSheet.create({
   card: {
-    ...cardStyles.premiumSoft,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
-    padding: spacing.lg,
+    backgroundColor: colors.primary100,
+    borderRadius: radius.xxl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(23, 97, 142, 0.12)',
   },
-  copy: { flex: 1, gap: 2 },
+  copy: { flex: 1, gap: 4, minWidth: 0 },
   name: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 17,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary900,
+    letterSpacing: -0.2,
   },
   meta: {
     fontSize: 13,
-    color: colors.neutral600,
-  },
-  status: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#059669',
-    marginTop: spacing.xs,
-  },
-  score: {
-    fontSize: 11,
-    color: colors.neutral500,
-    marginTop: 2,
+    color: colors.primary600,
   },
   addBtn: {
-    flexDirection: 'row',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
+    justifyContent: 'center',
   },
-  addBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.white,
-  },
+  addPressed: { opacity: 0.88 },
 });

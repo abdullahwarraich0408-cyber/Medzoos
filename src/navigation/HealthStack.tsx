@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { iosStackScreenOptions } from './iosStackOptions';
 import { HealthHomePage } from '../features/health/HealthHomePage';
 import { MedicalRecordsScreen } from '../features/health/screens/MedicalRecordsScreen';
 import { DoctorRecordsDetailScreen } from '../features/health/screens/DoctorRecordsDetailScreen';
@@ -7,6 +8,7 @@ import { LabRecordsDetailScreen } from '../features/health/screens/LabRecordsDet
 import { FamilyProfilesScreen } from '../features/health/screens/FamilyProfilesScreen';
 import { FamilyMemberDetailScreen } from '../features/health/screens/FamilyMemberDetailScreen';
 import { HealthHistoryScreen } from '../features/health/screens/HealthHistoryScreen';
+import { UploadMedicalDocumentScreen } from '../features/health/screens/UploadMedicalDocumentScreen';
 import { MedicinesPage } from '../features/medicines/MedicinesPage';
 import { MedicineDetailScreen } from '../features/medicines/screens/MedicineDetailScreen';
 import { PrescriptionDetailScreen } from '../features/medicines/screens/PrescriptionDetailScreen';
@@ -20,7 +22,7 @@ const Stack = createNativeStackNavigator<HealthStackParamList>();
 
 export function HealthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={iosStackScreenOptions}>
       <Stack.Screen name="HealthHome" component={HealthHomePage} />
       <Stack.Screen name="MedicinesList" component={MedicinesPage} />
       <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
@@ -35,6 +37,7 @@ export function HealthStack() {
       <Stack.Screen name="FamilyProfiles" component={FamilyProfilesScreen} />
       <Stack.Screen name="FamilyMemberDetail" component={FamilyMemberDetailScreen} />
       <Stack.Screen name="HealthHistory" component={HealthHistoryScreen} />
+      <Stack.Screen name="UploadMedicalDocument" component={UploadMedicalDocumentScreen} />
     </Stack.Navigator>
   );
 }

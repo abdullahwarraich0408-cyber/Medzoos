@@ -106,6 +106,8 @@ export type CopilotSessionState = {
   sessionId: string;
   phase: CopilotPhase;
   intent: CopilotIntent | null;
+  /** First user complaint for this journey (kept through Q&A) */
+  triggerMessage?: string;
   answers: Record<string, string>;
   questionIndex: number;
   pendingQuestions: CopilotQuestion[];

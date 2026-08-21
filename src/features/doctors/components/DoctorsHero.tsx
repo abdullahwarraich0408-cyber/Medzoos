@@ -77,7 +77,7 @@ export function DoctorsHero({ search, onSearchChange, category }: DoctorsHeroPro
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.brandBanner,
     borderRadius: 20,
     padding: spacing.xl,
     marginBottom: spacing.lg,
@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.white,
+    opacity: 0.08,
   },
   badge: {
     flexDirection: 'row',

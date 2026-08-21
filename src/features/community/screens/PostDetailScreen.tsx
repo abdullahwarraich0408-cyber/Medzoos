@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   videoPlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',

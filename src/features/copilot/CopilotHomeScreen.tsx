@@ -24,7 +24,7 @@ import { copilotCopy } from '../../lib/copy/uiMessages';
 import { useCopilot } from '../../lib/copilot/useCopilot';
 import type { CopilotAction } from '../../lib/copilot/types';
 import { navigateToServices, navigateToTabScreen } from '../../lib/auth/navigation';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
+import { colors, spacing, radius } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
 import { healthOs, healthOsTypography } from '../../theme/healthOs';
 import type { CopilotStackParamList, MainTabParamList } from '../../navigation/types';
@@ -56,6 +56,7 @@ export function CopilotHomeScreen() {
     isLoading,
     initializeSession,
     sendMessage,
+    startNewChat,
   } = useCopilot();
 
   const [input, setInput] = React.useState(route.params?.initialPrompt ?? '');
@@ -90,6 +91,12 @@ export function CopilotHomeScreen() {
     [sendMessage],
   );
 
+  const handleNewChat = useCallback(() => {
+    initialPromptSent.current = false;
+    setInput('');
+    startNewChat();
+  }, [startNewChat]);
+
   const handleActionPress = useCallback(
     (action: CopilotAction) => {
       if (action.type === 'emergency_alert') {
@@ -110,13 +117,26 @@ export function CopilotHomeScreen() {
         return;
       }
 
-      navigateToTabScreen(navigation, nav.tab === 'You' ? 'You' : nav.tab, nav.screen, nav.params);
+      navigateToTabScreen(navigation, nav.tab as any, nav.screen, nav.params);
     },
     [navigation],
   );
 
   return (
-    <ScreenLayout title="Copilot" showSearch={false} showCart={false}>
+    <ScreenLayout
+      title="Medzoos"
+      showSearch={false}
+      showCart={false}
+      headerRight={
+        <Pressable
+          onPress={handleNewChat}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Start new chat"
+          style={styles.newChatBtn}>
+          <Icon name="square-edit-outline" size={22} color={colors.primary700} />
+        </Pressable>
+      }>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -130,6 +150,16 @@ export function CopilotHomeScreen() {
               session?.phase ? phaseLabel(session.phase) : undefined
             }
           />
+
+          {messages.length > 0 ? (
+            <Pressable
+              style={styles.newChatBanner}
+              onPress={handleNewChat}
+              accessibilityRole="button">
+              <Icon name="plus" size={16} color={colors.primary700} />
+              <Text style={styles.newChatBannerText}>New chat</Text>
+            </Pressable>
+          ) : null}
 
           {isLoading && messages.length === 0 ? (
             <ActivityIndicator color={healthOs.copilotGlow} style={styles.loader} />
@@ -234,7 +264,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: calmLayout.screenPadding,
     paddingVertical: spacing.md,
-    paddingBottom: TAB_BAR_CLEARANCE + spacing.sm,
+    paddingBottom: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: healthOs.messageBorder,
     backgroundColor: colors.surfaceBase,
@@ -260,4 +290,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  newChatBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newChatBanner: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: colors.primary100,
+    borderWidth: 1,
+    borderColor: colors.primary200,
+  },
+  newChatBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary700,
+  },
 });

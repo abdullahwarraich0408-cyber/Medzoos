@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { MEDICAL_RECORD_TABS, type MedicalRecordTabId } from '../../data/healthData';
-import { colors, spacing, radius, shadows } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../../theme';
 
 type MedicalRecordTabsProps = {
   active: MedicalRecordTabId;
@@ -20,11 +19,7 @@ export function MedicalRecordTabs({ active, onChange }: MedicalRecordTabsProps) 
         return (
           <Pressable
             key={tab.id}
-            style={({ pressed }) => [
-              styles.tab,
-              isActive && styles.tabActive,
-              pressed && !isActive && styles.tabPressed,
-            ]}
+            style={[styles.tab, isActive && styles.tabActive]}
             onPress={() => onChange(tab.id)}>
             <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
               {tab.label}
@@ -39,30 +34,26 @@ export function MedicalRecordTabs({ active, onChange }: MedicalRecordTabsProps) 
 const styles = StyleSheet.create({
   row: {
     gap: spacing.sm,
-    paddingBottom: spacing.xs,
   },
   tab: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm,
     borderRadius: radius.pill,
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-    ...shadows.cardSoft,
+    borderColor: colors.borderLight,
   },
   tabActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
-  },
-  tabPressed: {
-    backgroundColor: colors.brandMist,
+    backgroundColor: colors.primary100,
+    borderColor: colors.primary300,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: colors.textMuted,
   },
   tabTextActive: {
-    color: colors.white,
+    color: colors.primary800,
+    fontWeight: '700',
   },
 });

@@ -4,7 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
+  Pressable,
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -19,10 +19,10 @@ import {
   getPrescriptionById,
   getSourceLabel,
   getRefillLabel,
+  DEMO_PATIENT_MEDICINES,
+  DEMO_PRESCRIPTIONS,
 } from '../data/medicineModel';
-import { DEMO_PATIENT_MEDICINES, DEMO_PRESCRIPTIONS } from '../data/medicineModel';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE, cardStyles } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
 
 type Route = RouteProp<HealthStackParamList, 'MedicineDetail'>;
@@ -67,82 +67,77 @@ function MedicineDetailContent() {
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg },
+        {
+          paddingBottom:
+            Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg,
+        },
       ]}
       showsVerticalScrollIndicator={false}>
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
-          <Icon name="pill" size={28} color={colors.brandPrimary} />
+          <Icon name="pill" size={24} color={colors.primary700} />
         </View>
-        <Text style={styles.heroTitle}>{medicine.medicineName}</Text>
-        <Text style={styles.heroGeneric}>{medicine.genericName}</Text>
-        <Text style={styles.heroSource}>{getSourceLabel(medicine)}</Text>
+        <View style={styles.heroCopy}>
+          <Text style={styles.heroTitle}>{medicine.medicineName}</Text>
+          <Text style={styles.heroMeta}>
+            {[medicine.genericName, getSourceLabel(medicine)]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.card}>
         <DetailRow label="Strength" value={medicine.strength} />
+        <View style={styles.divider} />
         <DetailRow label="Dosage" value={medicine.dosage} />
+        <View style={styles.divider} />
         <DetailRow label="Timing" value={medicine.timing} />
+        <View style={styles.divider} />
         <DetailRow label="Frequency" value={medicine.frequency} />
-        <DetailRow label="Duration" value={medicine.duration} />
+        <View style={styles.divider} />
         <DetailRow label="Instructions" value={medicine.instructions} />
-        <DetailRow label="Refill status" value={getRefillLabel(medicine)} />
-        <DetailRow
-          label="Reminders"
-          value={medicine.reminderEnabled ? `Next at ${medicine.nextReminderTime}` : 'Off'}
-        />
+        <View style={styles.divider} />
+        <DetailRow label="Refill" value={getRefillLabel(medicine)} />
       </View>
 
       {linkedPrescription ? (
-        <TouchableOpacity
-          style={styles.linkCard}
+        <Pressable
+          style={({ pressed }) => [styles.linkRow, pressed && styles.linkPressed]}
           onPress={() =>
             navigation.navigate('PrescriptionDetail', {
               prescriptionId: linkedPrescription.prescriptionId,
             })
           }>
-          <Icon name="file-document-outline" size={20} color={colors.brandPrimary} />
-          <View style={styles.linkBody}>
-            <Text style={styles.linkTitle}>Linked prescription</Text>
-            <Text style={styles.linkSub}>{linkedPrescription.title}</Text>
-          </View>
-          <Icon name="chevron-right" size={18} color={colors.neutral500} />
-        </TouchableOpacity>
-      ) : null}
-
-      {medicine.doctorId ? (
-        <TouchableOpacity
-          style={styles.linkCard}
-          onPress={() =>
-            navigation.navigate('DoctorRecordsDetail', { doctorId: medicine.doctorId! })
-          }>
-          <Icon name="stethoscope" size={20} color={colors.brandPrimary} />
-          <View style={styles.linkBody}>
-            <Text style={styles.linkTitle}>Doctor records</Text>
-            <Text style={styles.linkSub}>{medicine.doctorName}</Text>
-          </View>
-          <Icon name="chevron-right" size={18} color={colors.neutral500} />
-        </TouchableOpacity>
+          <Icon name="file-document-outline" size={18} color={colors.primary700} />
+          <Text style={styles.linkText} numberOfLines={1}>
+            Linked prescription
+          </Text>
+          <Icon name="chevron-right" size={18} color={colors.textMuted} />
+        </Pressable>
       ) : null}
 
       <View style={styles.actions}>
         {needsRefill ? (
-          <TouchableOpacity
-            style={styles.primaryBtn}
+          <Pressable
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              pressed && styles.btnPressed,
+            ]}
             onPress={() => navigation.navigate('Cart')}>
             <Text style={styles.primaryBtnText}>Refill medicine</Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => Alert.alert('Reminders', 'Reminder settings coming soon.')}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryBtn,
+            pressed && styles.linkPressed,
+          ]}
+          onPress={() =>
+            Alert.alert('Reminders', 'Reminder settings coming soon.')
+          }>
           <Text style={styles.secondaryBtnText}>Reminder settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => Alert.alert('Order history', 'No previous orders yet.')}>
-          <Text style={styles.secondaryBtnText}>Order history</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -150,7 +145,10 @@ function MedicineDetailContent() {
 
 export function MedicineDetailScreen() {
   const route = useRoute<Route>();
-  const medicine = getMedicineById(DEMO_PATIENT_MEDICINES, route.params.medicineId);
+  const medicine = getMedicineById(
+    DEMO_PATIENT_MEDICINES,
+    route.params.medicineId,
+  );
 
   return (
     <ScreenLayout
@@ -167,76 +165,85 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: calmLayout.screenPadding,
-    gap: calmLayout.sectionGap,
+    gap: 20,
   },
   hero: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-  },
-  heroIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  heroTitle: {
-    ...healthOsTypography.greeting,
-    fontSize: 22,
-    textAlign: 'center',
-  },
-  heroGeneric: {
-    fontSize: 14,
-    color: colors.neutral500,
-  },
-  heroSource: {
-    fontSize: 13,
-    color: colors.brandPrimary,
-    fontWeight: '600',
-  },
-  card: {
-    ...cardStyles.grouped,
-    padding: spacing.lg,
     gap: spacing.md,
   },
-  detailRow: { gap: 2 },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCopy: { flex: 1, gap: 4, minWidth: 0 },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primary900,
+    letterSpacing: -0.3,
+  },
+  heroMeta: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  detailRow: {
+    paddingVertical: spacing.md,
+    gap: 4,
+  },
   detailLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.neutral500,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   detailValue: {
-    fontSize: 14,
-    color: colors.ink900,
-    lineHeight: 20,
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textPrimary,
+    lineHeight: 21,
   },
-  linkCard: {
-    ...cardStyles.premiumSoft,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
-  linkBody: { flex: 1, gap: 2 },
-  linkTitle: {
-    ...healthOsTypography.messageTitle,
+  linkPressed: { backgroundColor: colors.primary100 },
+  linkText: {
+    flex: 1,
     fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
-  linkSub: {
-    fontSize: 12,
-    color: colors.neutral500,
-  },
-  actions: { gap: spacing.sm },
+  actions: { gap: spacing.sm, marginTop: spacing.xs },
   primaryBtn: {
     alignItems: 'center',
     paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.buttonEnd,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primary700,
   },
   primaryBtnText: {
     fontSize: 15,
@@ -246,21 +253,21 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     alignItems: 'center',
     paddingVertical: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.xl,
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.neutral200,
+    borderColor: colors.borderLight,
   },
   secondaryBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.brandPrimary,
+    color: colors.primary700,
   },
+  btnPressed: { opacity: 0.9 },
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceSubtle,
   },
-  emptyText: { fontSize: 15, color: colors.neutral500 },
+  emptyText: { fontSize: 15, color: colors.textMuted },
 });

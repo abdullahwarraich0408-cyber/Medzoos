@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
 
 import { BottomTabBar } from '../components/navigation/BottomTabBar';
 import { DrawerContent } from '../components/navigation/DrawerContent';
@@ -20,10 +20,18 @@ import { CopilotStack } from './CopilotStack';
 import { HealthStack } from './HealthStack';
 import { CommunityStack } from './CommunityStack';
 import { YouStack } from './YouStack';
+import { AuthStack } from './AuthStack';
 import { shouldShowBottomTabBar } from './tabBarVisibility';
 import { colors } from '../theme';
 import { AppBackground } from '../components/layout/AppBackground';
-import type { DrawerParamList, MainTabParamList } from './types';
+import { APP_DRAWER_ID } from '../lib/auth/navigation';
+import { useAuth } from '../lib/auth/AuthContext';
+import { needsProfileCompletion } from '../lib/auth/needsProfileCompletion';
+import {
+  hasCompletedOnboarding,
+  type OnboardingAuthTarget,
+} from '../features/onboarding';
+import type { GuestStackParamList, DrawerParamList, MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -53,6 +61,7 @@ function MainTabs() {
 function DrawerNavigator() {
   return (
     <Drawer.Navigator
+      id={APP_DRAWER_ID}
       drawerContent={props => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
@@ -62,8 +71,9 @@ function DrawerNavigator() {
           maxWidth: 320,
           backgroundColor: colors.surfaceBase,
         },
-        overlayColor: 'rgba(12, 26, 46, 0.45)',
+        overlayColor: 'rgba(15, 23, 42, 0.28)',
         swipeEdgeWidth: 60,
+        drawerStatusBarAnimation: 'fade',
       }}>
       <Drawer.Screen
         name="MainTabs"
@@ -81,10 +91,46 @@ function DrawerNavigator() {
 }
 
 export function AppNavigator() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const needsProfile = needsProfileCompletion(user);
+  const showApp = !isLoading && isAuthenticated && !needsProfile;
+  const [onboardingReady, setOnboardingReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [authEntry, setAuthEntry] = useState<'SignIn' | 'Register'>('SignIn');
+
+  useEffect(() => {
+    let cancelled = false;
+    hasCompletedOnboarding().then(done => {
+      if (cancelled) return;
+      setShowOnboarding(!done);
+      setOnboardingReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const finishOnboarding = useCallback((target: OnboardingAuthTarget) => {
+    setAuthEntry(target === 'register' ? 'Register' : 'SignIn');
+    setShowOnboarding(false);
+  }, []);
+
+  if (!onboardingReady) {
+    return <View style={styles.boot} />;
+  }
+
+  const authStart: keyof GuestStackParamList =
+    isAuthenticated && needsProfile
+      ? 'CompleteProfile'
+      : showOnboarding
+        ? 'Onboarding'
+        : authEntry;
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <AppBackground style={styles.root}>
         <NavigationContainer
+          key={showApp ? 'app' : showOnboarding ? 'onboarding' : 'auth'}
           theme={{
             dark: false,
             colors: {
@@ -102,7 +148,14 @@ export function AppNavigator() {
               heavy: { fontFamily: 'System', fontWeight: '800' },
             },
           }}>
-          <DrawerNavigator />
+          {showApp ? (
+            <DrawerNavigator />
+          ) : (
+            <AuthStack
+              initialRouteName={authStart}
+              onOnboardingComplete={finishOnboarding}
+            />
+          )}
         </NavigationContainer>
       </AppBackground>
     </GestureHandlerRootView>
@@ -112,5 +165,9 @@ export function AppNavigator() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  boot: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 });

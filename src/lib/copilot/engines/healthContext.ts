@@ -1,4 +1,4 @@
-import type { CopilotContextInput, HealthContext } from './types';
+import type { CopilotContextInput, HealthContext } from '../types';
 
 function calcAge(dob?: string): number | undefined {
   if (!dob) return undefined;

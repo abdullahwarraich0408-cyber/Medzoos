@@ -9,26 +9,59 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import type { HomeDoctor } from '../../../lib/hooks/useHomeData';
 import { colors, spacing, radius, shadows } from '../../../theme';
 import { specialtyVisual } from '../../home/data/homeData';
 
 const CARD_W = Dimensions.get('window').width * 0.72;
 
+export type HomeRecentVisit = {
+  id: string;
+  name: string;
+  specialty: string;
+  image?: string;
+  dateLabel: string;
+  modeLabel: string;
+};
+
 type HomeRecentVisitsProps = {
-  doctors: HomeDoctor[];
+  visits: HomeRecentVisit[];
   onSeeAll: () => void;
-  onDoctorPress: (id: string) => void;
-  onBookPress: (id: string) => void;
+  onVisitPress: (id: string) => void;
+  onEmptyCta?: () => void;
 };
 
 export function HomeRecentVisits({
-  doctors,
+  visits,
   onSeeAll,
-  onDoctorPress,
-  onBookPress,
+  onVisitPress,
+  onEmptyCta,
 }: HomeRecentVisitsProps) {
-  if (doctors.length === 0) return null;
+  if (visits.length === 0) {
+    return (
+      <View style={styles.section}>
+        <View style={styles.header}>
+          <Text style={styles.title}>My Recent Visit</Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [styles.emptyCard, pressed && styles.pressed]}
+          onPress={onEmptyCta ?? onSeeAll}>
+          <View style={styles.emptyIcon}>
+            <Icon name="stethoscope" size={26} color={colors.primary700} />
+          </View>
+          <View style={styles.emptyCopy}>
+            <Text style={styles.emptyTitle}>No visits yet</Text>
+            <Text style={styles.emptyHint}>
+              Book your first doctor visit and it will show up here.
+            </Text>
+          </View>
+          <View style={styles.emptyCta}>
+            <Text style={styles.emptyCtaText}>Find a doctor</Text>
+            <Icon name="arrow-right" size={16} color={colors.primary700} />
+          </View>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.section}>
@@ -45,50 +78,47 @@ export function HomeRecentVisits({
         decelerationRate="fast"
         snapToInterval={CARD_W + spacing.md}
         contentContainerStyle={styles.row}>
-        {doctors.map(doctor => {
-          const visual = specialtyVisual(doctor.specialty);
+        {visits.map(visit => {
+          const visual = specialtyVisual(visit.specialty);
           return (
             <Pressable
-              key={doctor.id}
+              key={visit.id}
               style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-              onPress={() => onDoctorPress(doctor.id)}>
+              onPress={() => onVisitPress(visit.id)}>
               <View style={styles.pill}>
                 <View style={styles.pillIcon}>
-                  <Icon name={visual.icon} size={16} color={colors.iconPrimary} />
+                  <Icon
+                    name={visual.icon}
+                    size={16}
+                    color={colors.iconPrimary}
+                  />
                 </View>
                 <View style={styles.pillCopy}>
                   <Text style={styles.specName} numberOfLines={1}>
-                    {doctor.specialty}
+                    {visit.specialty || 'Consultation'}
                   </Text>
                   <Text style={styles.specMeta} numberOfLines={1}>
-                    Specialist · 5+ years
+                    {visit.modeLabel}
                   </Text>
                 </View>
-                <Image source={{ uri: doctor.image }} style={styles.photo} />
+                {visit.image ? (
+                  <Image source={{ uri: visit.image }} style={styles.photo} />
+                ) : (
+                  <View style={[styles.photo, styles.photoFallback]}>
+                    <Icon name="doctor" size={20} color={colors.primary700} />
+                  </View>
+                )}
               </View>
 
               <Text style={styles.doctorName} numberOfLines={1}>
-                {doctor.name}
+                {visit.name}
               </Text>
 
               <View style={styles.bottomRow}>
-                <View style={styles.ratingRow}>
-                  <Icon name="star" size={15} color={colors.rating} />
-                  <Text style={styles.rating}>
-                    {doctor.rating.toFixed(1)}
-                  </Text>
-                  <Text style={styles.reviews}>({doctor.reviews})</Text>
+                <Text style={styles.dateLabel}>{visit.dateLabel}</Text>
+                <View style={styles.openBtn}>
+                  <Icon name="chevron-right" size={18} color={colors.iconWhite} />
                 </View>
-
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.bookBtn,
-                    pressed && styles.bookBtnPressed,
-                  ]}
-                  onPress={() => onBookPress(doctor.id)}
-                  hitSlop={6}>
-                  <Icon name="calendar-month" size={18} color={colors.iconWhite} />
-                </Pressable>
               </View>
             </Pressable>
           );
@@ -116,6 +146,48 @@ const styles = StyleSheet.create({
   seeAll: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.primary700,
+  },
+  emptyCard: {
+    backgroundColor: colors.primary100,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: 'rgba(23, 97, 142, 0.12)',
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCopy: { gap: 4 },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary900,
+  },
+  emptyHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.primary600,
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+  },
+  emptyCtaText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.primary700,
   },
   row: {
@@ -177,6 +249,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.white,
   },
+  photoFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   doctorName: {
     fontSize: 17,
     fontWeight: '700',
@@ -188,31 +264,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    flex: 1,
-  },
-  rating: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.ratingText,
-  },
-  reviews: {
+  dateLabel: {
     fontSize: 13,
     fontWeight: '500',
     color: colors.textSecondary,
+    flex: 1,
   },
-  bookBtn: {
+  openBtn: {
     width: 42,
     height: 42,
     borderRadius: 12,
     backgroundColor: colors.primary700,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  bookBtnPressed: {
-    backgroundColor: colors.primary800,
   },
 });

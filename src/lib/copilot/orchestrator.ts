@@ -32,6 +32,7 @@ function createSession(): CopilotSessionState {
     sessionId: createId(),
     phase: 'greeting',
     intent: null,
+    triggerMessage: undefined,
     answers: {},
     questionIndex: 0,
     pendingQuestions: [],
@@ -147,6 +148,7 @@ export class CopilotOrchestrator {
     // New intent
     const intent = detectIntent(trimmed);
     this.session.intent = intent;
+    this.session.triggerMessage = trimmed;
     this.session.answers = {};
     this.session.questionIndex = 0;
     this.session.phase = 'intent';
@@ -196,14 +198,18 @@ export class CopilotOrchestrator {
 
   private completeAssessment(userMessages: CopilotMessagePayload[]): CopilotTurnResult {
     this.session.phase = 'assessment';
+    const observation =
+      this.session.triggerMessage ||
+      userMessages[userMessages.length - 1]?.text ||
+      '';
     const assessment = assessRisk(
       this.session.intent ?? 'general',
-      userMessages[userMessages.length - 1]?.text ?? '',
+      observation,
       this.session.answers,
       this.context,
     );
     this.session.riskLevel = assessment.level;
-    return this.buildAssessmentResponse(userMessages, assessment);
+    return this.buildAssessmentResponse(userMessages, assessment, observation);
   }
 
   private buildAssessmentResponse(
@@ -212,13 +218,17 @@ export class CopilotOrchestrator {
     messageOverride?: string,
   ): CopilotTurnResult {
     const message =
-      messageOverride ?? userMessages[userMessages.length - 1]?.text ?? '';
+      messageOverride ??
+      this.session.triggerMessage ??
+      userMessages[userMessages.length - 1]?.text ??
+      '';
     const intent = this.session.intent ?? 'general';
     const actions = generateActions(
       intent,
       assessment.level,
       message,
       this.context,
+      this.session.answers,
     );
     const labTests = suggestLabTests(message, assessment.level);
 

@@ -1,217 +1,242 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, cardStyles } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../../theme';
 
-type QuickAction = {
-  id: string;
-  label: string;
+export type MemberPanelId = 'medicines' | 'reports' | 'appointments' | 'vitals';
+
+type MemberPanelTabsProps = {
+  active: MemberPanelId;
+  onChange: (id: MemberPanelId) => void;
+  counts?: {
+    medicines?: number;
+    reports?: number;
+  };
+};
+
+const TABS: { id: MemberPanelId; label: string }[] = [
+  { id: 'medicines', label: 'Meds' },
+  { id: 'reports', label: 'Rx' },
+  { id: 'appointments', label: 'Visits' },
+  { id: 'vitals', label: 'Vitals' },
+];
+
+export function MemberPanelTabs({ active, onChange }: MemberPanelTabsProps) {
+  return (
+    <View style={styles.wrap}>
+      {TABS.map(tab => {
+        const isActive = active === tab.id;
+        return (
+          <Pressable
+            key={tab.id}
+            style={[styles.tab, isActive && styles.tabActive]}
+            onPress={() => onChange(tab.id)}>
+            <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+type MemberHeroProps = {
+  name: string;
+  relationship: string;
+  bloodGroup?: string | null;
+  dobLabel?: string | null;
+  healthScore?: number | null;
+};
+
+export function MemberHero({
+  name,
+  relationship,
+  bloodGroup,
+  dobLabel,
+  healthScore,
+}: MemberHeroProps) {
+  const initials = name
+    .split(' ')
+    .map(p => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const meta = [relationship, bloodGroup, dobLabel].filter(Boolean).join(' · ');
+
+  return (
+    <View style={styles.hero}>
+      <View style={styles.avatar}>
+        <Text style={styles.initials}>{initials}</Text>
+      </View>
+      <View style={styles.heroCopy}>
+        <Text style={styles.heroName} numberOfLines={1}>
+          {name}
+        </Text>
+        {meta ? (
+          <Text style={styles.heroMeta} numberOfLines={2}>
+            {meta}
+          </Text>
+        ) : null}
+      </View>
+      {healthScore != null ? (
+        <View style={styles.scoreRing}>
+          <Text style={styles.scoreValue}>{healthScore}</Text>
+          <Text style={styles.scoreLabel}>Score</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+type QuickLinkProps = {
   icon: string;
+  title: string;
+  subtitle: string;
   onPress: () => void;
 };
 
-type SectionRow = {
-  label: string;
-  value: string;
-  icon?: string;
-  onPress?: () => void;
-};
-
-type MemberDetailSectionsProps = {
-  todayStatus: string;
-  medicineCount: number;
-  reportCount: number;
-  appointmentText: string;
-  quickActions: QuickAction[];
-  recordLinks: SectionRow[];
-  onMedicinesPress: () => void;
-  onReportsPress: () => void;
-  onAppointmentsPress: () => void;
-};
-
-function SectionCard({
+export function MemberQuickLink({
+  icon,
   title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+  subtitle,
+  onPress,
+}: QuickLinkProps) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.card}>{children}</View>
-    </View>
+    <Pressable
+      style={({ pressed }) => [styles.linkRow, pressed && styles.linkPressed]}
+      onPress={onPress}>
+      <View style={styles.linkIcon}>
+        <Icon name={icon} size={18} color={colors.primary700} />
+      </View>
+      <View style={styles.linkCopy}>
+        <Text style={styles.linkTitle}>{title}</Text>
+        <Text style={styles.linkSub} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
+      <Icon name="chevron-right" size={18} color={colors.textMuted} />
+    </Pressable>
   );
 }
 
-function InfoRow({ label, value, icon, onPress }: SectionRow) {
-  const content = (
-    <>
-      {icon ? (
-        <View style={styles.rowIcon}>
-          <Icon name={icon} size={18} color={colors.brandPrimary} />
-        </View>
-      ) : null}
-      <View style={styles.rowCopy}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={styles.rowValue}>{value}</Text>
-      </View>
-      {onPress ? (
-        <Icon name="chevron-right" size={20} color={colors.neutral500} />
-      ) : null}
-    </>
-  );
-
-  if (onPress) {
-    return (
-      <Pressable style={styles.row} onPress={onPress}>
-        {content}
-      </Pressable>
-    );
-  }
-  return <View style={styles.row}>{content}</View>;
-}
-
-export function MemberDetailSections({
-  todayStatus,
-  medicineCount,
-  reportCount,
-  appointmentText,
-  quickActions,
-  recordLinks,
-  onMedicinesPress,
-  onReportsPress,
-  onAppointmentsPress,
-}: MemberDetailSectionsProps) {
-  return (
-    <View style={styles.wrap}>
-      <View style={styles.quickRow}>
-        {quickActions.map(action => (
-          <Pressable key={action.id} style={styles.quickBtn} onPress={action.onPress}>
-            <View style={styles.quickIcon}>
-              <Icon name={action.icon} size={18} color={colors.brandPrimary} />
-            </View>
-            <Text style={styles.quickLabel}>{action.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <SectionCard title="Today">
-        <Text style={styles.todayText}>{todayStatus}</Text>
-      </SectionCard>
-
-      <SectionCard title="Medicines">
-        <InfoRow
-          label="Active medicines"
-          value={
-            medicineCount > 0
-              ? `${medicineCount} active medicine${medicineCount === 1 ? '' : 's'}`
-              : 'No active medicines'
-          }
-          icon="pill"
-          onPress={onMedicinesPress}
-        />
-      </SectionCard>
-
-      <SectionCard title="Reports">
-        <InfoRow
-          label="Lab reports"
-          value={
-            reportCount > 0
-              ? `${reportCount} report${reportCount === 1 ? '' : 's'} ready`
-              : 'No reports yet'
-          }
-          icon="flask-outline"
-          onPress={onReportsPress}
-        />
-      </SectionCard>
-
-      <SectionCard title="Appointments">
-        <InfoRow
-          label="Upcoming visits"
-          value={appointmentText}
-          icon="calendar-clock"
-          onPress={onAppointmentsPress}
-        />
-      </SectionCard>
-
-      <SectionCard title="Records">
-        {recordLinks.map(link => (
-          <InfoRow key={link.label} {...link} />
-        ))}
-      </SectionCard>
-    </View>
-  );
+/** @deprecated Prefer MemberHero + MemberPanelTabs */
+export function MemberDetailSections() {
+  return null;
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.md },
-  quickRow: {
+  wrap: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: 4,
+    gap: 2,
   },
-  quickBtn: {
+  tab: {
     flex: 1,
-    ...cardStyles.premiumSoft,
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  quickIcon: {
-    width: 36,
-    height: 36,
+    paddingVertical: spacing.sm + 2,
     borderRadius: radius.lg,
-    backgroundColor: colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  quickLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.ink900,
-    textAlign: 'center',
+  tabActive: {
+    backgroundColor: colors.primary100,
   },
-  section: { gap: spacing.sm },
-  sectionTitle: {
-    ...healthOsTypography.sectionTitle,
-    fontSize: 15,
-  },
-  card: {
-    ...cardStyles.premiumSoft,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  todayText: {
-    fontSize: 14,
+  tabText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.brandPrimary,
+    color: colors.textMuted,
   },
-  row: {
+  tabTextActive: {
+    color: colors.primary800,
+    fontWeight: '700',
+  },
+  hero: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.neutral200,
+    backgroundColor: colors.primary100,
+    borderRadius: radius.xxl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(23, 97, 142, 0.12)',
   },
-  rowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandLight,
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowCopy: { flex: 1 },
-  rowLabel: {
-    fontSize: 12,
-    color: colors.neutral500,
+  initials: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.primary800,
   },
-  rowValue: {
+  heroCopy: { flex: 1, gap: 4, minWidth: 0 },
+  heroName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary900,
+    letterSpacing: -0.2,
+  },
+  heroMeta: {
+    fontSize: 12,
+    color: colors.primary600,
+    lineHeight: 17,
+  },
+  scoreRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.primary800,
+  },
+  scoreLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  linkPressed: { backgroundColor: colors.primary100 },
+  linkIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkCopy: { flex: 1, gap: 2, minWidth: 0 },
+  linkTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink900,
-    marginTop: 2,
+    color: colors.textPrimary,
+  },
+  linkSub: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
 });

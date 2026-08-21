@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, cardStyles } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing } from '../../../../theme';
 
 type RecordFolderSectionProps = {
   title: string;
@@ -13,73 +11,44 @@ type RecordFolderSectionProps = {
 
 export function RecordFolderSection({
   title,
-  icon,
   onSeeAll,
   children,
 }: RecordFolderSectionProps) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.headerIcon}>
-            <Icon name={icon} size={16} color={colors.brandPrimary} />
-          </View>
-          <Text style={styles.headerTitle}>{title}</Text>
-        </View>
+        <Text style={styles.headerTitle}>{title}</Text>
         {onSeeAll ? (
-          <Pressable
-            style={({ pressed }) => [styles.seeAll, pressed && styles.seeAllPressed]}
-            onPress={onSeeAll}>
+          <Pressable onPress={onSeeAll} hitSlop={8}>
             <Text style={styles.seeAllText}>See all</Text>
           </Pressable>
         ) : null}
       </View>
-      <View style={styles.card}>{children}</View>
+      <View style={styles.list}>{children}</View>
     </View>
   );
 }
 
 export function RecordListDivider() {
-  return <View style={cardStyles.rowDivider} />;
+  return null;
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.sm },
+  section: { gap: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  headerIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-  },
   headerTitle: {
-    ...healthOsTypography.sectionTitle,
     fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
-  seeAll: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  seeAllPressed: { opacity: 0.7 },
   seeAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.brandPrimary,
+    color: colors.primary700,
   },
-  card: {
-    ...cardStyles.grouped,
-  },
+  list: { gap: spacing.sm },
 });

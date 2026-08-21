@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { iosStackScreenOptions } from './iosStackOptions';
 import { CommunityProvider } from '../lib/community/CommunityContext';
 import { CommunityHomeScreen } from '../features/community/CommunityHomeScreen';
 import { PostDetailScreen } from '../features/community/screens/PostDetailScreen';
@@ -18,7 +19,7 @@ const Stack = createNativeStackNavigator<CommunityStackParamList>();
 
 function CommunityStackNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={iosStackScreenOptions}>
       <Stack.Screen name="CommunityHome" component={CommunityHomeScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />

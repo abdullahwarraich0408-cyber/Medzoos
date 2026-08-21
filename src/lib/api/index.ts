@@ -38,6 +38,12 @@ export type BookAppointmentPayload = {
   preferred_consultation_mode?: 'online' | 'in_person';
   hospital_id?: string;
   practice_location_id?: string;
+  share_records?: {
+    share_prescriptions?: boolean;
+    share_lab_reports?: boolean;
+    share_medicines?: boolean;
+    share_documents?: boolean;
+  };
 };
 
 export type DoctorSlotsResponse = {
@@ -90,6 +96,8 @@ export const authApi = {
     api.put<{ user?: AuthUser }>('/auth/profile', data, { auth: 'customer' }),
   forgotPassword: (email: string) =>
     api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) =>
+    api.post(`/auth/reset-password/${token}`, { password }),
   logout: (data?: { refreshToken?: string }) =>
     api.post('/auth/logout', data, { auth: 'customer' }),
   logoutAll: () => api.post('/auth/logout-all', undefined, { auth: 'customer' }),
@@ -795,4 +803,88 @@ export const communityApi = {
       `/community/users/search?q=${encodeURIComponent(q)}`,
       { auth: 'customer' },
     ),
+};
+
+export const healthRecordsApi = {
+  listDocuments: (documentType?: string) =>
+    api.get<{ documents?: Array<Record<string, unknown>> }>(
+      documentType
+        ? `/health-records/documents?document_type=${encodeURIComponent(documentType)}`
+        : '/health-records/documents',
+      { auth: 'customer' },
+    ),
+  createDocument: (data: {
+    document_type: string;
+    title?: string;
+    doctor_name?: string;
+    hospital_name?: string;
+    document_date?: string;
+    file_url: string;
+    notes?: string;
+  }) =>
+    api.post<{ document?: Record<string, unknown> }>(
+      '/health-records/documents',
+      data,
+      { auth: 'customer' },
+    ),
+  deleteDocument: (id: string) =>
+    api.delete(`/health-records/documents/${id}`, { auth: 'customer' }),
+  getTimeline: () =>
+    api.get<{ timeline?: Array<Record<string, unknown>> }>(
+      '/health-records/timeline',
+      { auth: 'customer' },
+    ),
+};
+
+export type HomeSlideAudience = 'first_visit' | 'returning';
+
+export type HomeSlideDto = {
+  id: string;
+  audience: HomeSlideAudience;
+  slot: number;
+  title: string;
+  cta: string;
+  action: string;
+  image_url?: string;
+  bg?: string;
+  label?: string | null;
+  description?: string | null;
+  badge?: string | null;
+};
+
+export const homeSlidesApi = {
+  list: (audience: HomeSlideAudience) =>
+    api.get<{ slides?: HomeSlideDto[]; audience?: HomeSlideAudience }>(
+      `/home-slides?audience=${audience}`,
+    ),
+};
+
+export type ContentItemDto = {
+  id: string;
+  section: string;
+  channel: string;
+  sort_order: number;
+  title: string;
+  subtitle?: string;
+  body?: string;
+  cta?: string;
+  action?: string;
+  href?: string;
+  icon?: string;
+  image_url?: string;
+  bg?: string;
+  badge?: string;
+  meta?: string;
+};
+
+export const contentApi = {
+  list: (section?: string, channel: 'app' | 'website' | 'both' = 'app') => {
+    const params = new URLSearchParams();
+    if (section) params.set('section', section);
+    params.set('channel', channel);
+    return api.get<{
+      items?: ContentItemDto[];
+      settings?: Record<string, string>;
+    }>(`/content?${params.toString()}`);
+  },
 };

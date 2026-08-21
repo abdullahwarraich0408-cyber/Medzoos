@@ -85,6 +85,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                // Long Windows paths (spaces + node_modules) break default 250-char object paths
+                arguments "-DCMAKE_OBJECT_PATH_MAX=512"
+            }
+        }
     }
     signingConfigs {
         debug {

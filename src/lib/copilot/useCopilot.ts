@@ -148,7 +148,7 @@ export function useCopilot() {
     [contextInput, messages.length, session, useRemote],
   );
 
-  const resetSession = useCallback(() => {
+  const resetSession = useCallback(async () => {
     initializedRef.current = false;
     orchestratorRef.current = null;
     remoteSessionIdRef.current = null;
@@ -156,7 +156,40 @@ export function useCopilot() {
     setSession(null);
     setIsReady(false);
     setUseRemote(false);
+    // Kick off a fresh greeting session immediately
+    await Promise.resolve();
+    initializedRef.current = false;
   }, []);
+
+  const startNewChat = useCallback(async () => {
+    initializedRef.current = false;
+    orchestratorRef.current = null;
+    remoteSessionIdRef.current = null;
+    setMessages([]);
+    setSession(null);
+    setIsReady(false);
+    setUseRemote(false);
+
+    if (isAuthenticated) {
+      try {
+        const data = await copilotApi.createSession();
+        if (data?.session?.sessionId && data.messages?.length) {
+          remoteSessionIdRef.current = data.session.sessionId;
+          setSession(mapApiSession(data.session));
+          setMessages(data.messages as CopilotMessagePayload[]);
+          setIsReady(true);
+          setUseRemote(true);
+          initializedRef.current = true;
+          return;
+        }
+      } catch {
+        // fall through to local
+      }
+    }
+
+    initLocalSession();
+    initializedRef.current = true;
+  }, [isAuthenticated, initLocalSession]);
 
   return {
     messages,
@@ -167,5 +200,6 @@ export function useCopilot() {
     initializeSession,
     sendMessage,
     resetSession,
+    startNewChat,
   };
 }

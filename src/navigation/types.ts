@@ -1,5 +1,21 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
+export type AuthStackParamList = {
+  SignIn: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  PhoneSignIn: undefined;
+  OtpVerify: {
+    phone: string;
+    confirmation: import('../types/auth').PhoneLoginConfirmation;
+  };
+  CompleteProfile: undefined;
+};
+
+export type GuestStackParamList = {
+  Onboarding: undefined;
+} & AuthStackParamList;
+
 export type AccountStackParamList = {
   /** @deprecated Use YouHome */
   AccountHome?: undefined;
@@ -10,12 +26,7 @@ export type AccountStackParamList = {
   Notifications: undefined;
   Settings: undefined;
   Support: undefined;
-  PhoneSignIn: undefined;
-  OtpVerify: { phone: string; confirmation: import('../../types/auth').PhoneLoginConfirmation };
-  SignIn: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
-};
+} & AuthStackParamList;
 
 export type YouStackParamList = AccountStackParamList &
   OrdersStackParamList & {
@@ -70,6 +81,7 @@ export type HealthStackParamList = {
   FamilyProfiles: undefined;
   FamilyMemberDetail: { memberId: string };
   HealthHistory: undefined;
+  UploadMedicalDocument: undefined;
 };
 
 /** @deprecated Use HealthStackParamList */

@@ -1,9 +1,6 @@
 import { colors, spacing, radius } from '../../../../theme';
-import { healthOs } from '../../../../theme/healthOs';
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import { formatVaultDate } from '../../lib/familyVaultConstants';
 
 type VitalReading = {
@@ -26,23 +23,13 @@ function parseNumeric(value: string): number | null {
 }
 
 function trendLabel(readings: VitalReading[]): string {
-  if (readings.length < 2) return 'Add more readings to see trends';
+  if (readings.length < 2) return 'Need more readings';
   const latest = parseNumeric(readings[0].value);
   const previous = parseNumeric(readings[1].value);
-  if (latest == null || previous == null) return 'Trend available after numeric readings';
+  if (latest == null || previous == null) return 'Latest reading';
   const diff = latest - previous;
-  if (Math.abs(diff) < 0.01) return 'Stable compared to last reading';
-  return diff > 0 ? 'Up from last reading' : 'Down from last reading';
-}
-
-function trendIcon(readings: VitalReading[]): string {
-  if (readings.length < 2) return 'chart-timeline-variant';
-  const latest = parseNumeric(readings[0].value);
-  const previous = parseNumeric(readings[1].value);
-  if (latest == null || previous == null) return 'chart-timeline-variant';
-  const diff = latest - previous;
-  if (Math.abs(diff) < 0.01) return 'minus';
-  return diff > 0 ? 'trending-up' : 'trending-down';
+  if (Math.abs(diff) < 0.01) return 'Stable';
+  return diff > 0 ? 'Up' : 'Down';
 }
 
 export function VitalsTrendSection({ vitals }: VitalsTrendSectionProps) {
@@ -65,10 +52,7 @@ export function VitalsTrendSection({ vitals }: VitalsTrendSectionProps) {
 
   if (grouped.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Icon name="heart-pulse" size={32} color={colors.neutral300} />
-        <Text style={styles.emptyText}>No vitals recorded yet.</Text>
-      </View>
+      <Text style={styles.empty}>No vitals recorded yet.</Text>
     );
   }
 
@@ -78,12 +62,9 @@ export function VitalsTrendSection({ vitals }: VitalsTrendSectionProps) {
         <View key={type} style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.typeLabel}>{type.replace(/_/g, ' ')}</Text>
-            <View style={styles.trendBadge}>
-              <Icon name={trendIcon(readings)} size={14} color={colors.brandPrimary} />
-              <Text style={styles.trendText}>{trendLabel(readings)}</Text>
-            </View>
+            <Text style={styles.trendText}>{trendLabel(readings)}</Text>
           </View>
-          {readings.slice(0, 5).map(r => (
+          {readings.slice(0, 4).map(r => (
             <View key={r.id} style={styles.row}>
               <Text style={styles.value}>
                 {r.value}
@@ -99,43 +80,52 @@ export function VitalsTrendSection({ vitals }: VitalsTrendSectionProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.md },
+  wrap: { gap: spacing.sm },
   empty: {
-    alignItems: 'center',
-    padding: spacing.xl,
-    gap: spacing.sm,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.xl,
   },
-  emptyText: { fontSize: 14, color: colors.neutral500 },
   card: {
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.md,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   cardHeader: {
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  typeLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    textTransform: 'capitalize',
-  },
-  trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
-  trendText: { fontSize: 12, color: colors.brandPrimary, fontWeight: '600' },
+  typeLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textTransform: 'capitalize',
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary700,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.neutral100,
+    borderTopColor: colors.border,
   },
-  value: { fontSize: 14, fontWeight: '600', color: colors.ink900 },
-  date: { fontSize: 12, color: colors.neutral500 },
+  value: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  date: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
 });

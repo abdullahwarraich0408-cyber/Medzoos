@@ -14,6 +14,18 @@ const patches = [
     insert: '        reactnative                         # prefab ready\n        c++_shared\n)',
   },
   {
+    file: 'react-native/ReactAndroid/cmake-utils/ReactNative-application.cmake',
+    needle:
+      '        foreach(autolinked_library ${AUTOLINKED_LIBRARIES})\n            target_link_libraries(${autolinked_library} common_flags)\n        endforeach()',
+    insert:
+      '        foreach(autolinked_library ${AUTOLINKED_LIBRARIES})\n            target_link_libraries(${autolinked_library} common_flags c++_shared)\n        endforeach()',
+  },
+  {
+    file: 'react-native-safe-area-context/android/src/main/jni/CMakeLists.txt',
+    needle: '          fbjni\n          jsi\n          reactnative\n  )',
+    insert: '          fbjni\n          jsi\n          reactnative\n          c++_shared\n  )',
+  },
+  {
     file: 'react-native-safe-area-context/android/src/main/jni/CMakeLists.txt',
     needle: '          fbjni::fbjni\n  )',
     insert: '          fbjni::fbjni\n          c++_shared\n  )',

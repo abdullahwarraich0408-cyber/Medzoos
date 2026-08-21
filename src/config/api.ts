@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 /** Production Medzoos API (same as website) */
-const PRODUCTION_API = 'https://medmarket.asrar.dev/api';
+const PRODUCTION_API = 'https://backend.medzoos.com/api';
 
 /** Android emulator → host machine localhost */
 const LOCAL_ANDROID_EMULATOR = 'http://10.0.2.2:5000/api';

@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   imageWrap: { height: 148, backgroundColor: colors.neutral100 },
   image: { width: '100%', height: '100%' },
   imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.15)',
   },
   badgesTop: {

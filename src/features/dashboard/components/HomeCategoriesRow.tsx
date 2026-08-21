@@ -4,13 +4,36 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { DOCTOR_CATEGORIES } from '../../home/data/homeData';
 import { colors, spacing, radius, shadows } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
+import { useContentItems } from '../hooks/useContentItems';
+
+export type HomeCategory = {
+  id: string;
+  name: string;
+  icon: string;
+  specialty: string;
+};
 
 type HomeCategoriesRowProps = {
-  onPressCategory: (category: (typeof DOCTOR_CATEGORIES)[number]) => void;
+  onPressCategory: (category: HomeCategory) => void;
 };
 
 export function HomeCategoriesRow({ onPressCategory }: HomeCategoriesRowProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data } = useContentItems('specialties');
+  const categories: HomeCategory[] =
+    data && data.length > 0
+      ? data.map(item => ({
+          id: item.id,
+          name: item.title,
+          icon: item.icon || 'stethoscope',
+          specialty: item.meta || item.title,
+        }))
+      : DOCTOR_CATEGORIES.map(item => ({
+          id: item.id,
+          name: item.name,
+          icon: item.icon,
+          specialty: item.specialty,
+        }));
 
   return (
     <View style={styles.wrap}>
@@ -23,7 +46,7 @@ export function HomeCategoriesRow({ onPressCategory }: HomeCategoriesRowProps) {
         showsHorizontalScrollIndicator={false}
         style={styles.scroller}
         contentContainerStyle={styles.row}>
-        {DOCTOR_CATEGORIES.map(category => {
+        {categories.map(category => {
           const selected = selectedId === category.id;
           return (
             <Pressable

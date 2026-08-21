@@ -85,7 +85,7 @@ export async function pickPhotoFromLibrary(): Promise<PickedMedia | null> {
   const result = await launchImageLibrary({
     mediaType: 'photo',
     selectionLimit: 1,
-    quality: 0.85,
+    quality: 0.8 as any,
     presentationStyle: Platform.OS === 'ios' ? 'fullScreen' : undefined,
   });
 
@@ -114,7 +114,7 @@ export async function pickVideoFromLibrary(): Promise<PickedMedia | null> {
     videoQuality: 'high',
     durationLimit: 180,
     presentationStyle: Platform.OS === 'ios' ? 'fullScreen' : undefined,
-  });
+  } as any);
 
   if (result.didCancel) return null;
 

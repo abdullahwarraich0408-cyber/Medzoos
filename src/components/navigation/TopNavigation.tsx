@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, shadows, typography } from '../../theme';
+import { colors, spacing, radius, typography } from '../../theme';
+import { smoky } from './SmokyGlass';
 
 type TopNavigationProps = {
   mode?: 'main' | 'stack';
@@ -33,6 +34,8 @@ type TopNavigationProps = {
   headerCenter?: ReactNode;
 };
 
+const ICON_SIZE = 44;
+
 export function TopNavigation({
   mode = 'main',
   title,
@@ -51,154 +54,210 @@ export function TopNavigation({
   headerCenter,
 }: TopNavigationProps) {
   const insets = useSafeAreaInsets();
+  const topInset = Math.max(
+    insets.top,
+    Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   if (mode === 'stack') {
     return (
-      <View style={[styles.wrapper, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        <View style={styles.stackRow}>
-          {showMenu ? (
-            <Pressable
-              style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-              onPress={onMenuPress}
-              accessibilityLabel="Open menu"
-              hitSlop={8}>
-              <Icon name="menu" size={22} color={colors.primary900} />
-            </Pressable>
-          ) : showBack ? (
-            <Pressable
-              style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-              onPress={onBackPress}
-              accessibilityLabel="Go back"
-              hitSlop={8}>
-              <Icon name="arrow-left" size={22} color={colors.primary900} />
-            </Pressable>
-          ) : (
-            <View style={styles.sideSlot} />
-          )}
+      <View style={styles.bar}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        <View style={{ paddingTop: topInset }}>
+          <View style={styles.stackRow}>
+            {showMenu ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.iconBtn,
+                  pressed && styles.pressed,
+                ]}
+                onPress={onMenuPress}
+                accessibilityLabel="Open menu"
+                hitSlop={8}>
+                <Icon name="menu" size={22} color={colors.primary900} />
+              </Pressable>
+            ) : showBack ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.iconBtn,
+                  pressed && styles.pressed,
+                ]}
+                onPress={onBackPress}
+                accessibilityLabel="Go back"
+                hitSlop={8}>
+                <Icon name="arrow-left" size={22} color={colors.primary900} />
+              </Pressable>
+            ) : (
+              <View style={styles.sideSlot} />
+            )}
 
-          {headerCenter ? (
-            <View style={styles.stackCenter}>{headerCenter}</View>
-          ) : (
-            <Text style={styles.stackTitle} numberOfLines={1}>
-              {title ?? 'MedCare'}
-            </Text>
-          )}
+            {headerCenter ? (
+              <View style={styles.stackCenter}>{headerCenter}</View>
+            ) : (
+              <Text style={styles.stackTitle} numberOfLines={1}>
+                {title ?? 'MedCare'}
+              </Text>
+            )}
 
-          {headerRight ? (
-            <View style={styles.sideSlot}>{headerRight}</View>
-          ) : showCart ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.cartBtn,
-                pressed && styles.cartPressed,
-              ]}
-              onPress={onCartPress}
-              accessibilityLabel="Cart">
-              <Icon name="cart-outline" size={20} color={colors.iconWhite} />
-              {cartCount > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-          ) : (
-            <View style={styles.sideSlot} />
-          )}
+            {headerRight ? (
+              <View style={styles.sideSlot}>{headerRight}</View>
+            ) : showCart || showNotifications ? (
+              <View style={styles.actions}>
+                {showNotifications ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.iconBtn,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={onNotificationsPress}
+                    accessibilityLabel="Notifications">
+                    <Icon
+                      name="bell-outline"
+                      size={21}
+                      color={colors.primary900}
+                    />
+                    {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
+                  </Pressable>
+                ) : null}
+                {showCart ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.cartBtn,
+                      pressed && styles.cartPressed,
+                    ]}
+                    onPress={onCartPress}
+                    accessibilityLabel="Cart">
+                    <Icon name="cart-outline" size={20} color={colors.iconWhite} />
+                    {cartCount > 0 ? (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>
+                          {cartCount > 99 ? '99+' : cartCount}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : (
+              <View style={styles.sideSlot} />
+            )}
+          </View>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.wrapper, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <View style={styles.mainBody}>
-        <View style={styles.mainRow}>
-          <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-            onPress={onMenuPress}
-            accessibilityLabel="Open menu"
-            hitSlop={8}>
-            <Icon name="menu" size={22} color={colors.primary900} />
-          </Pressable>
+    <View style={styles.bar}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+      <View style={{ paddingTop: topInset }}>
+        <View style={styles.mainBody}>
+          <View style={styles.mainRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.iconBtn,
+                pressed && styles.pressed,
+              ]}
+              onPress={onMenuPress}
+              accessibilityLabel="Open menu"
+              hitSlop={8}>
+              <Icon name="menu" size={22} color={colors.primary900} />
+            </Pressable>
 
-          <View style={styles.brandBlock}>
-            <View style={styles.logoRow}>
-              <View style={styles.logoIcon}>
-                <Icon name="medical-bag" size={18} color={colors.primary700} />
+            <View style={styles.brandBlock}>
+              <View style={styles.logoRow}>
+                <View style={styles.logoIcon}>
+                  <Icon name="medical-bag" size={18} color={colors.primary700} />
+                </View>
+                <Text style={styles.logoText}>PharmaHub</Text>
               </View>
-              <Text style={styles.logoText}>PharmaHub</Text>
+            </View>
+
+            <View style={styles.actions}>
+              {showNotifications ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.iconBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={onNotificationsPress}
+                  accessibilityLabel="Notifications">
+                  <Icon
+                    name="bell-outline"
+                    size={21}
+                    color={colors.primary900}
+                  />
+                  {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
+                </Pressable>
+              ) : null}
+
+              {showCart ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cartBtn,
+                    pressed && styles.cartPressed,
+                  ]}
+                  onPress={onCartPress}
+                  accessibilityLabel="Cart">
+                  <Icon
+                    name="cart-outline"
+                    size={20}
+                    color={colors.iconWhite}
+                  />
+                  {cartCount > 0 ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              ) : null}
             </View>
           </View>
 
-          <View style={styles.actions}>
-            {showNotifications ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.iconBtn,
-                  pressed && styles.pressed,
-                ]}
-                onPress={onNotificationsPress}
-                accessibilityLabel="Notifications">
-                <Icon name="bell-outline" size={21} color={colors.primary900} />
-                {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
-              </Pressable>
-            ) : null}
-
-            {showCart ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.cartBtn,
-                  pressed && styles.cartPressed,
-                ]}
-                onPress={onCartPress}
-                accessibilityLabel="Cart">
-                <Icon name="cart-outline" size={20} color={colors.iconWhite} />
-                {cartCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            ) : null}
-          </View>
+          {showSearch ? (
+            <View style={styles.searchBar}>
+              <Icon name="magnify" size={20} color={colors.primary700} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search medicines, doctors, labs..."
+                placeholderTextColor={colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+              />
+              {searchQuery.length > 0 && Platform.OS === 'android' ? (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Icon
+                    name="close-circle"
+                    size={18}
+                    color={colors.textMuted}
+                  />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </View>
-
-        {showSearch ? (
-          <View style={styles.searchBar}>
-            <Icon name="magnify" size={20} color={colors.primary700} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search medicines, doctors, labs..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-            />
-            {searchQuery.length > 0 && Platform.OS === 'android' ? (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Icon name="close-circle" size={18} color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
       </View>
     </View>
   );
 }
 
-const ICON_SIZE = 44;
-
 const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: colors.background,
+  bar: {
+    backgroundColor: 'transparent',
+    zIndex: 50,
   },
   mainBody: {
     paddingHorizontal: spacing.lg,
@@ -224,7 +283,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: colors.primary100,
+    backgroundColor: 'rgba(91, 130, 156, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -259,7 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.error,
     borderWidth: 1.5,
-    borderColor: colors.background,
+    borderColor: '#fff',
   },
   cartBtn: {
     width: ICON_SIZE,
@@ -285,7 +344,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: colors.background,
+    borderColor: '#fff',
   },
   badgeText: {
     fontSize: 9,
@@ -297,13 +356,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: radius.xl,
     paddingHorizontal: spacing.lg,
     paddingVertical: Platform.OS === 'ios' ? spacing.md : spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.cardSoft,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: smoky.stroke,
   },
   searchInput: {
     flex: 1,

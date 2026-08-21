@@ -1,27 +1,24 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet, StatusBar, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopNavigation } from '../navigation/TopNavigation';
 import { AppBackground } from './AppBackground';
 import { useCartContext } from '../../lib/cart/CartContext';
 import { useNotifications } from '../../lib/notifications';
 import {
+  canPopCurrentStack,
   isDrawerRoute,
   navigateToMainTabs,
   navigateToTabScreen,
   openAppDrawer,
 } from '../../lib/auth/navigation';
 import type { DrawerParamList, MainTabParamList } from '../../navigation/types';
-import { colors } from '../../theme';
 
-type ScreenLayoutNav = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList>,
-  DrawerNavigationProp<DrawerParamList>
->;
+type ScreenLayoutNav = any;
 
 type ScreenLayoutProps = {
   children: ReactNode;
@@ -58,13 +55,19 @@ export function ScreenLayout({
 }: ScreenLayoutProps) {
   const navigation = useNavigation<ScreenLayoutNav>();
   const insets = useSafeAreaInsets();
+  const topInset = Math.max(
+    insets.top,
+    Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
+  );
   const { cartCount: medicineCartCount } = useCartContext();
   const { unreadCount } = useNotifications();
 
   const badgeCount = cartCountOverride ?? medicineCartCount;
-  const canGoBack = showBack && navigation.canGoBack();
-  // Tab roots can't go back — show menu like Appointments shows back.
-  const showStackMenu = headerMode === 'stack' && !canGoBack;
+  const stackCanPop = canPopCurrentStack(navigation);
+  const canGoBack = showBack && stackCanPop;
+  // Tab roots (stack index 0) show the menu, not a dead back arrow.
+  const isTabRoot = headerMode === 'stack' && !stackCanPop;
+  const showStackMenu = isTabRoot;
 
   const handleCartPress =
     onCartPress ??
@@ -86,7 +89,7 @@ export function ScreenLayout({
   const handleBackPress =
     onBackPress ??
     (() => {
-      if (navigation.canGoBack()) {
+      if (canPopCurrentStack(navigation)) {
         navigation.goBack();
         return;
       }
@@ -102,9 +105,14 @@ export function ScreenLayout({
   return (
     <AppBackground>
       {hideHeader ? (
-        <View style={{ paddingTop: insets.top }}>
-          <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        </View>
+        <>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="transparent"
+            translucent
+          />
+          <View style={{ height: topInset }} />
+        </>
       ) : (
         <TopNavigation
           mode={headerMode}
@@ -118,7 +126,9 @@ export function ScreenLayout({
           showSearch={showSearch}
           showCart={showCart}
           showBack={canGoBack}
-          showNotifications={showNotifications && headerMode === 'main'}
+          showNotifications={
+            (showNotifications && headerMode === 'main') || isTabRoot
+          }
           showMenu={headerMode === 'main' || showStackMenu}
           headerRight={headerRight}
           headerCenter={headerCenter}

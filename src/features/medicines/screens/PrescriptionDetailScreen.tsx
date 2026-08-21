@@ -4,7 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
+  Pressable,
   Alert,
   Linking,
 } from 'react-native';
@@ -19,12 +19,11 @@ import { ActiveMedicineRow } from '../components/ActiveMedicineRow';
 import {
   getPrescriptionById,
   getMedicinesForPrescription,
-  getVerificationLabel,
+  getPrescriptionSourceLabel,
   DEMO_PATIENT_MEDICINES,
   DEMO_PRESCRIPTIONS,
 } from '../data/medicineModel';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE, cardStyles } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
 
 type Route = RouteProp<HealthStackParamList, 'PrescriptionDetail'>;
@@ -53,18 +52,35 @@ function PrescriptionDetailContent() {
     );
   }
 
-  const statusLabel = getVerificationLabel(prescription.verificationStatus);
+  const statusLabel = getPrescriptionSourceLabel(prescription);
+  const pending = prescription.uploadedByUser;
 
   return (
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg },
+        {
+          paddingBottom:
+            Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg,
+        },
       ]}
       showsVerticalScrollIndicator={false}>
-      <TouchableOpacity
-        style={styles.previewCard}
+      <View style={styles.meta}>
+        {prescription.doctorName ? (
+          <Text style={styles.doctor}>{prescription.doctorName}</Text>
+        ) : null}
+        <Text style={styles.date}>{prescription.date}</Text>
+        <View style={[styles.statusBadge, pending && styles.statusPending]}>
+          <Text
+            style={[styles.statusText, pending && styles.statusTextPending]}>
+            {statusLabel}
+          </Text>
+        </View>
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [styles.previewRow, pressed && styles.pressed]}
         onPress={() => {
           if (prescription.fileUrl) {
             Linking.openURL(prescription.fileUrl).catch(() => {
@@ -74,69 +90,68 @@ function PrescriptionDetailContent() {
             Alert.alert('Prescription', 'Image preview not available yet.');
           }
         }}>
-        <Icon name="file-image-outline" size={40} color={colors.brandPrimary} />
-        <Text style={styles.previewText}>View prescription image or PDF</Text>
-      </TouchableOpacity>
-
-      <View style={styles.metaCard}>
-        {prescription.doctorName ? (
-          <Text style={styles.doctor}>{prescription.doctorName}</Text>
-        ) : null}
-        <Text style={styles.date}>{prescription.date}</Text>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{statusLabel}</Text>
-        </View>
-      </View>
+        <Icon name="file-image-outline" size={20} color={colors.primary700} />
+        <Text style={styles.previewText}>View prescription file</Text>
+        <Icon name="chevron-right" size={18} color={colors.textMuted} />
+      </Pressable>
 
       {extractedMedicines.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Medicines from prescription</Text>
-          <View style={styles.listCard}>
-            {extractedMedicines.map((medicine, index) => (
-              <React.Fragment key={medicine.medicineId}>
-                {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-                <ActiveMedicineRow
-                  medicine={medicine}
-                  onPress={() =>
-                    navigation.navigate('MedicineDetail', {
-                      medicineId: medicine.medicineId,
-                    })
-                  }
-                />
-              </React.Fragment>
+          <Text style={styles.sectionTitle}>Medicines</Text>
+          <View style={styles.list}>
+            {extractedMedicines.map(medicine => (
+              <ActiveMedicineRow
+                key={medicine.medicineId}
+                medicine={medicine}
+                onPress={() =>
+                  navigation.navigate('MedicineDetail', {
+                    medicineId: medicine.medicineId,
+                  })
+                }
+              />
             ))}
           </View>
         </View>
       ) : null}
 
       {prescription.doctorId ? (
-        <TouchableOpacity
-          style={styles.linkCard}
+        <Pressable
+          style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
           onPress={() =>
             navigation.navigate('DoctorRecordsDetail', {
               doctorId: prescription.doctorId!,
             })
           }>
-          <Icon name="stethoscope" size={20} color={colors.brandPrimary} />
-          <Text style={styles.linkText}>View doctor records</Text>
-          <Icon name="chevron-right" size={18} color={colors.neutral500} />
-        </TouchableOpacity>
+          <Icon name="stethoscope" size={18} color={colors.primary700} />
+          <Text style={styles.linkText}>Doctor records</Text>
+          <Icon name="chevron-right" size={18} color={colors.textMuted} />
+        </Pressable>
       ) : null}
 
-      {prescription.verificationStatus === 'verified' ? (
-        <TouchableOpacity
-          style={styles.orderBtn}
+      {prescription.uploadedByUser ? (
+        <Text style={styles.hint}>
+          This prescription was uploaded by you. It is not issued by a Medzoos doctor.
+        </Text>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [
+            styles.orderBtn,
+            pressed && styles.orderPressed,
+          ]}
           onPress={() => navigation.navigate('Cart')}>
           <Text style={styles.orderBtnText}>Order medicines</Text>
-        </TouchableOpacity>
-      ) : null}
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
 
 export function PrescriptionDetailScreen() {
   const route = useRoute<Route>();
-  const prescription = getPrescriptionById(DEMO_PRESCRIPTIONS, route.params.prescriptionId);
+  const prescription = getPrescriptionById(
+    DEMO_PRESCRIPTIONS,
+    route.params.prescriptionId,
+  );
 
   return (
     <ScreenLayout
@@ -153,83 +168,101 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: calmLayout.screenPadding,
-    gap: calmLayout.sectionGap,
+    gap: 20,
   },
-  previewCard: {
-    ...cardStyles.premiumSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xxxl,
-    gap: spacing.sm,
-  },
-  previewText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-  },
-  metaCard: {
-    ...cardStyles.grouped,
-    padding: spacing.lg,
-    gap: spacing.xs,
-  },
+  meta: { gap: 6 },
   doctor: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primary900,
+    letterSpacing: -0.2,
   },
   date: {
     fontSize: 13,
-    color: colors.neutral500,
+    color: colors.textMuted,
   },
   statusBadge: {
     alignSelf: 'flex-start',
-    marginTop: spacing.xs,
+    marginTop: 4,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandLight,
+    backgroundColor: colors.successBg,
+  },
+  statusPending: {
+    backgroundColor: colors.warningBg,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.brandPrimary,
+    color: colors.successText,
   },
-  section: { gap: spacing.sm },
-  sectionTitle: {
-    ...healthOsTypography.sectionTitle,
-    fontSize: 15,
+  statusTextPending: {
+    color: '#9A6B12',
   },
-  listCard: {
-    ...cardStyles.grouped,
-  },
-  linkCard: {
-    ...cardStyles.premiumSoft,
+  previewRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  previewText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  section: { gap: spacing.md },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  list: { gap: spacing.sm },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   linkText: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink900,
+    color: colors.textPrimary,
   },
+  pressed: { backgroundColor: colors.primary100 },
   orderBtn: {
     alignItems: 'center',
     paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primary700,
   },
+  orderPressed: { opacity: 0.9 },
   orderBtnText: {
     fontSize: 15,
     fontWeight: '700',
     color: colors.white,
   },
+  hint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textMuted,
+  },
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceSubtle,
   },
-  emptyText: { fontSize: 15, color: colors.neutral500 },
+  emptyText: { fontSize: 15, color: colors.textMuted },
 });

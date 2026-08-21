@@ -2,9 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { PatientMedicine } from '../data/medicineModel';
-import { getRefillLabel, getSourceLabel } from '../data/medicineModel';
-import { colors, spacing, cardStyles, appIcons, appIconTile } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { getRefillLabel } from '../data/medicineModel';
+import { colors, spacing, radius } from '../../../theme';
 
 type ActiveMedicineRowProps = {
   medicine: PatientMedicine;
@@ -20,20 +19,25 @@ export function ActiveMedicineRow({ medicine, onPress }: ActiveMedicineRowProps)
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}>
       <View style={styles.iconWrap}>
-        <Icon name="pill" size={appIcons.size.md} color={appIcons.color} />
+        <Icon name="pill" size={18} color={colors.primary700} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.name}>{medicine.medicineName}</Text>
-        <Text style={styles.generic}>{medicine.genericName}</Text>
-        <Text style={styles.dosage}>
-          {medicine.dosage} · {medicine.timing}
+        <Text style={styles.name} numberOfLines={1}>
+          {medicine.medicineName}
         </Text>
-        <Text style={styles.source}>{getSourceLabel(medicine)}</Text>
-        <Text style={[styles.refill, needsRefill && styles.refillDue]}>{refillLabel}</Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {[medicine.strength || medicine.dosage, medicine.timing]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
       </View>
-      <View style={cardStyles.chevronWrap}>
-        <Icon name="chevron-right" size={18} color={colors.neutral500} />
-      </View>
+      {needsRefill ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>Refill</Text>
+        </View>
+      ) : (
+        <Icon name="chevron-right" size={18} color={colors.textMuted} />
+      )}
     </Pressable>
   );
 }
@@ -43,36 +47,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  pressed: { backgroundColor: colors.brandMist },
-  iconWrap: appIconTile('md'),
-  body: { flex: 1, gap: 2 },
+  pressed: { backgroundColor: colors.primary100 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: { flex: 1, gap: 2, minWidth: 0 },
   name: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 15,
-  },
-  generic: {
-    fontSize: 13,
-    color: colors.neutral500,
-  },
-  dosage: {
-    fontSize: 12,
-    color: colors.neutral500,
-  },
-  source: {
-    fontSize: 12,
-    color: colors.neutral600,
-    marginTop: 2,
-  },
-  refill: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.neutral500,
-    marginTop: 2,
+    color: colors.textPrimary,
   },
-  refillDue: {
-    color: colors.brandPrimary,
+  meta: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  badge: {
+    backgroundColor: colors.warningBg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#9A6B12',
   },
 });

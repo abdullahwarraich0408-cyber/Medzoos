@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Alert,
 } from 'react-native';
 import { AppSheet } from '../../../components/modal/AppSheet';
@@ -22,13 +22,11 @@ import { FamilyVaultTabs } from '../components/family/FamilyVaultTabs';
 import { FamilyMemberRow } from '../components/family/FamilyMemberRow';
 import { FamilyCalendarTab } from '../components/family/FamilyCalendarTab';
 import { FamilyRecordsTab } from '../components/family/FamilyRecordsTab';
-import { FamilyActivitySection } from '../components/family/FamilyActivitySection';
 import {
   AddMemberModal,
   EMPTY_ADD_MEMBER_FORM,
   type AddMemberForm,
 } from '../components/family/AddMemberModal';
-import { PrimaryAction } from '../../../design-system';
 import {
   useFamilyVault,
   useFamilyDashboard,
@@ -43,15 +41,12 @@ import {
   buildAlertsFromMembers,
   buildEventViews,
   buildRecentRecords,
-  buildActivityFromAlerts,
   DEMO_MEMBERS,
   DEMO_ALERTS,
-  DEMO_ACTIVITY,
   type VaultTabId,
 } from '../data/familyVaultModel';
 import type { HealthStackParamList } from '../../../navigation/types';
-import { colors, spacing, TAB_BAR_CLEARANCE, radius, cardStyles } from '../../../theme';
-import { healthOs, healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, TAB_BAR_CLEARANCE, radius } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
 
 type HealthNav = NativeStackNavigationProp<HealthStackParamList>;
@@ -74,7 +69,9 @@ function FamilyProfilesContent() {
 
   const { data: vault, isLoading, isError, refetch } = useFamilyVault();
   const { data: dashboard } = useFamilyDashboard({ enabled: Boolean(vault) });
-  const { data: calendarEvents = [] } = useFamilyCalendar({ enabled: Boolean(vault) });
+  const { data: calendarEvents = [] } = useFamilyCalendar({
+    enabled: Boolean(vault),
+  });
   const { data: aiInsights } = useFamilyAiInsights({ enabled: Boolean(vault) });
   const createFamily = useCreateFamily();
   const addMember = useAddFamilyMember();
@@ -128,12 +125,6 @@ function FamilyProfilesContent() {
     return buildRecentRecords(memberViews, useDemo);
   }, [memberViews, useDemo]);
 
-  const activity = useMemo(() => {
-    const fromAlerts = buildActivityFromAlerts(alerts);
-    if (fromAlerts.length > 0) return fromAlerts;
-    return useDemo ? DEMO_ACTIVITY : [];
-  }, [alerts, useDemo]);
-
   const handleCreateFamily = async () => {
     try {
       await createFamily.mutateAsync(familyForm);
@@ -174,7 +165,10 @@ function FamilyProfilesContent() {
 
   const openMember = (memberId: string) => {
     if (memberId.startsWith('demo-')) {
-      Alert.alert('Demo member', 'Connect the backend to open live member profiles.');
+      Alert.alert(
+        'Demo member',
+        'Connect the backend to open live member profiles.',
+      );
       return;
     }
     navigation.navigate('FamilyMemberDetail', { memberId });
@@ -186,37 +180,52 @@ function FamilyProfilesContent() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg },
+          {
+            paddingBottom:
+              Math.max(insets.bottom, TAB_BAR_CLEARANCE) + calmLayout.contentBottom,
+          },
         ]}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>
-          Manage your family health in one secure place.
-        </Text>
-
         {isLoading ? (
           <ActivityIndicator
             size="large"
-            color={colors.brandPrimary}
+            color={colors.primary700}
             style={styles.loader}
           />
         ) : isError ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Could not load family vault</Text>
-            <Text style={styles.errorText}>Please try again.</Text>
-            <PrimaryAction icon="refresh" title="Retry" onPress={() => refetch()} />
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>Could not load vault</Text>
+            <Text style={styles.emptyText}>Please try again.</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={() => refetch()}>
+              <Text style={styles.primaryBtnText}>Retry</Text>
+            </Pressable>
           </View>
         ) : !vault || !familyView ? (
           <View style={styles.emptyCard}>
-            <Icon name="account-group-outline" size={48} color={colors.brandPrimary} />
+            <View style={styles.emptyIcon}>
+              <Icon
+                name="account-group-outline"
+                size={28}
+                color={colors.primary700}
+              />
+            </View>
             <Text style={styles.emptyTitle}>Create your family</Text>
             <Text style={styles.emptyText}>
-              Set up your family health vault to add members and track care.
+              Add members and keep everyone’s health in one place.
             </Text>
-            <PrimaryAction
-              icon="plus-circle-outline"
-              title="Create Family"
-              onPress={() => setShowCreateFamily(true)}
-            />
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={() => setShowCreateFamily(true)}>
+              <Text style={styles.primaryBtnText}>Create family</Text>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -234,18 +243,20 @@ function FamilyProfilesContent() {
 
             {tab === 'members' && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Family members</Text>
                 {memberViews.length === 0 ? (
                   <View style={styles.emptyCard}>
                     <Text style={styles.emptyTitle}>No members yet</Text>
                     <Text style={styles.emptyText}>
-                      Add your first family member to start tracking health.
+                      Add your first family member.
                     </Text>
-                    <PrimaryAction
-                      icon="account-plus-outline"
-                      title="Add member"
-                      onPress={() => setShowAddMember(true)}
-                    />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.primaryBtn,
+                        pressed && styles.btnPressed,
+                      ]}
+                      onPress={() => setShowAddMember(true)}>
+                      <Text style={styles.primaryBtnText}>Add member</Text>
+                    </Pressable>
                   </View>
                 ) : (
                   <View style={styles.list}>
@@ -258,14 +269,15 @@ function FamilyProfilesContent() {
                     ))}
                   </View>
                 )}
-                <FamilyActivitySection items={activity} />
               </View>
             )}
 
             {tab === 'calendar' && (
               <FamilyCalendarTab
                 events={events}
-                onAddEvent={() => Alert.alert('Add event', 'Event scheduling coming soon.')}
+                onAddEvent={() =>
+                  Alert.alert('Add event', 'Event scheduling coming soon.')
+                }
               />
             )}
 
@@ -281,7 +293,7 @@ function FamilyProfilesContent() {
       </ScrollView>
 
       <AppSheet visible={showCreateFamily} onClose={() => setShowCreateFamily(false)}>
-        <Text style={styles.modalTitle}>Create Family</Text>
+        <Text style={styles.modalTitle}>Create family</Text>
         <ScrollView showsVerticalScrollIndicator={false}>
           <FormField
             label="Family name (optional)"
@@ -296,25 +308,27 @@ function FamilyProfilesContent() {
           <FormField
             label="Emergency contact"
             value={familyForm.emergency_contact}
-            onChangeText={v => setFamilyForm(f => ({ ...f, emergency_contact: v }))}
+            onChangeText={v =>
+              setFamilyForm(f => ({ ...f, emergency_contact: v }))
+            }
           />
         </ScrollView>
         <View style={styles.modalActions}>
-          <TouchableOpacity
+          <Pressable
             style={styles.cancelBtn}
             onPress={() => setShowCreateFamily(false)}>
             <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={styles.saveBtn}
             onPress={handleCreateFamily}
             disabled={createFamily.isPending}>
             {createFamily.isPending ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.saveText}>Create Family</Text>
+              <Text style={styles.saveText}>Create</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </AppSheet>
 
@@ -346,7 +360,7 @@ function FormField({
         style={styles.input}
         value={value}
         onChangeText={onChangeText}
-        placeholderTextColor={colors.neutral300}
+        placeholderTextColor={colors.textDisabled}
       />
     </View>
   );
@@ -356,12 +370,12 @@ export function FamilyProfilesScreen() {
   return (
     <ScreenLayout
       headerMode="stack"
-      title="Family Health Vault"
+      title="Family Vault"
       showSearch={false}
-      showCart>
+      showCart={false}>
       <RequireAuthGate
         title="Sign in to manage family"
-        subtitle="View health profiles for yourself and family members."
+        subtitle="View health profiles for you and your family."
         icon="account-group-outline">
         <FamilyProfilesContent />
       </RequireAuthGate>
@@ -373,68 +387,75 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
     padding: calmLayout.screenPadding,
-    gap: calmLayout.sectionGap,
-  },
-  subtitle: {
-    ...healthOsTypography.sectionHint,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: -spacing.sm,
+    gap: 20,
   },
   loader: { marginVertical: spacing.xxxl },
   section: { gap: spacing.sm },
-  sectionTitle: {
-    ...healthOsTypography.sectionTitle,
-    fontSize: 15,
-  },
   list: { gap: spacing.sm },
   emptyCard: {
-    ...cardStyles.premiumSoft,
+    backgroundColor: colors.white,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
   },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    marginTop: spacing.sm,
+    color: colors.textPrimary,
   },
   emptyText: {
-    fontSize: 14,
-    color: colors.neutral500,
+    fontSize: 13,
+    color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: spacing.md,
+    lineHeight: 19,
+    marginBottom: spacing.sm,
   },
-  errorCard: {
-    ...cardStyles.premiumSoft,
-    padding: spacing.xl,
-    gap: spacing.md,
+  primaryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primary700,
   },
-  errorTitle: { fontSize: 16, fontWeight: '700', color: colors.inkHeadline },
-  errorText: { fontSize: 14, color: colors.neutral500, lineHeight: 20 },
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  btnPressed: { opacity: 0.9 },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
   fieldWrap: { marginBottom: spacing.md },
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: colors.textMuted,
     marginBottom: spacing.xs,
   },
   input: {
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    borderRadius: radius.md,
+    borderColor: colors.borderLight,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontSize: 15,
-    color: colors.ink900,
+    color: colors.textPrimary,
+    backgroundColor: colors.white,
   },
   modalActions: {
     flexDirection: 'row',
@@ -445,17 +466,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.white,
   },
-  cancelText: { fontWeight: '600', color: colors.neutral600 },
+  cancelText: { fontWeight: '600', color: colors.textMuted },
   saveBtn: {
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderRadius: radius.lg,
-    backgroundColor: colors.brandPrimary,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primary700,
   },
   saveText: { fontWeight: '700', color: colors.white },
 });

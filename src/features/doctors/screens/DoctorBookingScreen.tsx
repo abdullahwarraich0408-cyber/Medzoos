@@ -3,20 +3,25 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { ScreenLayout } from '../../../components/layout/ScreenLayout';
-import { useDoctor } from '../../../lib/hooks/useApi';
-import type { DoctorsStackParamList, HospitalsStackParamList } from '../../../navigation/types';
-import { colors, spacing, radius } from '../../../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDoctor } from '../../../lib/hooks/useApi';
+import { navigateToTabScreen } from '../../../lib/auth/navigation';
+import type {
+  DoctorsStackParamList,
+  HospitalsStackParamList,
+} from '../../../navigation/types';
+import { spacing } from '../../../theme';
 import { AppointmentFlow } from '../components/AppointmentFlow';
+import { bookingUi, useBookingLayout } from '../utils/bookingUi';
 
 type BookingRoute = RouteProp<
   DoctorsStackParamList | HospitalsStackParamList,
@@ -25,6 +30,7 @@ type BookingRoute = RouteProp<
 
 export function DoctorBookingScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useBookingLayout();
   const navigation =
     useNavigation<
       NativeStackNavigationProp<
@@ -39,114 +45,210 @@ export function DoctorBookingScreen() {
   const { data: doctor, isLoading, isError, error } = useDoctor(doctorId);
 
   return (
-    <ScreenLayout headerMode="stack" title="Book Appointment" showSearch={false}>
+    <View style={styles.root}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={bookingUi.gradientTop}
+      />
+      <View pointerEvents="none" style={styles.gradientWash}>
+        <View
+          style={[styles.gradientStop, { backgroundColor: bookingUi.gradientTop }]}
+        />
+        <View
+          style={[styles.gradientStop, { backgroundColor: bookingUi.gradientMid }]}
+        />
+        <View
+          style={[
+            styles.gradientStop,
+            { backgroundColor: bookingUi.gradientBottom, flex: 1.4 },
+          ]}
+        />
+      </View>
+
+      <View
+        style={[
+          styles.topNav,
+          {
+            paddingTop: insets.top + 8,
+            paddingHorizontal: layout.pad,
+          },
+        ]}>
+        <View
+          style={[styles.topNavInner, { maxWidth: layout.contentMaxWidth }]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.navBtn,
+              {
+                width: layout.navBtn,
+                height: layout.navBtn,
+                borderRadius: layout.navBtn / 2,
+              },
+              pressed && styles.pressed,
+            ]}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}>
+            <Icon name="arrow-left" size={22} color={bookingUi.ink} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.navBtn,
+              {
+                width: layout.navBtn,
+                height: layout.navBtn,
+                borderRadius: layout.navBtn / 2,
+              },
+              pressed && styles.pressed,
+            ]}
+            onPress={() =>
+              navigateToTabScreen(navigation as never, 'You', 'Notifications')
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            hitSlop={12}>
+            <Icon name="bell-outline" size={22} color={bookingUi.ink} />
+          </Pressable>
+        </View>
+      </View>
+
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.brandPrimary} />
+          <ActivityIndicator size="large" color={bookingUi.accent} />
           <Text style={styles.loadingText}>Loading doctor details...</Text>
         </View>
       ) : isError || !doctor ? (
         <View style={styles.center}>
-          <Icon name="alert-circle-outline" size={48} color={colors.neutral300} />
+          <Icon name="alert-circle-outline" size={48} color={bookingUi.muted} />
           <Text style={styles.errorTitle}>Could not load doctor</Text>
           <Text style={styles.errorSub}>
             {error instanceof Error ? error.message : 'Please try again.'}
           </Text>
-          <TouchableOpacity
+          <Pressable
             style={styles.retryBtn}
-            onPress={() => navigation.goBack()}>
+            onPress={() => navigation.goBack()}
+            hitSlop={8}>
             <Text style={styles.retryText}>Go back</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ) : (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+            {
+              paddingHorizontal: layout.pad,
+              paddingBottom: Math.max(insets.bottom, spacing.xl) + 28,
+            },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
-          <AppointmentFlow
-            doctor={doctor}
-            initialConsultType={consultType}
-            practiceLocationId={practiceLocationId}
-            hospitalId={hospitalId}
-          />
+          <View
+            style={[
+              styles.contentColumn,
+              { maxWidth: layout.contentMaxWidth },
+            ]}>
+            <AppointmentFlow
+              doctor={doctor}
+              initialConsultType={consultType}
+              practiceLocationId={practiceLocationId}
+              hospitalId={hospitalId}
+            />
+          </View>
         </ScrollView>
       )}
-    </ScreenLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
+  root: {
+    flex: 1,
+    backgroundColor: bookingUi.gradientTop,
+  },
+  gradientWash: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
+  },
+  gradientStop: {
+    flex: 1,
+  },
+  topNav: {
+    zIndex: 20,
+    elevation: 20,
+    paddingBottom: 4,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  topNavInner: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral200,
+    justifyContent: 'space-between',
   },
-  backBtn: {
-    width: 40,
-    height: 40,
+  navBtn: {
+    backgroundColor: bookingUi.white,
+    borderWidth: 1,
+    borderColor: 'rgba(23,97,142,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
+    zIndex: 21,
+    elevation: 8,
   },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-  },
-  headerSpacer: {
-    width: 40,
+  pressed: {
+    opacity: 0.88,
   },
   scroll: {
     flex: 1,
+    zIndex: 1,
     backgroundColor: 'transparent',
   },
   scrollContent: {
-    padding: spacing.lg,
+    paddingTop: 4,
+    flexGrow: 1,
+    alignItems: 'center',
+  },
+  contentColumn: {
+    width: '100%',
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xxxl,
-    backgroundColor: 'transparent',
+    zIndex: 1,
   },
   loadingText: {
     marginTop: spacing.md,
     fontSize: 14,
-    color: colors.neutral500,
+    color: bookingUi.muted,
   },
   errorTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: bookingUi.ink,
     marginTop: spacing.lg,
   },
   errorSub: {
     fontSize: 14,
-    color: colors.neutral500,
+    color: bookingUi.muted,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
   retryBtn: {
     marginTop: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandPrimary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: bookingUi.accent,
   },
   retryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.white,
+    color: bookingUi.white,
   },
 });

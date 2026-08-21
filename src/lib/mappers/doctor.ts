@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '../../config/api';
+
 export const DEFAULT_DOCTOR_PHOTO =
   'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400';
 
@@ -98,7 +100,19 @@ export type Doctor = {
 
 export function getDoctorPhoto(photoUrl?: string): string {
   const value = photoUrl?.trim();
-  return value || DEFAULT_DOCTOR_PHOTO;
+  if (!value) return DEFAULT_DOCTOR_PHOTO;
+  if (
+    value.startsWith('https://') ||
+    value.startsWith('http://') ||
+    value.startsWith('data:')
+  ) {
+    return value;
+  }
+  if (value.startsWith('/')) {
+    const base = String(getApiBaseUrl() || '').replace(/\/api\/?$/, '');
+    if (base) return `${base}${value}`;
+  }
+  return value;
 }
 
 function getNextAvailableFromSchedule(

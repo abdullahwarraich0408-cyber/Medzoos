@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { MedicalRecordItem } from '../../lib/medicalRecordModel';
-import { colors, spacing, radius, cardStyles, appIcons, appIconTile } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../../theme';
 
 type LinkedRecordRowProps = {
   record: MedicalRecordItem;
@@ -15,7 +14,6 @@ type LinkedRecordRowProps = {
 export function LinkedRecordRow({
   record,
   onPress,
-  showStatus = false,
   showNewBadge = false,
 }: LinkedRecordRowProps) {
   const showBadge = showNewBadge && record.isUnread;
@@ -25,32 +23,28 @@ export function LinkedRecordRow({
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}>
       <View style={styles.iconWrap}>
-        <Icon name={record.icon} size={appIcons.size.md} color={appIcons.color} />
+        <Icon name={record.icon} size={18} color={colors.primary700} />
       </View>
       <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {record.title}
-          </Text>
-          {showBadge ? (
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>New</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.description} numberOfLines={2}>
-          {record.description}
+        <Text style={styles.title} numberOfLines={1}>
+          {record.title}
         </Text>
-        <View style={styles.footer}>
-          {showStatus && record.status ? (
-            <Text style={styles.status}>{record.status}</Text>
-          ) : null}
-          <Text style={styles.date}>{record.date}</Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {[
+            record.uploadedByUser ? 'Uploaded by patient' : record.description,
+            record.date,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
+      </View>
+      {showBadge ? (
+        <View style={styles.newBadge}>
+          <Text style={styles.newBadgeText}>New</Text>
         </View>
-      </View>
-      <View style={cardStyles.chevronWrap}>
-        <Icon name="chevron-right" size={18} color={colors.neutral500} />
-      </View>
+      ) : (
+        <Icon name="chevron-right" size={18} color={colors.textMuted} />
+      )}
     </Pressable>
   );
 }
@@ -60,52 +54,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  pressed: { backgroundColor: colors.brandMist },
-  iconWrap: appIconTile('md'),
-  body: { flex: 1, gap: 2 },
-  titleRow: {
-    flexDirection: 'row',
+  pressed: { backgroundColor: colors.primary100 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
     alignItems: 'center',
-    gap: spacing.sm,
+    justifyContent: 'center',
   },
+  body: { flex: 1, gap: 2, minWidth: 0 },
   title: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 15,
-    flex: 1,
-  },
-  description: {
-    fontSize: 13,
-    color: colors.neutral500,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: 2,
-  },
-  status: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.brandPrimary,
+    color: colors.textPrimary,
   },
-  date: {
+  meta: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: colors.textMuted,
   },
   newBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandLight,
-    borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.15)',
+    backgroundColor: colors.primary100,
   },
   newBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.brandPrimary,
+    color: colors.primary800,
   },
 });

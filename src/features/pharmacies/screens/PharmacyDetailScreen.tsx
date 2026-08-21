@@ -182,9 +182,9 @@ const styles = StyleSheet.create({
     minHeight: 180,
     backgroundColor: colors.neutral200,
   },
-  heroImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(12, 26, 46, 0.55)',
   },
   heroContent: {

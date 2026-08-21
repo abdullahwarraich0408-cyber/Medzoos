@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { TodayReminder } from '../data/medicineModel';
-import { colors, spacing, radius, cardStyles } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../theme';
 
 type TodayMedicinesCardProps = {
   reminders: TodayReminder[];
@@ -14,134 +13,94 @@ type TodayMedicinesCardProps = {
 export function TodayMedicinesCard({
   reminders,
   onMarkTaken,
-  onViewAll,
 }: TodayMedicinesCardProps) {
-  if (reminders.length === 0) return null;
-
-  const dueCount = reminders.filter(r => !r.taken).length;
+  const due = reminders.filter(r => !r.taken);
+  if (due.length === 0) return null;
 
   return (
-    <View style={styles.card}>
+    <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>Today</Text>
-        <Text style={styles.count}>
-          {dueCount} medicine{dueCount === 1 ? '' : 's'} due
-        </Text>
+        <Text style={styles.title}>Due today</Text>
+        <Text style={styles.count}>{due.length}</Text>
       </View>
 
-      {reminders.map((reminder, index) => (
-        <React.Fragment key={reminder.medicineId}>
-          {index > 0 ? <View style={styles.divider} /> : null}
-          <View style={styles.row}>
+      <View style={styles.list}>
+        {due.slice(0, 3).map(reminder => (
+          <View key={reminder.medicineId} style={styles.row}>
             <View style={styles.body}>
-              <Text style={styles.medicineName}>{reminder.medicineName}</Text>
+              <Text style={styles.name} numberOfLines={1}>
+                {reminder.medicineName}
+              </Text>
               <Text style={styles.timing}>
                 {reminder.timingLabel} · {reminder.time}
               </Text>
             </View>
-            {reminder.taken ? (
-              <View style={styles.takenBadge}>
-                <Icon name="check" size={14} color={colors.brandPrimary} />
-                <Text style={styles.takenText}>Taken</Text>
-              </View>
-            ) : (
-              <Pressable
-                style={({ pressed }) => [styles.markBtn, pressed && styles.markBtnPressed]}
-                onPress={() => onMarkTaken(reminder.medicineId)}>
-                <Text style={styles.markBtnText}>Mark taken</Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={({ pressed }) => [
+                styles.markBtn,
+                pressed && styles.markBtnPressed,
+              ]}
+              onPress={() => onMarkTaken(reminder.medicineId)}>
+              <Icon name="check" size={16} color={colors.primary700} />
+            </Pressable>
           </View>
-        </React.Fragment>
-      ))}
-
-      <Pressable
-        style={({ pressed }) => [styles.viewAll, pressed && styles.viewAllPressed]}
-        onPress={onViewAll}>
-        <Text style={styles.viewAllText}>View all reminders</Text>
-      </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    ...cardStyles.grouped,
-    paddingBottom: spacing.sm,
-  },
+  section: { gap: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
   },
   title: {
-    ...healthOsTypography.sectionTitle,
     fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
   count: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+    fontWeight: '700',
+    color: colors.primary700,
+    backgroundColor: colors.primary100,
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
   },
+  list: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.neutral200,
-    marginLeft: spacing.lg,
-  },
-  body: { flex: 1, gap: 2 },
-  medicineName: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 15,
+  body: { flex: 1, gap: 2, minWidth: 0 },
+  name: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
   timing: {
-    fontSize: 13,
-    color: colors.neutral500,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   markBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandLight,
-    borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.15)',
-  },
-  markBtnPressed: { backgroundColor: colors.brandMist },
-  markBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.brandPrimary,
-  },
-  takenBadge: {
-    flexDirection: 'row',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary100,
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    justifyContent: 'center',
   },
-  takenText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-  },
-  viewAll: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  viewAllPressed: { opacity: 0.7 },
-  viewAllText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-  },
+  markBtnPressed: { backgroundColor: colors.primary200 },
 });

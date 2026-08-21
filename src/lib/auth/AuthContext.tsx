@@ -8,9 +8,12 @@ import React, {
   type ReactNode,
 } from 'react';
 import { authApi } from '../api';
+import { queryClient } from '../../providers/QueryProvider';
+import { getApiBaseUrl } from '../../config/api';
 import type { AuthUser, PendingAuthAction, PhoneLoginConfirmation } from '../../types/auth';
 import {
   clearAuthSession,
+  getAccessToken,
   getRefreshToken,
   getStoredUser,
   hasAuthSession,
@@ -43,20 +46,20 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   pendingAction: PendingAuthAction | null;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<StoredUser | null>;
   registerWithEmail: (payload: {
     name: string;
     email: string;
     password: string;
     phone?: string;
-  }) => Promise<void>;
+  }) => Promise<StoredUser | null>;
   startPhoneLogin: (phone: string) => Promise<PhoneLoginConfirmation>;
   completePhoneLogin: (
     confirmation: PhoneLoginConfirmation,
     code: string,
-  ) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithApple: () => Promise<void>;
+  ) => Promise<StoredUser | null>;
+  loginWithGoogle: () => Promise<StoredUser | null>;
+  loginWithApple: () => Promise<StoredUser | null>;
   logout: () => Promise<void>;
   logoutAllDevices: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -106,19 +109,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshSession = useCallback(async () => {
-    const [storedUser, authed] = await Promise.all([
-      getStoredUser(),
-      hasAuthSession(),
-    ]);
+    try {
+      const [storedUser, accessToken, refreshToken] = await Promise.all([
+        getStoredUser(),
+        getAccessToken(),
+        getRefreshToken(),
+      ]);
 
-    if (storedUser && authed) {
-      const refreshToken = await getRefreshToken();
-      if (refreshToken && !storedUser.id) {
-        await clearAuthSession();
+      if (!storedUser && !accessToken && !refreshToken) {
         setUser(null);
         setIsAuthenticated(false);
         return;
       }
+
+      if (storedUser && accessToken) {
+        setUser(storedUser);
+        setIsAuthenticated(true);
+      }
+
       if (refreshToken) {
         try {
           const deviceId = await getDeviceId();
@@ -132,36 +140,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             refreshToken: data.refreshToken,
           };
           if (tokens?.accessToken) {
-            setMemoryAccessToken(tokens.accessToken);
-            await persistAuthSession(mapUser(data.user) ?? storedUser, tokens);
-            setUser(mapUser(data.user) ?? storedUser);
+            const nextUser = mapUser(data.user) ?? storedUser;
+            await persistAuthSession(nextUser, tokens);
+            setUser(nextUser);
             setIsAuthenticated(true);
             return;
           }
         } catch {
-          await clearAuthSession();
-          setUser(null);
-          setIsAuthenticated(false);
-          return;
+          if (!accessToken) {
+            await clearAuthSession();
+            setUser(null);
+            setIsAuthenticated(false);
+            return;
+          }
         }
       }
-    }
 
-    if (!getMemoryAccessToken()) {
-      if (storedUser) {
+      if (storedUser && accessToken) {
+        setUser(storedUser);
+        setIsAuthenticated(true);
+      } else {
         await clearAuthSession();
+        setUser(null);
+        setIsAuthenticated(false);
       }
+    } catch {
       setUser(null);
       setIsAuthenticated(false);
-      return;
     }
-
-    setUser(storedUser);
-    setIsAuthenticated(Boolean(storedUser));
   }, []);
 
   useEffect(() => {
-    refreshSession().finally(() => setIsLoading(false));
+    let cancelled = false;
+    (async () => {
+      try {
+        await refreshSession();
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [refreshSession]);
 
   const loginWithEmail = useCallback(
@@ -180,7 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!tokens?.accessToken) {
         throw new Error('Invalid login response');
       }
-      await applySession(mapUser(data.user), tokens);
+      const sessionUser = mapUser(data.user);
+      await applySession(sessionUser, tokens);
+      return sessionUser;
     },
     [applySession],
   );
@@ -206,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Invalid registration response');
       }
       await applySession(mapUser(data.user), tokens);
+      return mapUser(data.user);
     },
     [applySession],
   );
@@ -220,7 +245,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!tokens.accessToken) {
         throw new Error('Invalid authentication response');
       }
-      await applySession(mapUser(data.user), tokens);
+      const sessionUser = mapUser(data.user);
+      await applySession(sessionUser, tokens);
+      return sessionUser;
     },
     [applySession],
   );
@@ -266,46 +293,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error('Invalid authentication response');
         }
         await applySession(sessionUser, tokens);
-        return;
+        return sessionUser;
       }
 
       const idToken = await verifyPhoneOtp(confirmation.verificationId, code);
-      await completeFirebaseLogin(idToken);
+      return completeFirebaseLogin(idToken);
     },
     [applySession, completeFirebaseLogin],
   );
 
   const loginWithGoogle = useCallback(async () => {
     const idToken = await signInWithGoogleIdToken();
-    await completeFirebaseLogin(idToken);
+    return completeFirebaseLogin(idToken);
   }, [completeFirebaseLogin]);
 
   const loginWithApple = useCallback(async () => {
     const idToken = await signInWithAppleIdToken();
-    await completeFirebaseLogin(idToken);
+    return completeFirebaseLogin(idToken);
   }, [completeFirebaseLogin]);
 
   const logout = useCallback(async () => {
-    try {
-      const refreshToken = await getRefreshToken();
-      await authApi.logout(refreshToken ? { refreshToken } : undefined);
-    } catch {
-      // Clear local session regardless.
-    }
+    const refreshToken = await getRefreshToken();
+    const accessToken = getMemoryAccessToken();
+
     await clearAuthSession();
     setUser(null);
     setIsAuthenticated(false);
+    queryClient.clear();
+
+    if (!accessToken && !refreshToken) return;
+
+    fetch(`${getApiBaseUrl()}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+    }).catch(() => {});
   }, []);
 
   const logoutAllDevices = useCallback(async () => {
-    try {
-      await authApi.logoutAll();
-    } catch {
-      // best effort
-    }
+    const accessToken = getMemoryAccessToken();
+
     await clearAuthSession();
     setUser(null);
     setIsAuthenticated(false);
+    queryClient.clear();
+
+    if (!accessToken) return;
+
+    fetch(`${getApiBaseUrl()}/auth/logout-all`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }).catch(() => {});
   }, []);
 
   const requireAuth = useCallback(

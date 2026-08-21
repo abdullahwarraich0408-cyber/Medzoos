@@ -3,8 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { DoctorFolder } from '../../lib/medicalRecordModel';
 import { formatDoctorFolderCounts } from '../../lib/medicalRecordModel';
-import { colors, spacing, cardStyles, appIcons, appIconTile } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../../theme';
 
 type DoctorFolderCardProps = {
   folder: DoctorFolder;
@@ -12,56 +11,57 @@ type DoctorFolderCardProps = {
 };
 
 export function DoctorFolderCard({ folder, onPress }: DoctorFolderCardProps) {
-  const counts = formatDoctorFolderCounts(folder);
-
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onPress}>
       <View style={styles.iconWrap}>
-        <Icon name="account-circle-outline" size={appIcons.size.lg} color={appIcons.color} />
+        <Icon name="stethoscope" size={18} color={colors.primary700} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.name}>{folder.name}</Text>
-        <Text style={styles.specialty}>{folder.specialty}</Text>
-        <Text style={styles.meta}>Last visit {folder.lastVisitDate}</Text>
-        <Text style={styles.counts}>{counts}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {folder.name}
+        </Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {[folder.specialty, formatDoctorFolderCounts(folder)]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
       </View>
-      <View style={cardStyles.chevronWrap}>
-        <Icon name="chevron-right" size={18} color={colors.neutral500} />
-      </View>
+      <Icon name="chevron-right" size={18} color={colors.textMuted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  pressed: { backgroundColor: colors.brandMist },
-  iconWrap: appIconTile('md'),
-  body: { flex: 1, gap: 2 },
-  name: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 15,
+  pressed: { backgroundColor: colors.primary100 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  specialty: {
-    fontSize: 13,
-    color: colors.neutral500,
+  body: { flex: 1, gap: 2, minWidth: 0 },
+  name: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
   meta: {
     fontSize: 12,
-    color: colors.neutral500,
-    marginTop: 2,
-  },
-  counts: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-    marginTop: 2,
+    color: colors.textMuted,
   },
 });

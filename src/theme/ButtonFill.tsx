@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   wash: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   washVertical: {
     flexDirection: 'column',

@@ -1,17 +1,15 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
 import { HealthPageHeader } from './components/hub/HealthPageHeader';
-import { HealthSummaryStrip } from './components/hub/HealthSummaryStrip';
 import { HealthAttentionSection } from './components/hub/HealthAttentionSection';
 import { HealthQuickActionGrid } from './components/hub/HealthQuickActionGrid';
 import { HealthActiveMedsStrip } from './components/hub/HealthActiveMedsStrip';
-import { HealthRecentReportsSection } from './components/hub/HealthRecentReportsSection';
-import { HealthFamilyPreview } from './components/hub/HealthFamilyPreview';
 import { HealthActivityTimeline } from './components/hub/HealthActivityTimeline';
 import { useHealthHubOverview } from './hooks/useHealthHubOverview';
+import { useAuth } from '../../lib/auth/AuthContext';
 import type { HealthStackParamList } from '../../navigation/types';
 import { colors, TAB_BAR_CLEARANCE } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
@@ -20,8 +18,23 @@ type HealthNav = NativeStackNavigationProp<HealthStackParamList>;
 
 export function HealthHomePage() {
   const navigation = useNavigation<HealthNav>();
+  const { user } = useAuth();
   const overview = useHealthHubOverview();
   const [refreshing, setRefreshing] = useState(false);
+
+  const firstName = useMemo(() => {
+    const name = user?.name?.trim();
+    if (!name) return undefined;
+    return name.split(/\s+/)[0];
+  }, [user?.name]);
+
+  const attention = useMemo(
+    () =>
+      overview.attention
+        .filter(item => item.id !== 'all-clear' && item.id !== 'demo-report')
+        .slice(0, 2),
+    [overview.attention],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -46,48 +59,27 @@ export function HealthHomePage() {
             colors={[colors.primary700]}
           />
         }>
-        <HealthPageHeader subtitle="Your medicines, reports, and records" />
-
-        <HealthSummaryStrip
-          activeMedicines={overview.activePrescriptions}
-          newReports={overview.reportsReady}
-          nextVisit={overview.upcomingVisit}
+        <HealthPageHeader
+          title={firstName ? `Hi, ${firstName}` : 'Health'}
+          subtitle="Medicines, reports, and records"
         />
 
-        <HealthAttentionSection
-          items={overview.attention}
-          navigation={navigation}
-        />
+        <HealthAttentionSection items={attention} navigation={navigation} />
 
         <HealthQuickActionGrid
           navigation={navigation}
           badges={overview.badges}
         />
 
-        <HealthActiveMedsStrip
-          medicines={overview.activeMedicines}
-          onSeeAll={() => navigation.navigate('MedicinesList')}
-          onMedicinePress={medicineId =>
-            navigation.navigate('MedicineDetail', { medicineId })
-          }
-        />
-
-        <HealthRecentReportsSection
-          reports={overview.recentReports}
-          onSeeAll={() => navigation.navigate('LabReports')}
-        />
-
-        <HealthFamilyPreview
-          members={overview.familyMembers}
-          onViewAll={() => navigation.navigate('FamilyProfiles')}
-          onMemberPress={memberId => {
-            if (!memberId || memberId === 'self') {
-              navigation.navigate('FamilyProfiles');
-              return;
+        {overview.activeMedicines.length > 0 ? (
+          <HealthActiveMedsStrip
+            medicines={overview.activeMedicines.slice(0, 2)}
+            onSeeAll={() => navigation.navigate('MedicinesList')}
+            onMedicinePress={medicineId =>
+              navigation.navigate('MedicineDetail', { medicineId })
             }
-            navigation.navigate('FamilyMemberDetail', { memberId });
-          }}
-        />
+          />
+        ) : null}
 
         <HealthActivityTimeline
           items={overview.activity}
@@ -103,6 +95,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: calmLayout.screenPadding,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
-    gap: calmLayout.sectionGap,
+    gap: 28,
   },
 });

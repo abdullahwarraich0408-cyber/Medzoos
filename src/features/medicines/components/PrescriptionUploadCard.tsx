@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, cardStyles } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { colors, spacing, radius } from '../../../theme';
 
 type PrescriptionUploadCardProps = {
   onUpload: () => void;
@@ -10,51 +9,61 @@ type PrescriptionUploadCardProps = {
 
 export function PrescriptionUploadCard({ onUpload }: PrescriptionUploadCardProps) {
   return (
-    <View style={styles.card}>
-      <View style={styles.copy}>
-        <Text style={styles.title}>Have a prescription?</Text>
-        <Text style={styles.subtitle}>Upload and get medicines verified.</Text>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      onPress={onUpload}>
+      <View style={styles.iconWrap}>
+        <Icon name="file-plus-outline" size={22} color={colors.primary700} />
       </View>
-      <Pressable
-        style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-        onPress={onUpload}>
-        <Icon name="cloud-upload-outline" size={16} color={colors.white} />
-        <Text style={styles.btnText}>Upload prescription</Text>
-      </Pressable>
-    </View>
+      <View style={styles.copy}>
+        <Text style={styles.title}>Upload prescription</Text>
+        <Text style={styles.subtitle}>Save to My Health as uploaded by you</Text>
+      </View>
+      <View style={styles.arrow}>
+        <Icon name="arrow-right" size={16} color={colors.primary700} />
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    ...cardStyles.premiumSoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
+    backgroundColor: colors.primary100,
+    borderRadius: radius.xxl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(23, 97, 142, 0.12)',
   },
-  copy: { flex: 1, gap: 2 },
+  pressed: { opacity: 0.92 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copy: { flex: 1, gap: 2, minWidth: 0 },
   title: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary900,
   },
   subtitle: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: colors.primary600,
+    lineHeight: 16,
   },
-  btn: {
-    flexDirection: 'row',
+  arrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.white,
     alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  btnPressed: { opacity: 0.9 },
-  btnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.white,
+    justifyContent: 'center',
   },
 });

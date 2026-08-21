@@ -146,6 +146,9 @@ export const RECORD_ALL_SECTION_META: Record<
   uploads: { title: 'Uploads', icon: 'cloud-upload-outline', seeAllTab: 'uploads' },
 };
 
+export type RecordSectionId = RecordAllSectionId;
+export const RECORD_SECTION_META = RECORD_ALL_SECTION_META;
+
 export type RecordCategoryId =
   | 'lab-report'
   | 'prescription'

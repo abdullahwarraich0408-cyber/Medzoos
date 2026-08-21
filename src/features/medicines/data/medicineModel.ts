@@ -21,8 +21,8 @@ export type PrescriptionVerificationStatus =
 export type MedicineHubTabId = 'my_medicines' | 'prescriptions' | 'refills' | 'shop';
 
 export const MEDICINE_HUB_TABS: { id: MedicineHubTabId; label: string }[] = [
-  { id: 'my_medicines', label: 'My Medicines' },
-  { id: 'prescriptions', label: 'Prescriptions' },
+  { id: 'my_medicines', label: 'Meds' },
+  { id: 'prescriptions', label: 'Rx' },
   { id: 'refills', label: 'Refills' },
   { id: 'shop', label: 'Shop' },
 ];
@@ -209,6 +209,11 @@ export function getSourceLabel(medicine: PatientMedicine): string {
   if (medicine.doctorName) return `Prescribed by ${medicine.doctorName}`;
   if (medicine.pharmacyName) return medicine.pharmacyName;
   return 'Added manually';
+}
+
+export function getPrescriptionSourceLabel(prescription: PatientPrescription): string {
+  if (prescription.uploadedByUser) return 'Uploaded by patient';
+  return 'Issued by Medzoos doctor';
 }
 
 export function getVerificationLabel(status: PrescriptionVerificationStatus): string {

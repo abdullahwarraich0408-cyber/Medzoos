@@ -2,9 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { FamilyMemberView } from '../../data/familyVaultModel';
-import { getMemberInitials, getStatusColor } from '../../data/familyVaultModel';
-import { colors, spacing, radius, cardStyles } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { getMemberInitials } from '../../data/familyVaultModel';
+import { colors, spacing, radius } from '../../../../theme';
 
 type FamilyMemberRowProps = {
   member: FamilyMemberView;
@@ -12,7 +11,6 @@ type FamilyMemberRowProps = {
 };
 
 export function FamilyMemberRow({ member, onPress }: FamilyMemberRowProps) {
-  const statusColor = getStatusColor(member.status);
   const needsAttention = member.status !== 'all_good';
 
   return (
@@ -23,60 +21,61 @@ export function FamilyMemberRow({ member, onPress }: FamilyMemberRowProps) {
         <Text style={styles.initials}>{getMemberInitials(member.name)}</Text>
       </View>
       <View style={styles.copy}>
-        <Text style={styles.name}>{member.name}</Text>
-        <Text style={styles.relation}>{member.relationship}</Text>
-        <Text style={[styles.status, { color: statusColor }]}>
-          {member.statusLabel}
+        <Text style={styles.name} numberOfLines={1}>
+          {member.name}
+        </Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {member.relationship}
+          {needsAttention ? ` · ${member.statusLabel}` : ''}
         </Text>
       </View>
-      {member.healthScore != null && !needsAttention ? (
+      {member.healthScore != null ? (
         <Text style={styles.score}>{member.healthScore}</Text>
       ) : null}
-      <Icon name="chevron-right" size={20} color={colors.neutral500} />
+      <Icon name="chevron-right" size={18} color={colors.textMuted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    ...cardStyles.premiumSoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
-  pressed: { backgroundColor: colors.brandMist },
+  pressed: { backgroundColor: colors.primary100 },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.brandLight,
+    backgroundColor: colors.primary100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    color: colors.brandPrimary,
+    color: colors.primary800,
   },
-  copy: { flex: 1, gap: 1 },
+  copy: { flex: 1, gap: 2, minWidth: 0 },
   name: {
-    ...healthOsTypography.messageTitle,
     fontSize: 14,
-  },
-  relation: {
-    fontSize: 12,
-    color: colors.neutral500,
-  },
-  status: {
-    fontSize: 11,
     fontWeight: '600',
-    marginTop: 2,
+    color: colors.textPrimary,
+  },
+  meta: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
   score: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.neutral500,
-    marginRight: spacing.xs,
+    color: colors.primary800,
   },
 });

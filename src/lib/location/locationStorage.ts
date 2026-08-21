@@ -31,8 +31,8 @@ export async function getSavedLocationDetail(): Promise<DetectedLocation | null>
 }
 
 export async function saveLocation(location: DetectedLocation): Promise<void> {
-  await AsyncStorage.multiSet([
-    [LOCATION_KEY, location.label || location.city],
-    [LOCATION_DETAIL_KEY, JSON.stringify(location)],
+  await Promise.all([
+    AsyncStorage.setItem(LOCATION_KEY, location.label || location.city),
+    AsyncStorage.setItem(LOCATION_DETAIL_KEY, JSON.stringify(location)),
   ]);
 }

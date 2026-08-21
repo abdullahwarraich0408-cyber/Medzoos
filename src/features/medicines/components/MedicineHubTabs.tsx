@@ -1,7 +1,7 @@
 import React from 'react';
-import { ScrollView, Pressable, StyleSheet, Text } from 'react-native';
+import { View, Pressable, StyleSheet, Text } from 'react-native';
 import { MEDICINE_HUB_TABS, type MedicineHubTabId } from '../data/medicineModel';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { colors, spacing, radius } from '../../../theme';
 
 type MedicineHubTabsProps = {
   active: MedicineHubTabId;
@@ -10,20 +10,13 @@ type MedicineHubTabsProps = {
 
 export function MedicineHubTabs({ active, onChange }: MedicineHubTabsProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}>
+    <View style={styles.wrap}>
       {MEDICINE_HUB_TABS.map(tab => {
         const isActive = active === tab.id;
         return (
           <Pressable
             key={tab.id}
-            style={({ pressed }) => [
-              styles.tab,
-              isActive && styles.tabActive,
-              pressed && !isActive && styles.tabPressed,
-            ]}
+            style={[styles.tab, isActive && styles.tabActive]}
             onPress={() => onChange(tab.id)}>
             <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
               {tab.label}
@@ -31,30 +24,36 @@ export function MedicineHubTabs({ active, onChange }: MedicineHubTabsProps) {
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { gap: spacing.sm, paddingBottom: spacing.xs },
-  tab: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.pill,
+  wrap: {
+    flexDirection: 'row',
     backgroundColor: colors.white,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-    ...shadows.cardSoft,
+    borderColor: colors.borderLight,
+    padding: 4,
+    gap: 2,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.lg,
   },
   tabActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: colors.primary100,
   },
-  tabPressed: { backgroundColor: colors.brandMist },
   tabText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: colors.textMuted,
   },
-  tabTextActive: { color: colors.white },
+  tabTextActive: {
+    color: colors.primary800,
+    fontWeight: '700',
+  },
 });

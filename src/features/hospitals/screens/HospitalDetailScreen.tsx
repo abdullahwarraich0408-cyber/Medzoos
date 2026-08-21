@@ -153,7 +153,6 @@ export function HospitalDetailScreen() {
           value={consultType}
           onChange={setConsultType}
           onlineCount={onlineCount}
-          disableOnline={onlineCount === 0}
         />
 
         <View style={styles.specialtyHeader}>
@@ -197,7 +196,22 @@ export function HospitalDetailScreen() {
           ))}
         </ScrollView>
 
-        {filteredDoctors.length > 0 ? (
+        <View style={styles.specialtyHeader}>
+          <Text style={styles.sectionTitle}>Available Doctors</Text>
+          <Text style={styles.sectionHint}>
+            {filteredDoctors.length} found
+          </Text>
+        </View>
+
+        {filteredDoctors.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.muted}>
+              {consultType === 'online'
+                ? 'No doctors available for online consult at this hospital.'
+                : 'No doctors match this specialty yet.'}
+            </Text>
+          </View>
+        ) : (
           <View style={styles.list}>
             {filteredDoctors.map(doctor => (
               <DoctorCard
@@ -210,12 +224,6 @@ export function HospitalDetailScreen() {
               />
             ))}
           </View>
-        ) : (
-          <Text style={styles.empty}>
-            {consultType === 'online'
-              ? 'No doctors available for online consult at this hospital.'
-              : 'No doctors match this specialty yet.'}
-          </Text>
         )}
       </ScrollView>
     </ScreenLayout>
@@ -224,22 +232,28 @@ export function HospitalDetailScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
-  content: {
-    paddingHorizontal: calmLayout.screenPadding,
-    paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
-    gap: calmLayout.blockGap,
+  scrollContent: { padding: spacing.lg, gap: spacing.lg },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xxxl,
+    backgroundColor: colors.white,
   },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  muted: { ...healthOsTypography.messageBody, color: colors.neutral500 },
-  hero: {
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    color: colors.neutral500,
+  },
+  heroCard: {
     borderRadius: radius.xl,
     overflow: 'hidden',
     minHeight: 180,
     backgroundColor: colors.neutral200,
   },
-  heroImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(12, 26, 46, 0.55)',
   },
   heroBody: {

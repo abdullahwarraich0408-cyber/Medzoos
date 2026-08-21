@@ -1,15 +1,9 @@
 import { CommonActions, DrawerActions } from '@react-navigation/native';
-import type { NavigationProp, ParamListBase } from '@react-navigation/native';
 
-type NavDispatch = {
-  dispatch: (action: ReturnType<typeof CommonActions.navigate>) => void;
-  navigate?: (name: string, params?: object) => void;
-  getParent?: () => NavDispatch | undefined;
-  getState?: () => { type?: string; routes: { name: string }[]; index: number };
-  canGoBack?: () => boolean;
-};
+export type NavDispatch = any;
+export type AnyNavigation = any;
 
-type AnyNavigation = NavigationProp<ParamListBase>;
+export const APP_DRAWER_ID = 'AppDrawer';
 
 const DRAWER_ROUTE_NAMES = new Set([
   'MainTabs',
@@ -22,12 +16,14 @@ const DRAWER_ROUTE_NAMES = new Set([
 ]);
 
 function isDrawerNavigator(nav: NavDispatch | AnyNavigation) {
-  if (typeof (nav as { openDrawer?: () => void }).openDrawer === 'function') {
+  const state = nav.getState?.() as
+    | { type?: string; routeNames?: string[] }
+    | undefined;
+  if (state?.type === 'drawer') {
     return true;
   }
 
-  const routeNames = (nav.getState?.() as { routeNames?: string[] } | undefined)
-    ?.routeNames;
+  const routeNames = state?.routeNames;
   if (!routeNames?.length) return false;
 
   return (
@@ -37,6 +33,11 @@ function isDrawerNavigator(nav: NavDispatch | AnyNavigation) {
 }
 
 export function getDrawerNavigation(navigation: NavDispatch | AnyNavigation) {
+  const byId = navigation.getParent?.(APP_DRAWER_ID);
+  if (byId && isDrawerNavigator(byId)) {
+    return byId;
+  }
+
   let nav: (NavDispatch | AnyNavigation) | undefined = navigation;
   while (nav) {
     if (isDrawerNavigator(nav)) {
@@ -49,17 +50,17 @@ export function getDrawerNavigation(navigation: NavDispatch | AnyNavigation) {
 
 export function openAppDrawer(navigation: NavDispatch | AnyNavigation) {
   const drawer = getDrawerNavigation(navigation);
-  if (!drawer) {
-    navigation.dispatch(DrawerActions.openDrawer());
+
+  if (drawer) {
+    if (typeof drawer.openDrawer === 'function') {
+      drawer.openDrawer();
+      return;
+    }
+    drawer.dispatch(DrawerActions.openDrawer() as any);
     return;
   }
 
-  if (typeof (drawer as { openDrawer?: () => void }).openDrawer === 'function') {
-    (drawer as { openDrawer: () => void }).openDrawer();
-    return;
-  }
-
-  drawer.dispatch(DrawerActions.openDrawer());
+  navigation.dispatch?.(DrawerActions.openDrawer() as any);
 }
 
 /** Dispatch navigation actions from the drawer navigator so nested targets resolve reliably. */
@@ -69,6 +70,27 @@ export function dispatchFromDrawer(
 ) {
   const drawer = getDrawerNavigation(navigation);
   (drawer ?? navigation).dispatch(action);
+}
+
+/**
+ * True only when a stack above this screen can pop — ignores tab/drawer parents.
+ * `navigation.canGoBack()` walks the whole tree and wrongly shows Back on tab roots.
+ */
+export function canPopCurrentStack(navigation: NavDispatch | AnyNavigation) {
+  let nav: (NavDispatch | AnyNavigation) | undefined = navigation;
+  while (nav) {
+    const state = nav.getState?.() as
+      | { type?: string; index?: number }
+      | undefined;
+    if (state?.type === 'tab' || state?.type === 'drawer') {
+      break;
+    }
+    if (state?.type === 'stack' && (state.index ?? 0) > 0) {
+      return true;
+    }
+    nav = nav.getParent?.() as NavDispatch | AnyNavigation | undefined;
+  }
+  return false;
 }
 
 /** True when the drawer is showing a standalone route (not MainTabs). */
@@ -100,17 +122,7 @@ export function navigateToMainTabs(
 }
 
 export function navigateToPhoneSignIn(navigation: NavDispatch) {
-  dispatchFromDrawer(
-    navigation,
-    CommonActions.navigate({
-      name: 'MainTabs',
-      params: {
-        screen: 'You',
-        params: { screen: 'PhoneSignIn' },
-      },
-      merge: false,
-    }),
-  );
+  navigateToSignIn(navigation);
 }
 
 export function navigateToSignIn(navigation: NavDispatch) {
