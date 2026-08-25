@@ -3,6 +3,9 @@ import { generatePersonalizedGreeting } from './engines/greetingEngine';
 import {
   detectIntent,
   getSpecialtyForIntent,
+  isTriageEscape,
+  wantsExerciseGuidance,
+  wantsEducationalInfo,
 } from './engines/intentDetection';
 import { getQuestionsForIntent, getNextQuestion } from './engines/questionEngine';
 import {
@@ -11,10 +14,12 @@ import {
   riskLevelLabel,
 } from './engines/riskEngine';
 import {
+  buildExerciseGuidanceText,
   buildRecommendationText,
   generateActions,
   suggestLabTests,
 } from './engines/recommendationEngine';
+import { evaluateLocalRedFlags } from './engines/localRedFlagEngine';
 import type {
   CopilotContextInput,
   CopilotMessagePayload,
@@ -86,7 +91,7 @@ export class CopilotOrchestrator {
         assistantMessage(greeting, {
           healthSummary: formatHealthSummary(this.context),
           suggestedReplies: [
-            'I have chest pain',
+            'Back pain exercises',
             'I need a doctor',
             'Explain my lab report',
             'I missed my medicine',
@@ -110,7 +115,34 @@ export class CopilotOrchestrator {
       timestamp: new Date().toISOString(),
     };
 
-    const responses: CopilotMessagePayload[] = [];
+    // Layer 1 — deterministic emergency fast path (no LLM)
+    const redFlag = evaluateLocalRedFlags(trimmed);
+    if (redFlag.triggered) {
+      this.session.phase = 'actions';
+      this.session.intent = 'emergency';
+      this.session.riskLevel = 'critical';
+      this.session.completed = true;
+      this.session.triggerMessage = trimmed;
+      const assessment = assessRisk('emergency', trimmed, {}, this.context);
+      return this.buildAssessmentResponse([userMsg], assessment, trimmed);
+    }
+
+    // Mid-questionnaire: user wants exercise / to leave triage → honor that
+    if (
+      this.session.phase === 'questions' &&
+      this.session.pendingQuestions.length > 0 &&
+      isTriageEscape(trimmed)
+    ) {
+      const observation = [this.session.triggerMessage, trimmed]
+        .filter(Boolean)
+        .join(' ');
+      this.session.intent = 'lifestyle';
+      this.session.triggerMessage = observation;
+      this.session.pendingQuestions = [];
+      this.session.questionIndex = 0;
+      this.session.answers = {};
+      return this.buildExerciseResponse([userMsg], observation);
+    }
 
     // If we're mid-question flow, treat as answer
     if (
@@ -132,13 +164,16 @@ export class CopilotOrchestrator {
       );
 
       if (nextQ) {
-        responses.push(
-          assistantMessage(nextQ.text, {
-            intent: this.session.intent ?? undefined,
-            suggestedReplies: nextQ.options,
-          }),
-        );
-        return { messages: [userMsg, ...responses], session: this.session };
+        return {
+          messages: [
+            userMsg,
+            assistantMessage(nextQ.text, {
+              intent: this.session.intent ?? undefined,
+              suggestedReplies: nextQ.options,
+            }),
+          ],
+          session: this.session,
+        };
       }
 
       // All questions answered → assess
@@ -158,6 +193,59 @@ export class CopilotOrchestrator {
       const assessment = assessRisk(intent, trimmed, this.session.answers, this.context);
       this.session.riskLevel = assessment.level;
       return this.buildAssessmentResponse([userMsg], assessment, trimmed);
+    }
+
+    // Educational / informational medical inquiries
+    if (wantsEducationalInfo(trimmed)) {
+      this.session.phase = 'assessment';
+      this.session.riskLevel = 'low';
+      let educationalText = '';
+      if (/diabetes|sugar|glucose|insulin/i.test(trimmed)) {
+        educationalText =
+          'Diabetes mellitus is a chronic metabolic condition where the body cannot effectively produce or utilize insulin, leading to elevated blood glucose (hyperglycemia).\n\n' +
+          '• Type 1 Diabetes: An autoimmune condition where the pancreas produces little to no insulin.\n' +
+          '• Type 2 Diabetes: The most common form, characterized by progressive insulin resistance and beta-cell dysfunction.\n\n' +
+          'Key ADA 2026 Clinical Targets:\n' +
+          '• Normal Fasting Glucose: 70–99 mg/dL (Diabetes diagnosis: ≥ 126 mg/dL)\n' +
+          '• Normal HbA1c: < 5.7% (Diabetes diagnosis: ≥ 6.5%)\n' +
+          '• Postprandial Glucose Target for Adults: < 180 mg/dL\n\n' +
+          '[Source: ADA Standards of Medical Care in Diabetes]';
+      } else if (/blood pressure|hypertension/i.test(trimmed)) {
+        educationalText =
+          'Hypertension (high blood pressure) is a common cardiovascular condition where the force of blood against artery walls is consistently too high.\n\n' +
+          '• Normal Blood Pressure: < 120/80 mmHg\n' +
+          '• Stage 1 Hypertension: 130–139 / 80–89 mmHg\n' +
+          '• Stage 2 Hypertension: ≥ 140/90 mmHg\n\n' +
+          'Lifestyle management includes sodium reduction, regular physical activity, and stress management.\n\n' +
+          '[Source: ACC/AHA Guidelines]';
+      } else {
+        educationalText =
+          'Mental health conditions like depression and anxiety are treatable health challenges involving brain chemistry, genetics, and life stressors.\n\n' +
+          'If you ever feel overwhelmed or in crisis, confidential 24/7 support is available in Pakistan via Umang (0311-7786264) and Rozan (0800-22444).\n\n' +
+          '[Source: APA Clinical Guidelines]';
+      }
+
+      return {
+        messages: [
+          userMsg,
+          assistantMessage(educationalText, {
+            riskLevel: 'low',
+            triageLevel: 'SELF_CARE' as any,
+            suggestedReplies: [
+              'Check fasting sugar target',
+              'Symptoms of high sugar',
+              'Diabetes diet tips',
+            ],
+          }),
+        ],
+        session: this.session,
+      };
+    }
+
+    // Exercise / lifestyle → answer with mobility guidance (no chest Q&A)
+    if (intent === 'lifestyle' || wantsExerciseGuidance(trimmed)) {
+      this.session.intent = 'lifestyle';
+      return this.buildExerciseResponse([userMsg], trimmed);
     }
 
     const questions = getQuestionsForIntent(
@@ -186,14 +274,55 @@ export class CopilotOrchestrator {
         : `I'll help with your ${intent.replace('_', ' ')} request. A few quick questions first.`;
 
     const firstQ = questions[0];
-    responses.push(
-      assistantMessage(`${intro}\n\n${firstQ.text}`, {
-        intent,
-        suggestedReplies: firstQ.options,
-      }),
+    return {
+      messages: [
+        userMsg,
+        assistantMessage(`${intro}\n\n${firstQ.text}`, {
+          intent,
+          suggestedReplies: firstQ.options,
+        }),
+      ],
+      session: this.session,
+    };
+  }
+
+  private buildExerciseResponse(
+    userMessages: CopilotMessagePayload[],
+    message: string,
+  ): CopilotTurnResult {
+    const assessment = assessRisk('lifestyle', message, {}, this.context);
+    this.session.riskLevel = assessment.level;
+    this.session.phase = 'actions';
+    this.session.completed = true;
+    this.session.intent = 'lifestyle';
+
+    const actions = generateActions(
+      'lifestyle',
+      assessment.level,
+      message,
+      this.context,
+      {},
     );
 
-    return { messages: [userMsg, ...responses], session: this.session };
+    const text = buildExerciseGuidanceText(message);
+
+    return {
+      messages: [
+        ...userMessages,
+        assistantMessage(text, {
+          intent: 'lifestyle',
+          riskLevel: assessment.level,
+          actions,
+          suggestedReplies: [
+            'When should I see a doctor?',
+            'Book orthopedic doctor',
+            'I have chest pain',
+          ],
+          healthSummary: formatHealthSummary(this.context),
+        }),
+      ],
+      session: this.session,
+    };
   }
 
   private completeAssessment(userMessages: CopilotMessagePayload[]): CopilotTurnResult {

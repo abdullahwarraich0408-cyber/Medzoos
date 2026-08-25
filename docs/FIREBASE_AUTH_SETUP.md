@@ -31,17 +31,51 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 
-## Mobile (`app/medCare`)
+## Mobile Google OAuth (`app/medCare`) — not Firebase Auth
 
-Add to Firebase console and native projects:
-- `android/app/google-services.json`
-- `ios/GoogleService-Info.plist`
+Same flow as the website:
 
-Then install and rebuild:
+1. App opens Google account picker (`@react-native-google-signin/google-signin`)
+2. App gets a Google **ID token**
+3. App calls `POST /api/auth/google` with `{ idToken }`
+4. Backend verifies token with Google (`tokeninfo`) using `GOOGLE_CLIENT_ID`
+
+### Config checklist
+
+| Place | Value |
+|-------|--------|
+| `src/config/googleAuth.ts` → `GOOGLE_WEB_CLIENT_ID` | Web OAuth client ID |
+| Backend `.env` → `GOOGLE_CLIENT_ID` | Same Web client ID |
+| Frontend → `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Same Web client ID |
+
+### Android OAuth client (required)
+
+Create this in the **same Google Cloud project as the Web client**
+(`1083815277954-9spbmn6ppfe4nnb3eong8dbihn44211a` — RouteBuddy), not Medzoos.
+
+Google Auth Platform → Clients → **+ Create client**:
+
+1. Application type: **Android**
+2. Package name: `com.medcare`
+3. SHA-1 (release / upload keystore — use this for tester APKs):
+   ```
+   3F:F2:9C:D6:73:9B:78:27:9A:87:E4:50:00:A6:F0:CC:6C:4B:F8:BB
+   ```
+4. Create → wait 5–10 minutes → rebuild release APK
+
+Get release SHA-1 anytime:
 ```bash
-npm install @react-native-firebase/app @react-native-firebase/auth
-cd ios && pod install
-npm run android   # or npm run ios
+keytool -list -v -keystore android/app/medcare-upload.keystore -alias medcare -storepass medcare123 -keypass medcare123
 ```
 
-Set `FIREBASE_ENABLED = true` in `src/lib/firebase/auth.ts` after native linking.
+Note: the old debug SHA-1 (`5E:8F:...`) is already claimed by another Google Cloud project, so release builds use `medcare-upload.keystore` instead.
+
+Without the Android OAuth client + matching SHA-1, Google login fails with `DEVELOPER_ERROR` / ApiException 10.
+
+### Phone OTP (Firebase — optional, separate)
+
+```bash
+npm install @react-native-firebase/auth
+```
+
+Set `FIREBASE_ENABLED = true` in `src/lib/firebase/auth.ts` after linking.

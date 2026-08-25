@@ -92,7 +92,7 @@ export function AppointmentVideoScreen() {
                 <Icon name="account" size={72} color="#94A3B8" />
               </View>
             )}
-            <Text style={styles.fallbackName}>{doctorName || 'Dr. Abdullah Warraich'}</Text>
+            <Text style={styles.fallbackName}>{doctorName || 'Doctor'}</Text>
             <Text style={styles.fallbackSub}>Video Consultation Room</Text>
           </View>
         )}

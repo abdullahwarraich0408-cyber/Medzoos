@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { AppSheet } from '../../../components/modal/AppSheet';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -41,8 +42,6 @@ import {
   buildAlertsFromMembers,
   buildEventViews,
   buildRecentRecords,
-  DEMO_MEMBERS,
-  DEMO_ALERTS,
   type VaultTabId,
 } from '../data/familyVaultModel';
 import type { HealthStackParamList } from '../../../navigation/types';
@@ -87,17 +86,12 @@ function FamilyProfilesContent() {
     })) ||
     [];
 
-  const useDemo = apiMembers.length === 0 && Boolean(vault);
-
   const memberViews = useMemo(() => {
     if (apiMembers.length > 0 && vault) {
       return buildMemberViews(apiMembers, vault.id);
     }
-    if (useDemo && vault) {
-      return DEMO_MEMBERS.map(m => ({ ...m, familyId: vault.id }));
-    }
     return [];
-  }, [apiMembers, vault, useDemo]);
+  }, [apiMembers, vault]);
 
   const familyView = useMemo(() => {
     if (!vault) return null;
@@ -111,19 +105,17 @@ function FamilyProfilesContent() {
   }, [vault, dashboard, memberViews]);
 
   const alerts = useMemo(() => {
-    const fromApi = buildAlertsFromMembers(memberViews, aiInsights?.members);
-    if (fromApi.length > 0) return fromApi;
-    return useDemo ? DEMO_ALERTS : [];
-  }, [memberViews, aiInsights, useDemo]);
+    return buildAlertsFromMembers(memberViews, aiInsights?.members);
+  }, [memberViews, aiInsights]);
 
   const events = useMemo(() => {
     if (!vault) return [];
-    return buildEventViews(calendarEvents, vault.id, useDemo);
-  }, [calendarEvents, vault, useDemo]);
+    return buildEventViews(calendarEvents, vault.id);
+  }, [calendarEvents, vault]);
 
   const recentRecords = useMemo(() => {
-    return buildRecentRecords(memberViews, useDemo);
-  }, [memberViews, useDemo]);
+    return buildRecentRecords(memberViews);
+  }, [memberViews]);
 
   const handleCreateFamily = async () => {
     try {
@@ -294,7 +286,9 @@ function FamilyProfilesContent() {
 
       <AppSheet visible={showCreateFamily} onClose={() => setShowCreateFamily(false)}>
         <Text style={styles.modalTitle}>Create family</Text>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView
+          showsVerticalScrollIndicator={false}
+          disableKeyboardInset>
           <FormField
             label="Family name (optional)"
             value={familyForm.name}
@@ -312,7 +306,7 @@ function FamilyProfilesContent() {
               setFamilyForm(f => ({ ...f, emergency_contact: v }))
             }
           />
-        </ScrollView>
+        </KeyboardAwareScrollView>
         <View style={styles.modalActions}>
           <Pressable
             style={styles.cancelBtn}

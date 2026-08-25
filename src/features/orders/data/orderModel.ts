@@ -520,8 +520,7 @@ export const DEMO_UNIFIED_ORDERS: UnifiedOrder[] = [
 ];
 
 export function buildHubOrders(orders: UnifiedOrder[]): HubOrderView[] {
-  const source = orders.length > 0 ? orders : DEMO_UNIFIED_ORDERS;
-  return source.map(buildHubOrderFromUnified);
+  return orders.map(buildHubOrderFromUnified);
 }
 
 export function filterByLifecycle(orders: HubOrderView[], tab: OrderLifecycleTab) {

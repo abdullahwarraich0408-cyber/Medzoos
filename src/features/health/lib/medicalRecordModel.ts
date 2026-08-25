@@ -469,7 +469,7 @@ export function buildMedicalRecordItems(input: {
     (a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime(),
   );
 
-  return sorted.length > 0 ? sorted : DEMO_MEDICAL_RECORD_ITEMS;
+  return sorted;
 }
 
 export function searchMedicalRecords(

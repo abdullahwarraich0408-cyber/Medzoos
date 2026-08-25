@@ -271,9 +271,9 @@ export function buildAlertsFromMembers(
 export function buildEventViews(
   events: VaultCalendarEvent[],
   familyId: string,
-  useDemo = false,
+  _useDemo = false,
 ): FamilyEventView[] {
-  if (events.length === 0) return useDemo ? DEMO_EVENTS : [];
+  if (events.length === 0) return [];
   return events.map(e => ({
     eventId: e.id,
     familyId,
@@ -306,9 +306,9 @@ export function buildActivityFromAlerts(alerts: FamilyAlertView[]): FamilyActivi
 
 export function buildRecentRecords(
   members: FamilyMemberView[],
-  useDemo = false,
+  _useDemo = false,
 ): FamilyRecordView[] {
-  if (members.length === 0) return useDemo ? DEMO_RECENT_RECORDS : [];
+  if (members.length === 0) return [];
   const records: FamilyRecordView[] = [];
   members.forEach(m => {
     if (m.reportCount > 0) {
@@ -322,7 +322,7 @@ export function buildRecentRecords(
       });
     }
   });
-  return records.length > 0 ? records : DEMO_RECENT_RECORDS;
+  return records;
 }
 
 export function getMemberRecordSummary(member: FamilyMemberView): string {

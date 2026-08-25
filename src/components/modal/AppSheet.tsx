@@ -4,12 +4,11 @@ import {
   View,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   type ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, radius } from '../../theme';
+import { KeyboardAvoidingContainer } from '../keyboard';
 
 type AppSheetProps = {
   visible: boolean;
@@ -34,18 +33,18 @@ export function AppSheet({
       animationType="slide"
       statusBarTranslucent
       onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { maxHeight }, contentStyle]}>
-          <View style={styles.handle} />
-          <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-            <Icon name="close" size={22} color={colors.neutral500} />
-          </Pressable>
-          {children}
-        </View>
-      </KeyboardAvoidingView>
+        <KeyboardAvoidingContainer enabled={visible} style={styles.sheetLift}>
+          <View style={[styles.sheet, { maxHeight }, contentStyle]}>
+            <View style={styles.handle} />
+            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
+              <Icon name="close" size={22} color={colors.neutral500} />
+            </Pressable>
+            {children}
+          </View>
+        </KeyboardAvoidingContainer>
+      </View>
     </Modal>
   );
 }
@@ -58,6 +57,9 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(12, 26, 46, 0.55)',
+  },
+  sheetLift: {
+    width: '100%',
   },
   sheet: {
     backgroundColor: colors.white,

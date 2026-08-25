@@ -25,11 +25,7 @@ import { getLabCart } from '../../../lib/labCart';
 import type { LabTest } from '../../../lib/mappers/labTest';
 import type { LabFlowParamList } from '../../../navigation/types';
 import { LabTestCard } from '../../lab-tests/components/LabTestCard';
-import {
-  MOCK_LAB_TESTS,
-  CATEGORIES,
-  getPopularPackages,
-} from '../../lab-tests/data/mockLabTests';
+import { CATEGORIES } from '../../lab-tests/data/mockLabTests';
 import { HealthSearchBar } from '../components/shared/HealthSearchBar';
 import { HealthSection } from '../components/shared/HealthSection';
 import { HealthEmptyState } from '../components/shared/HealthEmptyState';
@@ -69,9 +65,8 @@ function LabTestsContent() {
   const { data: apiPopular = [] } = usePopularLabTests();
   const { data: apiCategories = [] } = useLabTestCategories();
 
-  const tests =
-    apiTests.length > 0 || !isError ? apiTests : MOCK_LAB_TESTS;
-  const popular = apiPopular.length > 0 ? apiPopular : getPopularPackages();
+  const tests = apiTests;
+  const popular = apiPopular;
   const categories = apiCategories.length > 0 ? apiCategories : CATEGORIES;
 
   const popularChips = useMemo(
@@ -306,8 +301,12 @@ function LabTestsContent() {
         ) : (
           <HealthEmptyState
             icon="flask-empty-outline"
-            title="No tests found"
-            subtitle="Try a different search or category."
+            title={isError ? 'Could not load tests' : 'No tests found'}
+            subtitle={
+              isError
+                ? 'Pull to refresh or try again in a moment.'
+                : 'Try a different search or category.'
+            }
           />
         )}
       </HealthSection>

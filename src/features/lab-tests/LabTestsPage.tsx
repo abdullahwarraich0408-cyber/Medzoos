@@ -23,11 +23,7 @@ import type { LabTest } from '../../lib/mappers/labTest';
 import type { LabTestsStackParamList } from '../../navigation/types';
 import { LabTestsHero } from './components/LabTestsHero';
 import { LabTestCard } from './components/LabTestCard';
-import {
-  MOCK_LAB_TESTS,
-  CATEGORIES,
-  getPopularPackages,
-} from './data/mockLabTests';
+import { CATEGORIES } from './data/mockLabTests';
 
 function LabTestSkeleton() {
   return <View style={styles.skeleton} />;
@@ -46,9 +42,8 @@ export function LabTestsPage() {
   const { data: apiPopular = [] } = usePopularLabTests();
   const { data: apiCategories = [] } = useLabTestCategories();
 
-  const tests =
-    apiTests.length > 0 || !isError ? apiTests : MOCK_LAB_TESTS;
-  const popular = apiPopular.length > 0 ? apiPopular : getPopularPackages();
+  const tests = apiTests;
+  const popular = apiPopular;
   const categories = apiCategories.length > 0 ? apiCategories : CATEGORIES;
 
   const filtered = useMemo(() => {
@@ -230,9 +225,13 @@ export function LabTestsPage() {
           ) : (
             <View style={styles.empty}>
               <Icon name="flask-empty-outline" size={48} color={colors.neutral300} />
-              <Text style={styles.emptyTitle}>No tests found</Text>
+              <Text style={styles.emptyTitle}>
+                {isError ? 'Could not load tests' : 'No tests found'}
+              </Text>
               <Text style={styles.emptySub}>
-                Try a different search or category.
+                {isError
+                  ? 'Pull to refresh or try again in a moment.'
+                  : 'Try a different search or category.'}
               </Text>
             </View>
           )}

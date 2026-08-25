@@ -24,7 +24,6 @@ import {
   DoctorFilterSheet,
 } from './components';
 import {
-  MOCK_DOCTORS,
   DEFAULT_FILTERS,
   FILTER_OPTIONS,
   applyDoctorFilters,
@@ -99,8 +98,7 @@ export function DoctorsPage() {
     return FILTER_OPTIONS.specialties;
   }, [apiFilters]);
 
-  const doctors =
-    apiDoctors.length > 0 || !isError ? apiDoctors : MOCK_DOCTORS;
+  const doctors = apiDoctors;
   const usingLiveData = apiDoctors.length > 0;
 
   const onlineCount = useMemo(
@@ -285,9 +283,13 @@ export function DoctorsPage() {
         ) : (
           <View style={styles.empty}>
             <Icon name="doctor" size={48} color={colors.neutral300} />
-            <Text style={styles.emptyTitle}>No doctors found</Text>
+            <Text style={styles.emptyTitle}>
+              {isError ? 'Could not load doctors' : 'No doctors found'}
+            </Text>
             <Text style={styles.emptySub}>
-              Try another consult type or adjust your search or filters.
+              {isError
+                ? 'Pull to refresh or try again in a moment.'
+                : 'Try another consult type or adjust your search or filters.'}
             </Text>
             <TouchableOpacity
               style={styles.clearFiltersBtn}

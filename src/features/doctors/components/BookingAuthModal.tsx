@@ -12,13 +12,14 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import type { Doctor } from '../../../lib/mappers/doctor';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAvoidingContainer,
+} from '../../../components/keyboard';
 
 import type { ConsultOption } from '../utils/consultOptions';
 import { formatShortSlot } from '../utils/bookingUtils';
@@ -104,9 +105,7 @@ export function BookingAuthModal({
       transparent
       animationType="slide"
       onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingContainer style={styles.overlay} enabled={visible}>
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
@@ -114,7 +113,9 @@ export function BookingAuthModal({
             <Icon name="close" size={22} color={colors.neutral500} />
           </TouchableOpacity>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            disableKeyboardInset>
             <Text style={styles.title}>
               {mode === 'signin' ? 'Sign in to book' : 'Create account'}
             </Text>
@@ -240,9 +241,9 @@ export function BookingAuthModal({
                 </>
               )}
             </TouchableOpacity>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </Modal>
   );
 }

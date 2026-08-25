@@ -19,7 +19,6 @@ import type { DoctorsStackParamList } from '../../../navigation/types';
 import { HealthSection } from '../components/shared/HealthSection';
 import { HealthPackageCard } from '../components/packages/HealthPackageCard';
 import { HEALTH_PACKAGES, type HealthPackageDef } from '../data/healthData';
-import { MOCK_LAB_TESTS } from '../../lab-tests/data/mockLabTests';
 
 
 function findTestForPackage(pkg: HealthPackageDef, tests: LabTest[]) {
@@ -42,7 +41,7 @@ function HealthPackagesContent() {
   const [compareId, setCompareId] = useState<string | null>(null);
 
   const { data: apiTests = [], refetch } = useLabTests();
-  const tests = apiTests.length > 0 ? apiTests : MOCK_LAB_TESTS;
+  const tests = apiTests;
 
   useFocusEffect(
     useCallback(() => {

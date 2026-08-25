@@ -28,9 +28,17 @@ export function CopilotMessageBubble({
       </Text>
 
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-        {message.riskLevel && !isUser ? (
+        {!isUser && (message.triageLevel || message.riskLevel) ? (
           <View style={styles.riskRow}>
-            <CopilotRiskBadge level={message.riskLevel} />
+            {message.riskLevel ? (
+              <CopilotRiskBadge level={message.riskLevel} />
+            ) : null}
+            {message.triageLevel ? (
+              <Text style={styles.triageMeta}>{String(message.triageLevel)}</Text>
+            ) : null}
+            {message.reasonCode ? (
+              <Text style={styles.triageMeta}>{message.reasonCode}</Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -101,7 +109,18 @@ const styles = StyleSheet.create({
   },
   text: healthOsTypography.messageBody,
   userText: { color: colors.white },
-  riskRow: { marginBottom: spacing.xs },
+  riskRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  triageMeta: {
+    ...healthOsTypography.label,
+    fontSize: 11,
+    color: colors.neutral500,
+  },
   diffBlock: {
     backgroundColor: colors.surfaceSubtle,
     borderRadius: radius.md,

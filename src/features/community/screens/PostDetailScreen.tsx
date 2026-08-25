@@ -7,8 +7,6 @@ import {
   TextInput,
   Pressable,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Image,
   Linking,
@@ -18,6 +16,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAvoidingContainer } from '../../../components/keyboard';
 import { SimpleMessage } from '../../../design-system';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import type { CommunityStackParamList } from '../../../navigation/types';
@@ -110,9 +109,7 @@ export function PostDetailScreen() {
       showSearch={false}
       showCart={false}
       onBackPress={() => navigation.goBack()}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingContainer style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content}>
           {isDebate ? (
             <View style={styles.debateBanner}>
@@ -216,7 +213,7 @@ export function PostDetailScreen() {
             <Icon name="send" size={18} color={colors.white} />
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
 }

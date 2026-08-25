@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import {
   useUserProfile,
@@ -105,14 +106,13 @@ function SettingsContent() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
         { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) },
       ]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled">
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.subtitle}>
         Update your account details and security settings.
       </Text>
@@ -238,7 +238,7 @@ function SettingsContent() {
           <Text style={styles.secondaryBtnText}>Update Password</Text>
         )}
       </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

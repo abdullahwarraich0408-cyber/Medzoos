@@ -3,10 +3,12 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import { formatFirebaseAuthError } from '../../../lib/auth/firebaseErrors';
-import { colors } from '../../../theme';
+import { authUi } from '../authUi';
 
 type SocialLoginProps = {
-  onSuccess: (user?: { name?: string | null; email?: string | null } | null) => void;
+  onSuccess: (
+    user?: { name?: string | null; email?: string | null } | null,
+  ) => void;
 };
 
 export function SocialLogin({ onSuccess }: SocialLoginProps) {
@@ -14,7 +16,10 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
   const [loading, setLoading] = useState<'google' | 'apple' | ''>('');
   const [error, setError] = useState('');
 
-  const run = async (provider: 'google' | 'apple', action: () => Promise<{ name?: string | null; email?: string | null } | null>) => {
+  const run = async (
+    provider: 'google' | 'apple',
+    action: () => Promise<{ name?: string | null; email?: string | null } | null>,
+  ) => {
     setError('');
     setLoading(provider);
     try {
@@ -35,10 +40,10 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
         onPress={() => run('google', loginWithGoogle)}
         disabled={Boolean(loading)}
         accessibilityRole="button"
-        accessibilityLabel="Continue with Google">
-        <Icon name="google" size={18} color={colors.inkHeadline} />
+        accessibilityLabel="Sign in with Google">
+        <Icon name="google" size={18} color="#EA4335" />
         <Text style={styles.btnText}>
-          {loading === 'google' ? 'Connecting...' : 'Sign in with Google'}
+          {loading === 'google' ? 'Connecting...' : 'Sign In With Google'}
         </Text>
       </TouchableOpacity>
       {Platform.OS === 'ios' ? (
@@ -48,8 +53,8 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
           disabled={Boolean(loading)}
           accessibilityRole="button"
           accessibilityLabel="Continue with Apple">
-          <Icon name="apple" size={18} color={colors.white} />
-          <Text style={[styles.btnText, styles.appleText]}>
+          <Icon name="apple" size={18} color={authUi.white} />
+          <Text style={styles.btnText}>
             {loading === 'apple' ? 'Connecting...' : 'Continue with Apple'}
           </Text>
         </TouchableOpacity>
@@ -61,13 +66,14 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
 const styles = StyleSheet.create({
   wrap: {
     gap: 10,
+    width: '100%',
   },
   btn: {
-    minHeight: 54,
+    height: 52,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+    borderColor: authUi.inputBorder,
+    backgroundColor: authUi.inputBg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -75,19 +81,17 @@ const styles = StyleSheet.create({
   },
   apple: {
     backgroundColor: '#082B3F',
-    borderColor: '#082B3F',
+    borderColor: '#184D67',
   },
   btnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.inkHeadline,
-  },
-  appleText: {
-    color: colors.white,
+    color: authUi.white,
   },
   error: {
-    fontSize: 13,
-    color: '#D92D20',
+    fontSize: 12,
+    fontWeight: '600',
+    color: authUi.errorText,
     lineHeight: 18,
   },
 });

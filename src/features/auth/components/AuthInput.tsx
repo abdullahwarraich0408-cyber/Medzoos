@@ -1,4 +1,3 @@
-import { colors, spacing } from '../../../theme';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { authUi } from '../authUi';
 
 type AuthInputProps = TextInputProps & {
   label: string;
@@ -45,13 +45,12 @@ export function AuthInput({
           <Icon
             name={icon}
             size={18}
-            color={focused ? colors.brandPrimary : colors.neutral500}
-            style={styles.icon}
+            color={focused ? authUi.accent : authUi.iconMuted}
           />
         ) : null}
         <TextInput
           style={[styles.input, style]}
-          placeholderTextColor="#8AA0B2"
+          placeholderTextColor={authUi.iconMuted}
           secureTextEntry={secure}
           onFocus={event => {
             setFocused(true);
@@ -72,7 +71,7 @@ export function AuthInput({
             <Icon
               name={visible ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={colors.neutral600}
+              color={authUi.iconMuted}
             />
           </TouchableOpacity>
         ) : null}
@@ -84,45 +83,45 @@ export function AuthInput({
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 16,
+    marginBottom: 6,
+    width: '100%',
   },
   label: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: 8,
+    color: authUi.muted,
+    marginBottom: 6,
+    marginTop: 4,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 54,
+    height: 52,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: authUi.inputBorder,
     borderRadius: 16,
-    backgroundColor: colors.brandMist,
-    paddingHorizontal: spacing.md,
+    backgroundColor: authUi.inputBg,
+    paddingHorizontal: 16,
+    gap: 10,
   },
   inputFocused: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.white,
+    borderColor: authUi.accent,
+    backgroundColor: authUi.inputFocusBg,
   },
   inputError: {
-    borderColor: colors.error,
-    backgroundColor: colors.errorBg,
-  },
-  icon: {
-    marginRight: spacing.sm,
+    borderColor: authUi.errorBorder,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: colors.inkHeadline,
-    paddingVertical: 14,
+    fontSize: 14,
+    color: authUi.white,
+    paddingVertical: 0,
     paddingHorizontal: 0,
   },
   error: {
     marginTop: 6,
-    fontSize: 13,
-    color: colors.error,
+    fontSize: 12,
+    fontWeight: '600',
+    color: authUi.errorText,
   },
 });

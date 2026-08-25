@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   Pressable,
   StyleSheet,
   Alert,
@@ -12,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { SimpleSection } from '../../../design-system';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import {
@@ -77,7 +77,7 @@ export function CreateGroupScreen() {
 
   return (
     <ScreenLayout title="Create health group" headerMode="stack" showSearch={false} showCart={false}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <SimpleSection
           title="Start from a template"
           hint="Pre-built groups for common health topics"
@@ -154,7 +154,7 @@ export function CreateGroupScreen() {
             {submitting ? 'Creating...' : 'Create group'}
           </Text>
         </Pressable>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenLayout>
   );
 }

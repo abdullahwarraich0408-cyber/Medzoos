@@ -1,57 +1,52 @@
-import { colors, spacing } from '../../../theme';
 import React, { ReactNode } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Image,
-  ImageBackground,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
+import { authUi } from '../authUi';
 
-const authVisual = require('../../../assets/branding/auth-medzoos-healthcare.jpg');
 const wordmark = require('../../../assets/branding/splash-wordmark.png');
-
-const SCREEN_H = Dimensions.get('window').height;
-const HERO_TALL = Math.min(Math.round(SCREEN_H * 0.34), 292);
-const HERO_COMPACT = Math.min(Math.round(SCREEN_H * 0.22), 188);
 
 type AuthScreenLayoutProps = {
   title: string;
   subtitle?: string;
-  kicker?: string;
-  heroTitle?: string;
-  heroSubtitle?: string;
+  /** Portal pill — defaults to PATIENT APP (doctor app uses DOCTOR PANEL). */
+  badge?: string;
   children: ReactNode;
   showBack?: boolean;
   onBack?: () => void;
+  headerGraphic?: ReactNode;
+  showBrand?: boolean;
+  /** Compatibility aliases from older call sites */
+  kicker?: string;
   compact?: boolean;
   showTrust?: boolean;
+  heroTitle?: string;
+  heroSubtitle?: string;
 };
 
 export function AuthScreenLayout({
   title,
   subtitle,
-  kicker,
-  heroTitle = 'Care that stays with you.',
-  heroSubtitle = 'Medicines, doctors and lab tests — in one trusted place.',
+  badge = 'PATIENT APP',
   children,
   showBack = true,
   onBack,
-  compact = false,
-  showTrust = true,
+  headerGraphic,
+  showBrand = true,
+  kicker,
 }: AuthScreenLayoutProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const heroHeight = (compact ? HERO_COMPACT : HERO_TALL) + insets.top;
+  const portalLabel = (kicker || badge).toUpperCase();
 
   const handleBack = () => {
     if (onBack) {
@@ -65,83 +60,57 @@ export function AuthScreenLayout({
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A6B86" translucent />
-      <KeyboardAvoidingView
+      <StatusBar barStyle="light-content" backgroundColor={authUi.bg} translucent />
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.hero, { height: heroHeight }]}>
-          <ImageBackground
-            source={authVisual}
-            style={styles.heroImageWrap}
-            imageStyle={styles.heroImage}
-            accessibilityIgnoresInvertColors>
-            <View style={styles.heroWash} pointerEvents="none" />
-            <View style={styles.heroFade} pointerEvents="none" />
-            <View
-              style={[
-                styles.heroInner,
-                { paddingTop: Math.max(insets.top, 12) + 6 },
-              ]}>
-              <View style={styles.heroTopRow}>
-                {showBack ? (
-                  <TouchableOpacity
-                    onPress={handleBack}
-                    style={styles.backCircle}
-                    accessibilityRole="button"
-                    accessibilityLabel="Back"
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Icon name="arrow-left" size={20} color="#FFFFFF" />
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.backCircleSpacer} />
-                )}
-                <View style={styles.wordmarkPill}>
-                  <Image
-                    source={wordmark}
-                    style={styles.wordmark}
-                    resizeMode="contain"
-                    accessibilityLabel="Medzoos"
-                  />
-                </View>
-              </View>
-              {compact ? null : (
-                <View style={styles.heroCopy}>
-                  <Text style={styles.heroEyebrow}>Medzoos care</Text>
-                  <Text style={styles.heroTitle}>{heroTitle}</Text>
-                  <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
-                </View>
-              )}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + 24,
+            paddingBottom: Math.max(insets.bottom, 24) + 180,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        extraScrollHeight={40}>
+        {showBack ? (
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Icon name="arrow-left" size={20} color={authUi.white} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backSpacer} />
+        )}
+
+        {showBrand ? (
+          <View style={styles.logoContainer}>
+            <View style={styles.logoGlow} />
+            <View style={styles.logoCard}>
+              <Image
+                source={wordmark}
+                style={styles.logoImage}
+                resizeMode="contain"
+                accessibilityLabel="Medzoos"
+              />
             </View>
-          </ImageBackground>
+            <View style={styles.portalBadge}>
+              <Text style={styles.portalBadgeText}>{portalLabel}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.headerTextWrap}>
+          {headerGraphic}
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
 
-        <View style={styles.sheet}>
-          <ScrollView
-            style={styles.formScroll}
-            contentContainerStyle={[
-              styles.form,
-              { paddingBottom: Math.max(insets.bottom, 20) + 16 },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}>
-            {kicker ? <Text style={styles.kicker}>{kicker}</Text> : null}
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-            {children}
-            {showTrust ? (
-              <View style={styles.trust}>
-                <View style={styles.trustIcon}>
-                  <Icon name="shield-lock-outline" size={16} color={colors.brandPrimary} />
-                </View>
-                <Text style={styles.trustText}>
-                  Encrypted access. Your health details stay private.
-                </Text>
-              </View>
-            ) : null}
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+        <View style={styles.formContainer}>{children}</View>
+      </KeyboardAwareScrollView>
     </View>
   );
 }
@@ -149,147 +118,100 @@ export function AuthScreenLayout({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: authUi.bg,
   },
   flex: {
     flex: 1,
   },
-  hero: {
-    backgroundColor: '#0A6B86',
-  },
-  heroImageWrap: {
-    flex: 1,
-  },
-  heroImage: {
-    opacity: 0.5,
-  },
-  heroWash: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(8, 90, 110, 0.48)',
-  },
-  heroFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 72,
-    backgroundColor: 'rgba(8, 90, 110, 0.28)',
-  },
-  heroInner: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    justifyContent: 'space-between',
-  },
-  heroTopRow: {
-    flexDirection: 'row',
+  scrollContent: {
+    paddingHorizontal: 24,
     alignItems: 'center',
-    gap: 10,
   },
-  backCircle: {
+  backBtn: {
+    alignSelf: 'flex-start',
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(22,169,224,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    borderColor: 'rgba(22,169,224,0.28)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  backSpacer: {
+    height: 8,
+    alignSelf: 'stretch',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+    position: 'relative',
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(22, 169, 224, 0.15)',
+  },
+  logoCard: {
+    backgroundColor: authUi.white,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(22, 169, 224, 0.4)',
+    shadowColor: authUi.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backCircleSpacer: {
-    width: 0,
+  logoImage: {
+    width: 150,
+    height: 38,
   },
-  wordmarkPill: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
+  portalBadge: {
+    marginTop: 10,
+    backgroundColor: 'rgba(22, 169, 224, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(22, 169, 224, 0.35)',
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 4,
   },
-  wordmark: {
-    width: 148,
-    height: 30,
-  },
-  heroCopy: {
-    paddingBottom: 8,
-    maxWidth: 320,
-  },
-  heroEyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.78)',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  heroTitle: {
-    fontSize: 24,
+  portalBadgeText: {
+    fontSize: 10,
     fontWeight: '800',
-    color: colors.white,
-    letterSpacing: -0.4,
-    lineHeight: 30,
+    color: authUi.accent,
+    letterSpacing: 1.2,
   },
-  heroSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 19,
-    color: 'rgba(255,255,255,0.84)',
-  },
-  sheet: {
-    flex: 1,
-    marginTop: -28,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: 'hidden',
-  },
-  formScroll: {
-    flex: 1,
-  },
-  form: {
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    flexGrow: 1,
-  },
-  kicker: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.brandPrimary,
-    letterSpacing: 0.4,
-    marginBottom: 6,
+  headerTextWrap: {
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 6,
+    width: '100%',
   },
   title: {
     fontSize: 26,
     fontWeight: '800',
-    color: colors.inkHeadline,
-    marginBottom: 6,
-    letterSpacing: -0.4,
-    lineHeight: 32,
+    color: authUi.white,
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    color: colors.neutral600,
-    marginBottom: 22,
-    lineHeight: 21,
+    color: authUi.muted,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 290,
   },
-  trust: {
-    marginTop: 'auto',
-    paddingTop: spacing.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
+  formContainer: {
+    width: '100%',
     gap: 10,
-  },
-  trustIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.brandMist,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trustText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.neutral600,
   },
 });

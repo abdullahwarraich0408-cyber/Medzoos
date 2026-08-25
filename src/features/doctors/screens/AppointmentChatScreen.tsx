@@ -9,8 +9,6 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Linking,
   Image,
 } from 'react-native';
@@ -19,6 +17,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAvoidingContainer } from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import {
@@ -233,10 +232,7 @@ function DemoChatContent() {
           />
         ) : undefined
       }>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+      <KeyboardAvoidingContainer style={styles.flex} subtractSafeArea>
         {demo?.isOnline ? (
           <TouchableOpacity style={styles.videoBtn} onPress={openVideo}>
             <Icon name="video" size={18} color={colors.white} />
@@ -283,7 +279,7 @@ function DemoChatContent() {
             <Icon name="send" size={20} color={colors.white} />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
 }
@@ -382,10 +378,7 @@ function LiveChatContent() {
           avatarUrl={avatarUrl}
         />
       }>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+      <KeyboardAvoidingContainer style={styles.flex} subtractSafeArea>
         {access?.reason && (
           <View style={styles.notice}>
             <Icon
@@ -468,7 +461,7 @@ function LiveChatContent() {
             </TouchableOpacity>
           </View>
         )}
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
 }

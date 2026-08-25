@@ -23,10 +23,8 @@ import { useUnifiedOrder } from '../../../lib/hooks/useApi';
 import { useCustomerOrderTracking } from '../../../lib/hooks/useOrderTracking';
 import {
   buildHubOrderFromUnified,
-  buildHubOrders,
   formatHubOrderRef,
   getStatusBadgeColor,
-  DEMO_UNIFIED_ORDERS,
 } from '../data/orderModel';
 import type { OrdersStackParamList } from '../../../navigation/types';
 import { healthOsTypography } from '../../../theme/healthOs';
@@ -90,11 +88,8 @@ function OrderDetailContent() {
 
   const hubOrder = useMemo(() => {
     if (order) return buildHubOrderFromUnified(order);
-    const demo = DEMO_UNIFIED_ORDERS.find(o => o.id === orderRef);
-    if (demo) return buildHubOrderFromUnified(demo);
-    const all = buildHubOrders([]);
-    return all.find(o => o.orderId === orderRef) ?? null;
-  }, [order, orderRef]);
+    return null;
+  }, [order]);
 
   if (isLoading) {
     return (

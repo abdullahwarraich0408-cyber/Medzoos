@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -16,6 +15,7 @@ import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import { ReadPrescriptionSection } from '../../lab-tests/components/ReadPrescriptionSection';
 import { UseLocationButton } from '../../../components/location/UseLocationButton';
@@ -115,7 +115,7 @@ function PrescriptionUploadContent() {
   };
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
@@ -239,7 +239,7 @@ function PrescriptionUploadContent() {
           ))
         )}
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

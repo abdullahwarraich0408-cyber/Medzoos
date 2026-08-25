@@ -8,8 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import {
   MemberHero,
@@ -158,21 +157,18 @@ function MemberDetailContent() {
     : null;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingBottom:
-              Math.max(insets.bottom, TAB_BAR_CLEARANCE) +
-              calmLayout.contentBottom,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
+    <KeyboardAwareScrollView
+      style={styles.scroll}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingBottom:
+            Math.max(insets.bottom, TAB_BAR_CLEARANCE) +
+            calmLayout.contentBottom,
+        },
+      ]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled">
         <MemberHero
           name={member.full_name}
           relationship={member.relationship}
@@ -335,8 +331,7 @@ function MemberDetailContent() {
             style={styles.refreshHint}
           />
         ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 }
 

@@ -1,9 +1,21 @@
 import { useCallback, useState } from 'react';
-import { MOCK_GAMIFICATION } from './mockData';
 import type { GamificationProfile } from './types';
 
+const EMPTY_GAMIFICATION: GamificationProfile = {
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 100,
+  coins: 0,
+  healthScore: 0,
+  aiSummary: '',
+  missions: [],
+  streaks: [],
+  activeChallenges: [],
+  achievements: [],
+};
+
 export function useGamification() {
-  const [profile, setProfile] = useState<GamificationProfile>(MOCK_GAMIFICATION);
+  const [profile, setProfile] = useState<GamificationProfile>(EMPTY_GAMIFICATION);
 
   const toggleMission = useCallback((missionId: string) => {
     setProfile(prev => {
@@ -26,6 +38,6 @@ export function useGamification() {
   return {
     profile,
     toggleMission,
-    refetch: () => setProfile(MOCK_GAMIFICATION),
+    refetch: () => setProfile(EMPTY_GAMIFICATION),
   };
 }

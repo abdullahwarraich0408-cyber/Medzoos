@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,20 +16,27 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import {
-  getDemoAppointment,
-  type DemoPreVisitTask,
-} from '../data/demoAppointmentDetails';
+  mapOrderToAppointmentCard,
+} from '../components/AppointmentCard';
+import { useAllOrders } from '../../../lib/hooks/useApi';
 import type { YouStackParamList } from '../../../navigation/types';
 import { colors, spacing, radius, shadows } from '../../../theme';
 
 type DetailRoute = RouteProp<YouStackParamList, 'AppointmentDetail'>;
 type DetailNav = NativeStackNavigationProp<YouStackParamList, 'AppointmentDetail'>;
 
+type TrackTask = {
+  id: string;
+  title: string;
+  subtitle: string;
+  done: boolean;
+};
+
 function TaskRow({
   task,
   onToggle,
 }: {
-  task: DemoPreVisitTask;
+  task: TrackTask;
   onToggle: () => void;
 }) {
   return (
@@ -55,9 +63,47 @@ export function AppointmentDetailScreen() {
   const route = useRoute<DetailRoute>();
   const insets = useSafeAreaInsets();
   const { appointmentId } = route.params;
+  const { data: allOrders = [], isLoading } = useAllOrders();
 
-  const seed = getDemoAppointment(appointmentId);
-  const [tasks, setTasks] = useState<DemoPreVisitTask[]>(seed?.tasks ?? []);
+  const order = useMemo(
+    () =>
+      allOrders.find(
+        o =>
+          o.type === 'doctor' &&
+          (o.sourceId === appointmentId || o.id === appointmentId),
+      ),
+    [allOrders, appointmentId],
+  );
+
+  const detail = useMemo(() => {
+    if (!order) return null;
+    const card = mapOrderToAppointmentCard(order);
+    return {
+      ...card,
+      isOnline: Boolean(order.isOnline),
+      hospital: order.deliveryAddress || 'Clinic',
+      fee: order.total,
+      records: [] as { id: string; title: string; meta: string; icon: string }[],
+    };
+  }, [order]);
+
+  const [tasks, setTasks] = useState<TrackTask[]>([]);
+  const trackingKey = order?.id ?? '';
+
+  useEffect(() => {
+    if (!order) {
+      setTasks([]);
+      return;
+    }
+    setTasks(
+      order.tracking.map((step, index) => ({
+        id: `${order.id}-t${index}`,
+        title: step.step,
+        subtitle: step.time,
+        done: step.done,
+      })),
+    );
+  }, [trackingKey, order]);
 
   const doneCount = useMemo(
     () => tasks.filter(t => t.done).length,
@@ -65,7 +111,21 @@ export function AppointmentDetailScreen() {
   );
   const progress = tasks.length ? doneCount / tasks.length : 0;
 
-  if (!seed) {
+  if (isLoading && !detail) {
+    return (
+      <ScreenLayout
+        headerMode="stack"
+        title="Track visit"
+        showSearch={false}
+        showCart={false}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.brandPrimary} />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (!detail) {
     return (
       <ScreenLayout
         headerMode="stack"
@@ -84,24 +144,24 @@ export function AppointmentDetailScreen() {
 
   const openChat = () => {
     navigation.navigate('AppointmentChat', {
-      appointmentId: seed.sourceId,
-      doctorName: seed.doctorName,
+      appointmentId: detail.sourceId,
+      doctorName: detail.doctorName,
     });
   };
 
   const openVideo = () => {
-    if (!seed.isOnline) {
+    if (!detail.isOnline) {
       Alert.alert(
         'Clinic visit',
-        `${seed.doctorName} is an in-clinic appointment at ${seed.hospital}.`,
+        `${detail.doctorName} is an in-clinic appointment at ${detail.hospital}.`,
       );
       return;
     }
     navigation.navigate('AppointmentVideo', {
-      appointmentId: seed.sourceId,
-      doctorName: seed.doctorName,
-      doctorImage: seed.image,
-      slot: seed.slot,
+      appointmentId: detail.sourceId,
+      doctorName: detail.doctorName,
+      doctorImage: detail.image,
+      slot: detail.slot,
     });
   };
 
@@ -118,12 +178,12 @@ export function AppointmentDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
-          <Image source={{ uri: seed.image }} style={styles.avatar} />
+          <Image source={{ uri: detail.image }} style={styles.avatar} />
           <View style={styles.heroCopy}>
-            <Text style={styles.name}>{seed.doctorName}</Text>
-            <Text style={styles.specialty}>{seed.specialty}</Text>
+            <Text style={styles.name}>{detail.doctorName}</Text>
+            <Text style={styles.specialty}>{detail.specialty}</Text>
             <Text style={styles.meta}>
-              {seed.callType} · {seed.slot}
+              {detail.callType} · {detail.slot}
             </Text>
           </View>
         </View>
@@ -139,19 +199,19 @@ export function AppointmentDetailScreen() {
             style={[styles.actionChip, styles.actionVideo]}
             onPress={openVideo}>
             <Icon
-              name={seed.isOnline ? 'video' : 'hospital-building'}
+              name={detail.isOnline ? 'video' : 'hospital-building'}
               size={18}
               color={colors.white}
             />
             <Text style={styles.actionChipText}>
-              {seed.isOnline ? 'Video call' : 'Clinic info'}
+              {detail.isOnline ? 'Video call' : 'Clinic info'}
             </Text>
           </Pressable>
         </View>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Pre-visit tasks</Text>
+            <Text style={styles.cardTitle}>Visit progress</Text>
             <Text style={styles.progressCount}>
               {doneCount}/{tasks.length} Done
             </Text>
@@ -159,61 +219,32 @@ export function AppointmentDetailScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
           </View>
-          <View style={styles.taskList}>
-            {tasks.map(task => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                onToggle={() =>
-                  setTasks(prev =>
-                    prev.map(t =>
-                      t.id === task.id ? { ...t, done: !t.done } : t,
-                    ),
-                  )
-                }
-              />
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Your records</Text>
-          {seed.records.length === 0 ? (
-            <Text style={styles.muted}>
-              No records attached yet. Complete tasks to add notes and files.
-            </Text>
+          {tasks.length === 0 ? (
+            <Text style={styles.muted}>No tracking steps yet.</Text>
           ) : (
-            seed.records.map(record => (
-              <View key={record.id} style={styles.recordRow}>
-                <View style={styles.recordIcon}>
-                  <Icon name={record.icon} size={18} color={colors.iconPrimary} />
-                </View>
-                <View style={styles.recordCopy}>
-                  <Text style={styles.recordTitle}>{record.title}</Text>
-                  <Text style={styles.recordMeta}>{record.meta}</Text>
-                </View>
-                <Icon name="chevron-right" size={18} color={colors.textMuted} />
-              </View>
-            ))
+            <View style={styles.taskList}>
+              {tasks.map(task => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onToggle={() =>
+                    setTasks(prev =>
+                      prev.map(t =>
+                        t.id === task.id ? { ...t, done: !t.done } : t,
+                      ),
+                    )
+                  }
+                />
+              ))}
+            </View>
           )}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Visit details</Text>
-          <View style={styles.detailLine}>
-            <Text style={styles.detailLabel}>Fee</Text>
-            <Text style={styles.detailValue}>
-              PKR {seed.fee.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.detailLine}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailValue}>{seed.hospital}</Text>
-          </View>
-          <View style={styles.detailLine}>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text style={styles.detailValue}>Confirmed</Text>
-          </View>
+          <Text style={styles.cardTitle}>Your records</Text>
+          <Text style={styles.muted}>
+            No records attached yet.
+          </Text>
         </View>
       </ScrollView>
 
@@ -222,19 +253,9 @@ export function AppointmentDetailScreen() {
           styles.footer,
           { paddingBottom: Math.max(insets.bottom, spacing.md) },
         ]}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            pressed && styles.pressed,
-          ]}
-          onPress={seed.isOnline ? openVideo : openChat}>
-          <Icon
-            name={seed.isOnline ? 'video' : 'message-outline'}
-            size={20}
-            color={colors.white}
-          />
+        <Pressable style={styles.primaryBtn} onPress={openVideo}>
           <Text style={styles.primaryBtnText}>
-            {seed.isOnline ? 'Join video consultation' : 'Message doctor'}
+            {detail.isOnline ? 'Join video call' : 'View clinic details'}
           </Text>
         </Pressable>
       </View>
@@ -243,73 +264,84 @@ export function AppointmentDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: {
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
+    padding: spacing.xl,
   },
-  muted: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
-  link: { fontSize: 14, fontWeight: '700', color: colors.primary700 },
-  pressed: { opacity: 0.92 },
-
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
+  muted: {
+    fontSize: 14,
+    color: colors.textMuted,
+    lineHeight: 20,
   },
-
+  link: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.brandPrimary,
+  },
   heroCard: {
     flexDirection: 'row',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
     padding: spacing.lg,
-    ...shadows.cardSoft,
+    ...shadows.card,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primary100,
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    backgroundColor: colors.neutral100,
   },
-  heroCopy: { flex: 1, gap: 4, justifyContent: 'center' },
-  name: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
-  specialty: { fontSize: 13, fontWeight: '600', color: colors.primary700 },
-  meta: { fontSize: 12, color: colors.textMuted },
-
+  heroCopy: { flex: 1, justifyContent: 'center', gap: 4 },
+  name: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  specialty: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  meta: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   actionsRow: { flexDirection: 'row', gap: spacing.sm },
   actionChip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.pill,
+    gap: spacing.xs,
     paddingVertical: spacing.md,
+    borderRadius: radius.pill,
   },
-  actionChat: { backgroundColor: colors.primary700 },
-  actionVideo: { backgroundColor: '#0E304B' },
+  actionChat: { backgroundColor: colors.brandPrimary },
+  actionVideo: { backgroundColor: '#0F766E' },
   actionChipText: {
     color: colors.white,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
-
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
     padding: spacing.lg,
     gap: spacing.md,
-    ...shadows.cardSoft,
+    ...shadows.card,
   },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   cardTitle: {
     fontSize: 16,
@@ -318,41 +350,41 @@ const styles = StyleSheet.create({
   },
   progressCount: {
     fontSize: 12,
-    fontWeight: '700',
-    color: colors.primary700,
+    fontWeight: '600',
+    color: colors.textMuted,
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.primary100,
+    backgroundColor: colors.neutral100,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary700,
+    backgroundColor: colors.brandPrimary,
   },
   taskList: { gap: spacing.sm },
   taskRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.sm,
   },
+  pressed: { opacity: 0.85 },
   taskCheck: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: colors.neutral300,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
   taskCheckDone: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary,
   },
-  taskCopy: { flex: 1, gap: 2 },
+  taskCopy: { flex: 1 },
   taskTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -362,44 +394,11 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: colors.textMuted,
   },
-  taskSub: { fontSize: 12, color: colors.textMuted },
-
-  recordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
+  taskSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
   },
-  recordIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.primary100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recordCopy: { flex: 1, gap: 2 },
-  recordTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  recordMeta: { fontSize: 12, color: colors.textMuted },
-
-  detailLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  detailLabel: { fontSize: 13, color: colors.textMuted },
-  detailValue: {
-    flex: 1,
-    textAlign: 'right',
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-
   footer: {
     position: 'absolute',
     left: 0,
@@ -407,18 +406,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    backgroundColor: colors.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.neutral200,
   },
   primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: '#0E304B',
+    backgroundColor: colors.brandPrimary,
     borderRadius: radius.pill,
-    paddingVertical: 16,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
   },
   primaryBtnText: {
     color: colors.white,

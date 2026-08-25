@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { AppSheet } from '../../../../components/modal/AppSheet';
+import { KeyboardAwareScrollView } from '../../../../components/keyboard';
 import {
   RELATIONSHIPS,
   BLOOD_GROUPS,
@@ -82,7 +83,9 @@ export function AddMemberModal({
   return (
     <AppSheet visible={visible} onClose={onClose}>
       <Text style={styles.title}>Add family member</Text>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        disableKeyboardInset>
             <FormField
               label="Full name"
               value={form.full_name}
@@ -158,7 +161,7 @@ export function AddMemberModal({
               onChangeText={v => onChange({ ...form, emergency_contact: v })}
               placeholder="Name and phone"
             />
-          </ScrollView>
+          </KeyboardAwareScrollView>
           <View style={styles.actions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
               <Text style={styles.cancelText}>Cancel</Text>

@@ -4,7 +4,6 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -16,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import { navigateToSignIn } from '../../../lib/auth/navigation';
 import {
@@ -34,6 +34,8 @@ import type { LabTestsStackParamList } from '../../../navigation/types';
 import { useLocationContext } from '../../../lib/location/LocationContext';
 import type { DetectedLocation } from '../../../lib/location/types';
 import { UseLocationButton } from '../../../components/location/UseLocationButton';
+import { StripeCheckoutModal } from '../../../components/payments/StripeCheckoutModal';
+import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
 import { TIME_SLOTS } from '../data/mockLabTests';
 import { ReadPrescriptionSection } from '../components/ReadPrescriptionSection';
 
@@ -67,6 +69,9 @@ export function LabCartScreen() {
     new Date().toISOString().slice(0, 10),
   );
   const [prescriptionUrl, setPrescriptionUrl] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cod'>('stripe');
+  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const loadCart = useCallback(async () => {
     setCart(await getLabCart());
@@ -104,8 +109,10 @@ export function LabCartScreen() {
       return;
     }
 
+    setPaying(true);
     try {
-      await createOrder.mutateAsync({
+      const method = collectionType === 'HOME' ? 'stripe' : paymentMethod;
+      const result = await createOrder.mutateAsync({
         lab_test_ids: cart.map(t => t.id),
         patient_name: patient.name.trim(),
         patient_gender: patient.gender || undefined,
@@ -117,9 +124,27 @@ export function LabCartScreen() {
             : undefined,
         collection_date: new Date(collectionDate).toISOString(),
         time_slot: selectedSlot,
-        payment_method: 'cod',
+        payment_method: method,
         prescription_url: prescriptionUrl || undefined,
       });
+
+      if (method === 'stripe') {
+        const bookings =
+          (result as { orders?: Array<{ id?: string }> }).orders || [];
+        const bookingIds = bookings
+          .map(b => b.id)
+          .filter((id): id is string => Boolean(id));
+        if (!bookingIds.length) {
+          throw new Error('Lab order created but missing booking ids for Stripe.');
+        }
+        const payment = await startStripeCheckout({
+          purpose: 'lab',
+          booking_ids: bookingIds,
+        });
+        setStripeUrl(payment.checkoutUrl);
+        return;
+      }
+
       await clearLabCart();
       setCart([]);
       Alert.alert('Order placed', 'Your lab order was placed successfully.', [
@@ -134,7 +159,22 @@ export function LabCartScreen() {
         'Checkout failed',
         error instanceof Error ? error.message : 'Could not place order.',
       );
+    } finally {
+      setPaying(false);
     }
+  };
+
+  const finishStripePaid = async () => {
+    setStripeUrl(null);
+    await clearLabCart();
+    setCart([]);
+    Alert.alert('Payment successful', 'Your lab order is confirmed.', [
+      {
+        text: 'View Reports',
+        onPress: () => navigation.navigate('LabReports'),
+      },
+      { text: 'OK', onPress: () => navigation.navigate('LabTestsList') },
+    ]);
   };
 
   return (
@@ -152,7 +192,7 @@ export function LabCartScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView
+        <KeyboardAwareScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
@@ -320,27 +360,82 @@ export function LabCartScreen() {
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>PKR {total.toLocaleString()}</Text>
             </View>
-            <Text style={styles.codNote}>
-              Pay on collection — no online payment required.
-            </Text>
+
+            {collectionType === 'VISIT_LAB' ? (
+              <View style={styles.paymentBlock}>
+                {(
+                  [
+                    { id: 'stripe' as const, label: 'Pay online (Stripe)' },
+                    { id: 'cod' as const, label: 'Pay cash at lab' },
+                  ] as const
+                ).map(method => (
+                  <TouchableOpacity
+                    key={method.id}
+                    style={[
+                      styles.paymentRow,
+                      paymentMethod === method.id && styles.paymentRowActive,
+                    ]}
+                    onPress={() => setPaymentMethod(method.id)}
+                    activeOpacity={0.85}>
+                    <Text style={styles.paymentLabel}>{method.label}</Text>
+                    <Icon
+                      name={
+                        paymentMethod === method.id
+                          ? 'radiobox-marked'
+                          : 'radiobox-blank'
+                      }
+                      size={20}
+                      color={colors.brandPrimary}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.codNote}>
+                Home collection requires online Stripe payment.
+              </Text>
+            )}
 
             <TouchableOpacity
               style={[
                 styles.checkoutBtn,
-                createOrder.isPending && styles.checkoutBtnDisabled,
+                (createOrder.isPending || paying) && styles.checkoutBtnDisabled,
               ]}
               onPress={handleCheckout}
-              disabled={createOrder.isPending}
+              disabled={createOrder.isPending || paying}
               activeOpacity={0.85}>
-              {createOrder.isPending ? (
+              {createOrder.isPending || paying ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.checkoutBtnText}>Place Lab Order</Text>
+                <Text style={styles.checkoutBtnText}>
+                  {collectionType === 'HOME' || paymentMethod === 'stripe'
+                    ? 'Pay with Stripe'
+                    : 'Place Lab Order'}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
+
+      <StripeCheckoutModal
+        visible={Boolean(stripeUrl)}
+        checkoutUrl={stripeUrl}
+        onPaid={() => {
+          void finishStripePaid();
+        }}
+        onCancelled={() => {
+          setStripeUrl(null);
+          Alert.alert(
+            'Payment cancelled',
+            'Order was created but payment was not completed.',
+          );
+        }}
+        onError={message => {
+          setStripeUrl(null);
+          Alert.alert('Payment failed', message);
+        }}
+      />
     </ScreenLayout>
   );
 }
@@ -546,6 +641,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.neutral500,
     marginBottom: spacing.lg,
+  },
+  paymentBlock: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: healthOs.cardBorder,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    backgroundColor: colors.white,
+  },
+  paymentRowActive: {
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandLight,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.inkHeadline,
   },
   checkoutBtn: {
     height: 48,

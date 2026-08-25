@@ -19,7 +19,6 @@ import { useLabTest } from '../../../lib/hooks/useApi';
 import type { LabTestsStackParamList } from '../../../navigation/types';
 
 import { LabBookingFlow } from '../components/LabBookingFlow';
-import { getLabTestById } from '../data/mockLabTests';
 
 type BookingRoute = RouteProp<LabTestsStackParamList, 'LabTestBooking'>;
 
@@ -31,8 +30,7 @@ export function LabTestBookingScreen() {
   const { testId } = route.params;
 
   const { data: apiTest, isLoading } = useLabTest(testId);
-  const mockTest = getLabTestById(testId);
-  const test = apiTest || mockTest;
+  const test = apiTest;
 
   return (
     <ScreenLayout headerMode="stack" title="Book Lab Test" showSearch={false}>

@@ -10,6 +10,19 @@ const RULES: IntentRule[] = [
       /\b(emergency|1122|ambulance|can't breathe|cannot breathe|unconscious|severe bleeding)\b/i,
     ],
   },
+  // Exercise / mobility requests must beat generic "pain" → symptoms,
+  // otherwise "back pain … tell me the exercise" always opens chest triage.
+  {
+    intent: 'lifestyle',
+    priority: 96,
+    patterns: [
+      /\b(exercise|exercises|stretch|stretches|workout|physio|physiotherapy|mobility|yoga)\b/i,
+      /\bonly want\b.*\b(exercise|stretch|workout)\b/i,
+      /\bjust (want|need)\b.*\b(exercise|stretch)\b/i,
+      /\btell me (the |about )?(exercise|stretch)/i,
+      /\bshow me (safe )?(exercise|stretch)/i,
+    ],
+  },
   {
     intent: 'symptoms',
     priority: 90,
@@ -59,7 +72,7 @@ const RULES: IntentRule[] = [
   {
     intent: 'lifestyle',
     priority: 50,
-    patterns: [/\b(diet|exercise|smoke|alcohol|weight|sleep|walk|water)\b/i],
+    patterns: [/\b(diet|smoke|alcohol|weight|sleep|walk|water)\b/i],
   },
   {
     intent: 'vaccination',
@@ -83,9 +96,41 @@ const RULES: IntentRule[] = [
   },
 ];
 
+/** User wants mobility/exercise advice (not full symptom triage). */
+export function wantsExerciseGuidance(message: string): boolean {
+  return (
+    /\b(exercise|exercises|stretch|stretches|workout|physio|physiotherapy|mobility|yoga)\b/i.test(
+      message,
+    ) ||
+    /\bonly want\b.*\b(exercise|stretch|workout)\b/i.test(message) ||
+    /\bjust (want|need)\b.*\b(exercise|stretch)\b/i.test(message)
+  );
+}
+
+/** Mid-flow: leave chest/symptom Q&A and answer the request they actually made. */
+export function isTriageEscape(message: string): boolean {
+  const t = message.trim();
+  if (!t) return false;
+  if (wantsExerciseGuidance(t)) return true;
+  return /\b(skip|stop|cancel|never ?mind|not (a |an )?emergency|don't (want|need) (triage|questions)|no more questions)\b/i.test(
+    t,
+  );
+}
+
+export function mentionsCardiacUrgency(message: string): boolean {
+  return /\b(chest pain|crushing|pressure in (my )?chest|shortness of breath|can't breathe|cannot breathe|radiat\w* (to )?(arm|jaw))\b/i.test(
+    message,
+  );
+}
+
 export function detectIntent(message: string): CopilotIntent {
   const trimmed = message.trim();
   if (!trimmed) return 'general';
+
+  // Safety: cardiac language always stays in symptom/emergency triage
+  if (mentionsCardiacUrgency(trimmed) && wantsExerciseGuidance(trimmed)) {
+    return 'symptoms';
+  }
 
   let best: { intent: CopilotIntent; priority: number } | null = null;
 
@@ -103,11 +148,13 @@ export function detectIntent(message: string): CopilotIntent {
 export function getSpecialtyForIntent(intent: CopilotIntent, message: string): string | undefined {
   const lower = message.toLowerCase();
   if (/\bchest|heart|cardio\b/i.test(lower)) return 'Cardiology';
+  if (/\bback|spine|orthop\b/i.test(lower)) return 'Orthopedic';
   if (/\bskin|rash|acne\b/i.test(lower)) return 'Dermatology';
   if (/\bstomach|gut|digest\b/i.test(lower)) return 'Gastroenterology';
   if (/\bchild|baby|pediatr\b/i.test(lower)) return 'Pediatrics';
   if (intent === 'mental_health') return 'Psychiatry';
   if (intent === 'symptoms' && /\bfever|cough\b/i.test(lower)) return 'General Physician';
+  if (intent === 'lifestyle' && /\bback\b/i.test(lower)) return 'Orthopedic';
   return undefined;
 }
 
@@ -116,4 +163,13 @@ export function getUrgencyHint(intent: CopilotIntent, message: string): 'routine
   if (/\bchest pain|crushing|arm pain|shortness of breath\b/i.test(message)) return 'urgent';
   if (intent === 'symptoms') return 'soon';
   return 'routine';
+}
+
+export function wantsEducationalInfo(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  return (
+    /\b(what is|what are|explain|tell me about|information on|kya hota hai|kya hai|kya hoti hai)\b/i.test(
+      lower,
+    ) && /\b(diabetes|sugar|insulin|glucose|hba1c|blood pressure|hypertension|depression|anxiety)\b/i.test(lower)
+  );
 }

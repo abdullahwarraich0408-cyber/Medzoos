@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../../lib/auth/AuthContext';
-import { colors, spacing } from '../../../theme';
 import { AuthInput } from '../components/AuthInput';
 import { AuthScreenLayout } from '../components/AuthScreenLayout';
 import { AuthPrimaryButton } from '../components/AuthButtons';
+import { authUi } from '../authUi';
 
 const GENDERS = [
   { value: 'female', label: 'Female' },
@@ -35,7 +35,10 @@ export function CompleteProfileScreen() {
         ...(gender ? { gender } : {}),
       });
     } catch {
-      Alert.alert('Could not save', 'We could not save your details. Please try again.');
+      Alert.alert(
+        'Could not save',
+        'We could not save your details. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -45,8 +48,7 @@ export function CompleteProfileScreen() {
     <AuthScreenLayout
       title="A few details to get started"
       subtitle="This helps us personalise your Medzoos care. You can update it later."
-      kicker="Complete profile"
-      compact
+      badge="COMPLETE PROFILE"
       showBack={false}>
       <AuthInput
         label="Full name"
@@ -78,7 +80,11 @@ export function CompleteProfileScreen() {
             style={[styles.gender, gender === item.value && styles.genderActive]}
             accessibilityRole="button"
             accessibilityState={{ selected: gender === item.value }}>
-            <Text style={[styles.genderText, gender === item.value && styles.genderTextActive]}>
+            <Text
+              style={[
+                styles.genderText,
+                gender === item.value && styles.genderTextActive,
+              ]}>
               {item.label}
             </Text>
           </TouchableOpacity>
@@ -88,7 +94,6 @@ export function CompleteProfileScreen() {
         label="Continue"
         loading={loading}
         loadingLabel="Saving..."
-        showArrow={false}
         onPress={handleSubmit}
       />
     </AuthScreenLayout>
@@ -97,39 +102,40 @@ export function CompleteProfileScreen() {
 
 const styles = StyleSheet.create({
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.inkHeadline,
+    fontSize: 13,
+    fontWeight: '700',
+    color: authUi.muted,
     marginBottom: 8,
+    marginTop: 4,
   },
   genderGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: spacing.lg,
+    marginBottom: 16,
   },
   gender: {
     minHeight: 48,
     minWidth: '47%',
     flexGrow: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: authUi.inputBorder,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
-    backgroundColor: colors.brandMist,
+    backgroundColor: authUi.inputBg,
   },
   genderActive: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandMist,
+    borderColor: authUi.accent,
+    backgroundColor: authUi.inputFocusBg,
   },
   genderText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.inkHeadline,
+    color: authUi.muted,
   },
   genderTextActive: {
-    color: colors.brandPrimary,
+    color: authUi.accent,
   },
 });

@@ -9,7 +9,7 @@ import {
 import type { LabBooking } from '../../../lib/mappers/labTest';
 import type { UnifiedOrder } from '../../../lib/mappers/order';
 import { mergeProfileData } from '../../../lib/profile/profileData';
-import { DEMO_REPORT_TRENDS, type ReportTrend } from '../data/healthData';
+import type { ReportTrend } from '../data/healthData';
 
 const ACTIVE_BOOKING_STATUSES = new Set([
   'pending',
@@ -64,28 +64,9 @@ export function useHealthDashboard(options: { enabled?: boolean } = {}) {
   const allReports = reportsQuery.data || [];
 
   const reportTrends = useMemo((): ReportTrend[] => {
-    const reports = reportsQuery.data || [];
-    const hba1cReports = reports.filter(r =>
-      (r.testName || '').toLowerCase().includes('hba1c'),
-    );
-    if (hba1cReports.length >= 2) {
-      return [
-        {
-          testName: 'HbA1c',
-          improving: true,
-          points: hba1cReports.slice(0, 3).map((r, i) => ({
-            label: new Date(r.collectionDate || '').toLocaleDateString('en-US', {
-              month: 'short',
-            }),
-            value: 8.2 - i * 0.7,
-            unit: '%',
-            date: r.collectionDate || '',
-          })),
-        },
-      ];
-    }
-    return reports.length > 0 ? [] : DEMO_REPORT_TRENDS;
-  }, [reportsQuery.data]);
+    // Trends require numeric series from the API; do not fabricate values.
+    return [];
+  }, []);
 
   const timelineByMonth = useMemo(() => {
     const orders = ordersQuery.data || [];

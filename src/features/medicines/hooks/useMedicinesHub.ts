@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useProducts } from '../../../lib/hooks/useApi';
 import type { Medicine } from '../../../lib/mappers/product';
 import {
-  DEMO_PATIENT_MEDICINES,
-  DEMO_PRESCRIPTIONS,
   buildTodayReminders,
   getActiveMedicines,
   getRefillMedicines,
@@ -13,17 +11,17 @@ import {
   type PatientPrescription,
   type ShopCategoryId,
 } from '../data/medicineModel';
-import { MOCK_MEDICINES, applyMedicineFilters, DEFAULT_MEDICINE_FILTERS } from '../data/mockMedicines';
+import { applyMedicineFilters, DEFAULT_MEDICINE_FILTERS } from '../data/mockMedicines';
 
 function filterShopProducts(
   products: Medicine[],
   category: ShopCategoryId | 'all',
   search: string,
+  activeProductIds: Set<string>,
 ) {
   let list = applyMedicineFilters(products, search, DEFAULT_MEDICINE_FILTERS, 'relevance');
-  const activeIds = new Set(DEMO_PATIENT_MEDICINES.map(m => m.productId).filter(Boolean));
 
-  list = list.filter(p => !activeIds.has(p.id));
+  list = list.filter(p => !activeProductIds.has(p.id));
 
   if (category === 'all') return list;
   if (category === 'prescription') {
@@ -57,10 +55,10 @@ export function useMedicinesHub(search: string) {
 
   const { data: apiProducts = [], isLoading: productsLoading } = useProducts();
 
-  const medicines = useMemo(() => DEMO_PATIENT_MEDICINES, []);
-  const prescriptions = useMemo(() => DEMO_PRESCRIPTIONS, []);
+  const medicines = useMemo((): PatientMedicine[] => [], []);
+  const prescriptions = useMemo((): PatientPrescription[] => [], []);
 
-  const shopProducts = apiProducts.length > 0 ? apiProducts : MOCK_MEDICINES;
+  const shopProducts = apiProducts;
 
   const todayReminders = useMemo(
     () => buildTodayReminders(medicines, takenIds),
@@ -82,9 +80,14 @@ export function useMedicinesHub(search: string) {
     [prescriptions, search],
   );
 
+  const activeProductIds = useMemo(
+    () => new Set(medicines.map(m => m.productId).filter(Boolean) as string[]),
+    [medicines],
+  );
+
   const filteredShop = useMemo(
-    () => filterShopProducts(shopProducts, shopCategory, search),
-    [shopProducts, shopCategory, search],
+    () => filterShopProducts(shopProducts, shopCategory, search, activeProductIds),
+    [shopProducts, shopCategory, search, activeProductIds],
   );
 
   const markTaken = useCallback((medicineId: string) => {

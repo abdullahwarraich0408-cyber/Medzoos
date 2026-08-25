@@ -20,8 +20,6 @@ import {
   getPrescriptionById,
   getMedicinesForPrescription,
   getPrescriptionSourceLabel,
-  DEMO_PATIENT_MEDICINES,
-  DEMO_PRESCRIPTIONS,
 } from '../data/medicineModel';
 import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
@@ -35,13 +33,13 @@ function PrescriptionDetailContent() {
   const insets = useSafeAreaInsets();
 
   const prescription = useMemo(
-    () => getPrescriptionById(DEMO_PRESCRIPTIONS, route.params.prescriptionId),
+    () => getPrescriptionById([], route.params.prescriptionId),
     [route.params.prescriptionId],
   );
 
   const extractedMedicines = useMemo(() => {
     if (!prescription) return [];
-    return getMedicinesForPrescription(DEMO_PATIENT_MEDICINES, prescription);
+    return getMedicinesForPrescription([], prescription);
   }, [prescription]);
 
   if (!prescription) {
@@ -148,10 +146,7 @@ function PrescriptionDetailContent() {
 
 export function PrescriptionDetailScreen() {
   const route = useRoute<Route>();
-  const prescription = getPrescriptionById(
-    DEMO_PRESCRIPTIONS,
-    route.params.prescriptionId,
-  );
+  const prescription = getPrescriptionById([], route.params.prescriptionId);
 
   return (
     <ScreenLayout

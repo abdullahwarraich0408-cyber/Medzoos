@@ -491,26 +491,53 @@ export function generateActions(
     intent === 'vaccination' ||
     intent === 'lifestyle'
   ) {
-    push({
-      type: 'health_plan',
-      label: 'View preventive care plan',
-      reason: 'Personalized screenings and wellness tasks based on your profile.',
-      navigation: healthNav(),
-      priority: 60,
-    });
-    push({
-      type: 'health_plan',
-      label: 'Weekly exercise starter',
-      reason: 'Build a simple walk + stretch routine aligned with your fitness level.',
-      navigation: healthNav(),
-      priority: 55,
-    });
-    push({
-      type: 'follow_up_reminder',
-      label: 'Schedule follow-up',
-      reason: 'Stay on track with checkups and screenings.',
-      priority: 50,
-    });
+    const wantsBack =
+      /\bback|spine|kamar|lumbar\b/i.test(message) ||
+      /\bexercise|stretch|mobility|physio\b/i.test(message);
+
+    if (wantsBack) {
+      push({
+        type: 'health_plan',
+        label: 'Save this mobility plan',
+        reason: 'Keep gentle walk + stretch habits in your Health tab.',
+        navigation: healthNav(),
+        priority: 85,
+      });
+      push({
+        type: 'book_doctor',
+        label: 'Book orthopedic / physio consult',
+        reason: 'Persistent or worsening back pain deserves a clinical exam.',
+        navigation: doctorNav('Orthopedic'),
+        priority: 70,
+      });
+      push({
+        type: 'follow_up_reminder',
+        label: 'Remind me to recheck in 3 days',
+        reason: 'If pain is not easing with gentle mobility, escalate care.',
+        priority: 55,
+      });
+    } else {
+      push({
+        type: 'health_plan',
+        label: 'View preventive care plan',
+        reason: 'Personalized screenings and wellness tasks based on your profile.',
+        navigation: healthNav(),
+        priority: 60,
+      });
+      push({
+        type: 'health_plan',
+        label: 'Weekly exercise starter',
+        reason: 'Build a simple walk + stretch routine aligned with your fitness level.',
+        navigation: healthNav(),
+        priority: 55,
+      });
+      push({
+        type: 'follow_up_reminder',
+        label: 'Schedule follow-up',
+        reason: 'Stay on track with checkups and screenings.',
+        priority: 50,
+      });
+    }
   }
 
   if (actions.length === 0) {
@@ -577,6 +604,43 @@ export function buildRecommendationText(
       'Pick a next step below — rest plan, medicines, exercise guidance, labs, or a doctor.',
     );
   }
+
+  return lines.join('\n');
+}
+
+/**
+ * Direct exercise / mobility reply (no chest-pain questionnaire).
+ * Educational only — not a physio prescription.
+ */
+export function buildExerciseGuidanceText(message: string): string {
+  const isBack = /\bback|spine|kamar|lumbar|neck\b/i.test(message);
+
+  const lines: string[] = [];
+
+  if (isBack) {
+    lines.push('Here are gentle mobility ideas often used for mild mechanical back discomfort:');
+    lines.push('');
+    lines.push('1. Short walks — 5–10 minutes, a few times a day, within comfort.');
+    lines.push('2. Pelvic tilts — lie on your back, knees bent; gently flatten then release the lower back (8–10 slow reps).');
+    lines.push('3. Knee-to-chest — hug one knee toward the chest, 20–30 seconds each side (skip if it increases pain).');
+    lines.push('4. Cat–camel — on hands and knees, slowly round then gently arch the spine (6–8 slow reps).');
+    lines.push('');
+    lines.push('Stop and seek care if you get new leg weakness, numbness in the saddle area, or bladder/bowel changes.');
+  } else {
+    lines.push('Here is a simple starter mobility routine:');
+    lines.push('');
+    lines.push('1. Easy walk — 10–15 minutes at a pace you can talk through.');
+    lines.push('2. Gentle shoulder rolls and neck mobility (no forcing).');
+    lines.push('3. Hip openers / light stretches within a pain-free range.');
+    lines.push('4. Rest days between harder sessions; hydrate.');
+    lines.push('');
+    lines.push('Stop if you feel chest pain, dizziness, or unusual shortness of breath.');
+  }
+
+  lines.push('');
+  lines.push(
+    'These are general educational suggestions, not a treatment plan. A clinician or physiotherapist can personalize this for you.',
+  );
 
   return lines.join('\n');
 }

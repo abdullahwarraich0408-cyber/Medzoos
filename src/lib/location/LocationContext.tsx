@@ -18,7 +18,11 @@ import {
   markLocationPromptSeen,
   saveLocation,
 } from './locationStorage';
-import { detectUserLocation, openLocationSettings } from './requestLocation';
+import {
+  detectUserLocation,
+  openDeviceLocationSettings,
+  openLocationSettings,
+} from './requestLocation';
 import type { DetectedLocation } from './types';
 
 export type LocationDetectionResult = {
@@ -124,13 +128,25 @@ function useLocationController(): LocationController {
           ? error.message
           : 'Turn on GPS and allow location access, then try again.';
       resolvePending({ city: null, address: null, declined: false, error: message });
+      const needsAppPermission =
+        /permission|denied|blocked|settings → apps/i.test(message);
       Alert.alert(
         'Could not detect location',
         message,
         [
           { text: 'Not now', style: 'cancel' },
-          { text: 'Open Settings', onPress: openLocationSettings },
-          { text: 'Try again' },
+          {
+            text: needsAppPermission ? 'App Settings' : 'Location Settings',
+            onPress: needsAppPermission
+              ? openLocationSettings
+              : openDeviceLocationSettings,
+          },
+          {
+            text: 'Try again',
+            onPress: () => {
+              void handleAllow();
+            },
+          },
         ],
       );
     } finally {

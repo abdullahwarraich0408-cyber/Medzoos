@@ -56,12 +56,19 @@ function mapApiSession(raw?: {
   };
 }
 
+/**
+ * Connects directly to Medzoos 20-Phase AI Health Copilot backend service.
+ * Falls back to on-device orchestration if offline or unauthenticated.
+ */
+const PREFER_ON_DEVICE_COPILOT = false;
+
 export function useCopilot() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const health = useHealthDashboard();
   const [messages, setMessages] = useState<CopilotMessagePayload[]>([]);
   const [session, setSession] = useState<CopilotSessionState | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [useRemote, setUseRemote] = useState(false);
   const orchestratorRef = useRef<ReturnType<typeof createOrchestrator> | null>(null);
   const initializedRef = useRef(false);
@@ -73,9 +80,8 @@ export function useCopilot() {
   );
 
   const initLocalSession = useCallback(() => {
-    const orchestrator = createOrchestrator(contextInput);
-    orchestratorRef.current = orchestrator;
-    const result = orchestrator.startSession();
+    orchestratorRef.current = createOrchestrator(contextInput);
+    const result = orchestratorRef.current.startSession();
     setSession(result.session);
     setMessages(result.messages);
     setIsReady(true);
@@ -86,7 +92,7 @@ export function useCopilot() {
     if (initializedRef.current || health.isLoading) return;
     initializedRef.current = true;
 
-    if (isAuthenticated) {
+    if (!PREFER_ON_DEVICE_COPILOT) {
       try {
         const data = await copilotApi.createSession();
         if (data?.session?.sessionId && data.messages?.length) {
@@ -103,7 +109,7 @@ export function useCopilot() {
     }
 
     initLocalSession();
-  }, [health.isLoading, isAuthenticated, initLocalSession]);
+  }, [health.isLoading, initLocalSession]);
 
   useEffect(() => {
     initializeSession();
@@ -111,18 +117,38 @@ export function useCopilot() {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim()) return;
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      const userMsg: CopilotMessagePayload = {
+        id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        role: 'user',
+        text: trimmed,
+        timestamp: new Date().toISOString(),
+      };
+
+      // 1. Optimistically display user question bubble immediately
+      setMessages(prev => [...prev, userMsg]);
+      setIsThinking(true);
 
       if (useRemote && remoteSessionIdRef.current) {
         try {
-          const data = await copilotApi.sendMessage(remoteSessionIdRef.current, text);
+          const data = await copilotApi.sendMessage(remoteSessionIdRef.current, trimmed);
           if (data?.messages?.length) {
             setSession(mapApiSession(data.session));
-            setMessages(prev => [...prev, ...(data.messages as CopilotMessagePayload[])]);
+            const assistantReplies = (data.messages as CopilotMessagePayload[]).filter(
+              m => m.role === 'assistant',
+            );
+            if (assistantReplies.length > 0) {
+              setMessages(prev => [...prev, ...assistantReplies]);
+            } else {
+              setMessages(prev => [...prev, ...(data.messages as CopilotMessagePayload[])]);
+            }
+            setIsThinking(false);
             return;
           }
         } catch {
-          // Continue with local engine below
+          // Continue with local engine fallback below
         }
       }
 
@@ -140,10 +166,12 @@ export function useCopilot() {
         );
       }
 
-      const result = orchestratorRef.current.processMessage(text);
+      const result = orchestratorRef.current.processMessage(trimmed);
       setSession(result.session);
-      setMessages(prev => [...prev, ...result.messages]);
+      const assistantReplies = result.messages.filter(m => m.role === 'assistant');
+      setMessages(prev => [...prev, ...assistantReplies]);
       setUseRemote(false);
+      setIsThinking(false);
     },
     [contextInput, messages.length, session, useRemote],
   );
@@ -155,6 +183,7 @@ export function useCopilot() {
     setMessages([]);
     setSession(null);
     setIsReady(false);
+    setIsThinking(false);
     setUseRemote(false);
     // Kick off a fresh greeting session immediately
     await Promise.resolve();
@@ -168,9 +197,10 @@ export function useCopilot() {
     setMessages([]);
     setSession(null);
     setIsReady(false);
+    setIsThinking(false);
     setUseRemote(false);
 
-    if (isAuthenticated) {
+    if (!PREFER_ON_DEVICE_COPILOT) {
       try {
         const data = await copilotApi.createSession();
         if (data?.session?.sessionId && data.messages?.length) {
@@ -189,12 +219,13 @@ export function useCopilot() {
 
     initLocalSession();
     initializedRef.current = true;
-  }, [isAuthenticated, initLocalSession]);
+  }, [initLocalSession]);
 
   return {
     messages,
     session,
     isReady,
+    isThinking,
     isLoading: health.isLoading,
     healthContext: orchestratorRef.current?.getHealthContext(),
     initializeSession,

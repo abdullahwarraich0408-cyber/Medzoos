@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import {
   AppointmentCard,
+  mapOrderToAppointmentCard,
   type AppointmentCardModel,
 } from '../components/AppointmentCard';
 import {
@@ -13,14 +14,22 @@ import {
   type DayItem,
 } from '../components/DayCalendarStrip';
 import { CompactDoctorRow } from '../components/CompactDoctorRow';
-import {
-  DEMO_APPOINTMENTS,
-  DEMO_SAVED_DOCTORS,
-  localDayKey,
-} from '../data/demoAppointments';
-import { getDemoAppointment } from '../data/demoAppointmentDetails';
+import { localDayKey } from '../data/localDay';
+import { useAllOrders } from '../../../lib/hooks/useApi';
 import type { YouStackParamList } from '../../../navigation/types';
 import { colors, spacing, TAB_BAR_CLEARANCE } from '../../../theme';
+
+type AppointmentListItem = AppointmentCardModel & {
+  dayKey: string;
+  isOnline: boolean;
+};
+
+function dayKeyFromSortDate(value?: string) {
+  if (!value) return localDayKey();
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return localDayKey();
+  return localDayKey(date);
+}
 
 export function AppointmentsScreen() {
   const insets = useSafeAreaInsets();
@@ -28,11 +37,32 @@ export function AppointmentsScreen() {
     useNavigation<NativeStackNavigationProp<YouStackParamList>>();
   const todayKey = useMemo(() => localDayKey(), []);
   const [selectedDay, setSelectedDay] = useState(todayKey);
+  const { data: allOrders = [], isLoading } = useAllOrders();
+
+  const appointments = useMemo((): AppointmentListItem[] => {
+    return allOrders
+      .filter(order => order.type === 'doctor')
+      .map(order => ({
+        ...mapOrderToAppointmentCard(order),
+        dayKey: dayKeyFromSortDate(order.sortDate || order.date),
+        isOnline: Boolean(order.isOnline),
+      }));
+  }, [allOrders]);
 
   const forSelectedDay = useMemo(
-    () => DEMO_APPOINTMENTS.filter(item => item.dayKey === selectedDay),
-    [selectedDay],
+    () => appointments.filter(item => item.dayKey === selectedDay),
+    [appointments, selectedDay],
   );
+
+  const savedDoctors = useMemo(() => {
+    const seen = new Set<string>();
+    return appointments.filter(item => {
+      const key = item.doctorName.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [appointments]);
 
   const onSelectDay = useCallback((day: DayItem) => {
     setSelectedDay(day.key);
@@ -58,9 +88,8 @@ export function AppointmentsScreen() {
   );
 
   const openVideo = useCallback(
-    (item: AppointmentCardModel) => {
-      const detail = getDemoAppointment(item.sourceId);
-      if (detail && !detail.isOnline) {
+    (item: AppointmentListItem) => {
+      if (!item.isOnline) {
         openTrack(item);
         return;
       }
@@ -97,38 +126,52 @@ export function AppointmentsScreen() {
             },
           ]}
           showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionLabel}>
-            {forSelectedDay.length > 0 ? 'Scheduled' : 'No visits this day'}
-          </Text>
-          <Text style={styles.hint}>
-            Tap card to track · calendar for visit · chat bubble to message
-          </Text>
-          <View style={styles.list}>
-            {forSelectedDay.map(item => (
-              <AppointmentCard
-                key={item.id}
-                item={item}
-                onPress={() => openTrack(item)}
-                onCalendarPress={() => openTrack(item)}
-                onChatPress={() => openChat(item)}
-              />
-            ))}
-          </View>
+          {isLoading && appointments.length === 0 ? (
+            <ActivityIndicator color={colors.brandPrimary} style={styles.loader} />
+          ) : (
+            <>
+              <Text style={styles.sectionLabel}>
+                {forSelectedDay.length > 0
+                  ? 'Scheduled'
+                  : appointments.length === 0
+                    ? 'No appointments yet'
+                    : 'No visits this day'}
+              </Text>
+              <Text style={styles.hint}>
+                Tap card to track · calendar for visit · chat bubble to message
+              </Text>
+              <View style={styles.list}>
+                {forSelectedDay.map(item => (
+                  <AppointmentCard
+                    key={item.id}
+                    item={item}
+                    onPress={() => openTrack(item)}
+                    onCalendarPress={() => openTrack(item)}
+                    onChatPress={() => openChat(item)}
+                  />
+                ))}
+              </View>
 
-          <Text style={[styles.sectionLabel, styles.sectionGap]}>
-            Saved doctors
-          </Text>
-          <View style={styles.list}>
-            {DEMO_SAVED_DOCTORS.map(item => (
-              <CompactDoctorRow
-                key={`saved-${item.id}`}
-                item={item}
-                onPress={() => openTrack(item)}
-                onCalendarPress={() => openVideo(item)}
-                onChatPress={() => openChat(item)}
-              />
-            ))}
-          </View>
+              <Text style={[styles.sectionLabel, styles.sectionGap]}>
+                Saved doctors
+              </Text>
+              {savedDoctors.length === 0 ? (
+                <Text style={styles.hint}>No saved doctors yet</Text>
+              ) : (
+                <View style={styles.list}>
+                  {savedDoctors.map(item => (
+                    <CompactDoctorRow
+                      key={`saved-${item.id}`}
+                      item={item}
+                      onPress={() => openTrack(item)}
+                      onCalendarPress={() => openVideo(item)}
+                      onChatPress={() => openChat(item)}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
         </ScrollView>
       </View>
     </ScreenLayout>
@@ -156,4 +199,5 @@ const styles = StyleSheet.create({
   },
   sectionGap: { marginTop: spacing.lg },
   list: { gap: spacing.lg },
+  loader: { marginTop: spacing.xxl },
 });

@@ -677,18 +677,38 @@ export type CopilotSessionResponse = {
   }>;
 };
 
+export type TriageApiResponse = {
+  triageLevel?: string;
+  emergency?: boolean;
+  reasonCode?: string;
+  reasoning?: string;
+  text?: string;
+  actions?: Array<Record<string, unknown>>;
+  suggestedReplies?: string[];
+  metadata?: Record<string, unknown>;
+  riskLevel?: string;
+  providers?: unknown;
+};
+
 export const copilotApi = {
   createSession: () =>
-    api.post<CopilotSessionResponse>('/v2/copilot/sessions', {}, { auth: 'customer' }),
+    api.post<CopilotSessionResponse>('/v2/copilot/sessions', {}, { auth: 'auto' }),
   getSession: (sessionId: string) =>
     api.get<CopilotSessionResponse>(`/v2/copilot/sessions/${sessionId}`, {
-      auth: 'customer',
+      auth: 'auto',
     }),
   sendMessage: (sessionId: string, message: string) =>
-    api.post<CopilotSessionResponse>(
+    api.post<CopilotSessionResponse & { triage?: TriageApiResponse }>(
       `/v2/copilot/sessions/${sessionId}/messages`,
       { message },
-      { auth: 'customer' },
+      { auth: 'auto' },
+    ),
+  /** Stateless deterministic triage (backend source of truth). */
+  triage: (message: string, answers?: Record<string, string>) =>
+    api.post<TriageApiResponse>(
+      '/v2/copilot/triage',
+      { message, answers },
+      { auth: 'auto' },
     ),
 };
 
@@ -887,4 +907,45 @@ export const contentApi = {
       settings?: Record<string, string>;
     }>(`/content?${params.toString()}`);
   },
+};
+
+export type StripeCheckoutPurpose = 'order' | 'appointment' | 'lab';
+
+export type StripeCheckoutPayload = {
+  purpose: StripeCheckoutPurpose;
+  order_ids?: string[];
+  total_amount?: number;
+  appointment_id?: string;
+  booking_ids?: string[];
+  order_group_id?: string;
+  payment_method?: 'stripe' | 'cod' | 'card' | 'bankalfalah';
+  frontend_url?: string;
+};
+
+export type StripeCheckoutResponse = {
+  checkoutUrl?: string;
+  sessionId?: string;
+  purpose?: StripeCheckoutPurpose;
+};
+
+export type StripeVerifyResponse = {
+  paid?: boolean;
+  purpose?: StripeCheckoutPurpose;
+  sessionId?: string;
+  status?: string;
+  orderIds?: string[];
+  appointmentId?: string;
+  bookingIds?: string[];
+};
+
+export const paymentsApi = {
+  checkout: (data: StripeCheckoutPayload) =>
+    api.post<StripeCheckoutResponse>('/payments/checkout', data, {
+      auth: 'customer',
+    }),
+  verifyStripeSession: (sessionId: string) =>
+    api.get<StripeVerifyResponse>(
+      `/payments/stripe/verify?session_id=${encodeURIComponent(sessionId)}`,
+      { auth: 'customer' },
+    ),
 };

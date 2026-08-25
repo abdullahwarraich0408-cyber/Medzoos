@@ -50,22 +50,38 @@ function normalizeLocationError(error: unknown): string {
 }
 
 async function ensureAndroidPermission(): Promise<boolean> {
-  const permissions = [
-    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-  ];
+  const fine = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+  const coarse = PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION;
 
-  const alreadyGranted = await Promise.all(
-    permissions.map(permission => PermissionsAndroid.check(permission)),
-  );
-  if (alreadyGranted.some(Boolean)) {
+  const [fineGranted, coarseGranted] = await Promise.all([
+    PermissionsAndroid.check(fine),
+    PermissionsAndroid.check(coarse),
+  ]);
+  if (fineGranted || coarseGranted) {
     return true;
   }
 
-  const result = await PermissionsAndroid.requestMultiple(permissions);
-  return permissions.some(
-    permission => result[permission] === PermissionsAndroid.RESULTS.GRANTED,
-  );
+  const result = await PermissionsAndroid.requestMultiple([fine, coarse]);
+  const fineStatus = result[fine];
+  const coarseStatus = result[coarse];
+
+  if (
+    fineStatus === PermissionsAndroid.RESULTS.GRANTED ||
+    coarseStatus === PermissionsAndroid.RESULTS.GRANTED
+  ) {
+    return true;
+  }
+
+  if (
+    fineStatus === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
+    coarseStatus === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN
+  ) {
+    throw new Error(
+      'Location permission is blocked. Open Settings → Apps → Medzoos → Permissions → Location and allow it.',
+    );
+  }
+
+  return false;
 }
 
 async function ensureIosPermission(): Promise<boolean> {
@@ -125,23 +141,40 @@ function getCurrentPosition(options: {
 }
 
 async function getAccurateCoordinates(): Promise<Coordinates> {
+  // Network/last-known first (faster indoors), then GPS.
   try {
     return await getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 25_000,
-      maximumAge: 5_000,
+      enableHighAccuracy: false,
+      timeout: 12_000,
+      maximumAge: 60_000,
     });
-  } catch (highAccuracyError) {
+  } catch (networkError) {
     try {
       return await getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 15_000,
-        maximumAge: 120_000,
+        enableHighAccuracy: true,
+        timeout: 25_000,
+        maximumAge: 5_000,
       });
     } catch {
-      throw highAccuracyError;
+      throw networkError;
     }
   }
+}
+
+function fallbackFromCoordinates(coords: Coordinates): DetectedLocation {
+  const lat = coords.latitude.toFixed(5);
+  const lng = coords.longitude.toFixed(5);
+  const label = `Near ${lat}, ${lng}`;
+
+  return {
+    street: label,
+    city: 'Current location',
+    province: '',
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+    label,
+    accuracy: coords.accuracy,
+  };
 }
 
 async function reverseGeocode(
@@ -172,11 +205,7 @@ async function reverseGeocode(
   const roadHint = data.localityInfo?.informative?.find(item =>
     item.description?.toLowerCase().includes('road'),
   )?.name;
-  const street =
-    data.street ||
-    roadHint ||
-    data.locality ||
-    city;
+  const street = data.street || roadHint || data.locality || city;
 
   const label = [street, city, province].filter(Boolean).join(', ');
 
@@ -191,6 +220,21 @@ async function reverseGeocode(
 }
 
 export function openLocationSettings() {
+  if (Platform.OS === 'android') {
+    // App permission settings (most common fix after "Don't ask again")
+    void Linking.openSettings();
+    return;
+  }
+  void Linking.openSettings();
+}
+
+export function openDeviceLocationSettings() {
+  if (Platform.OS === 'android') {
+    void Linking.sendIntent('android.settings.LOCATION_SOURCE_SETTINGS').catch(() => {
+      void Linking.openSettings();
+    });
+    return;
+  }
   void Linking.openSettings();
 }
 
@@ -210,12 +254,17 @@ export async function detectUserLocation(): Promise<DetectedLocation> {
     }
 
     const coords = await getAccurateCoordinates();
-    const address = await reverseGeocode(coords.latitude, coords.longitude);
 
-    return {
-      ...address,
-      accuracy: coords.accuracy,
-    };
+    try {
+      const address = await reverseGeocode(coords.latitude, coords.longitude);
+      return {
+        ...address,
+        accuracy: coords.accuracy,
+      };
+    } catch {
+      // GPS worked but address API failed / blocked — still return usable coords.
+      return fallbackFromCoordinates(coords);
+    }
   } catch (error) {
     throw new Error(normalizeLocationError(error));
   }

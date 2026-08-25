@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { useVendors, useDoctors, usePopularLabTests, useHospitals } from './useApi';
 import { formatConsultations } from '../mappers/doctor';
-import {
-  NEARBY_PHARMACIES,
-  FEATURED_DOCTORS,
-  LAB_PACKAGES,
-  FEATURED_HOSPITALS,
-} from '../../features/home/data/homeData';
 import type { Hospital } from '../mappers/hospital';
 
 export type HomePharmacy = {
@@ -63,71 +57,58 @@ export function useHomeData() {
 
   const nearbyPharmacies = useMemo((): HomePharmacy[] => {
     const apiPharmacies = vendorsQuery.data ?? [];
-    if (apiPharmacies.length > 0) {
-      return apiPharmacies.slice(0, 4).map((vendor, i) => ({
+    return apiPharmacies.slice(0, 4).map(vendor => {
+      const raw = vendor.deliveryTime?.split('–')[0]?.trim();
+      const time = raw
+        ? raw.includes('min')
+          ? raw
+          : `${raw} mins`
+        : '';
+      return {
         id: vendor.id,
         slug: vendor.slug,
         name: vendor.name,
         rating: vendor.rating,
-        reviews: NEARBY_PHARMACIES[i]?.reviews ?? vendor.reviews ?? 200,
-        time: (() => {
-          const raw = vendor.deliveryTime?.split('–')[0]?.trim();
-          if (!raw) return NEARBY_PHARMACIES[i]?.time || '30 mins';
-          return raw.includes('min') ? raw : `${raw} mins`;
-        })(),
-        distance:
-          formatDisplayDistance(vendor.distanceKm ?? vendor.distance) ||
-          NEARBY_PHARMACIES[i]?.distance ||
-          '1.2 km',
+        reviews: vendor.reviews ?? 0,
+        time,
+        distance: formatDisplayDistance(vendor.distanceKm ?? vendor.distance) || '',
         minOrder: 'PKR 500',
         open: vendor.open,
         bgImage: vendor.bgImage,
-      }));
-    }
-    return NEARBY_PHARMACIES;
+      };
+    });
   }, [vendorsQuery.data]);
 
   const featuredDoctors = useMemo((): HomeDoctor[] => {
     const apiDoctors = doctorsQuery.data ?? [];
-    if (apiDoctors.length > 0) {
-      return apiDoctors.slice(0, 4).map((doctor, i) => {
-        const fallback = FEATURED_DOCTORS[i] || FEATURED_DOCTORS[0];
-        const reviews = doctor.reviews ?? fallback.reviews;
-        return {
-          id: doctor.id,
-          name: doctor.name,
-          specialty: doctor.specialty,
-          rating: doctor.rating,
-          reviews,
-          consultations: formatConsultations(reviews),
-          fee: doctor.fee ?? fallback.fee,
-          image: doctor.photo || doctor.image || fallback.image,
-        };
-      });
-    }
-    return FEATURED_DOCTORS;
+    return apiDoctors.slice(0, 4).map(doctor => {
+      const reviews = doctor.reviews ?? 0;
+      return {
+        id: doctor.id,
+        name: doctor.name,
+        specialty: doctor.specialty,
+        rating: doctor.rating,
+        reviews,
+        consultations: formatConsultations(reviews),
+        fee: doctor.fee ?? 0,
+        image: doctor.photo || doctor.image || '',
+      };
+    });
   }, [doctorsQuery.data]);
 
   const labPackages = useMemo((): HomeLabPackage[] => {
     const apiLabPackages = labTestsQuery.data ?? [];
-    if (apiLabPackages.length > 0) {
-      return apiLabPackages.slice(0, 4).map(pkg => ({
-        id: pkg.id,
-        name: pkg.name,
-        tests: [`${pkg.testsIncluded} tests included`],
-        price: `PKR ${pkg.price.toLocaleString()}`,
-        discount: pkg.discount,
-      }));
-    }
-    return LAB_PACKAGES;
+    return apiLabPackages.slice(0, 4).map(pkg => ({
+      id: pkg.id,
+      name: pkg.name,
+      tests: [`${pkg.testsIncluded} tests included`],
+      price: `PKR ${pkg.price.toLocaleString()}`,
+      discount: pkg.discount,
+    }));
   }, [labTestsQuery.data]);
 
   const featuredHospitals = useMemo((): Hospital[] => {
-    const apiHospitals = hospitalsQuery.data ?? [];
-    if (apiHospitals.length > 0) {
-      return apiHospitals.slice(0, 4);
-    }
-    return FEATURED_HOSPITALS;
+    return (hospitalsQuery.data ?? []).slice(0, 4);
   }, [hospitalsQuery.data]);
 
   const isLoading =

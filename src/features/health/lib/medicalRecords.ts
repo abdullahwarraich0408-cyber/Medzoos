@@ -436,7 +436,7 @@ export function buildUnifiedMedicalRecords(input: {
     (a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime(),
   );
 
-  return sorted.length > 0 ? sorted : DEMO_MEDICAL_RECORDS;
+  return sorted;
 }
 
 export function filterMedicalRecordsByTab(

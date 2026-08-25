@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TextInput,
   Pressable,
@@ -16,6 +15,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { SimpleMessage, SimpleSection } from '../../../design-system';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import { communityCopy } from '../../../lib/copy/uiMessages';
@@ -220,7 +220,7 @@ export function CreatePostScreen() {
       showSearch={false}
       showCart={false}
       onBackPress={() => navigation.goBack()}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         {group ? (
           <SimpleMessage
             label={`Posting in ${group.name}`}
@@ -378,7 +378,7 @@ export function CreatePostScreen() {
             {submitting ? 'Publishing...' : groupId ? 'Post to group' : 'Publish post'}
           </Text>
         </Pressable>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenLayout>
   );
 }

@@ -32,7 +32,7 @@ export const copilotCopy = {
   safetyNote:
     'This is not emergency care. For chest pain, trouble breathing, or severe bleeding — call 1122 immediately.',
   youLabel: 'You',
-  copilotLabel: 'Copilot',
+  copilotLabel: 'Medzoos',
 };
 
 export const healthCopy = {

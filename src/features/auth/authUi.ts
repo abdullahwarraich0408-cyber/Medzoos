@@ -1,0 +1,22 @@
+/** Shared auth UI tokens — matches medDoctor LoginScreen layout. */
+export const authUi = {
+  bg: '#061F2C',
+  accent: '#16A9E0',
+  medicalBlue: '#0B6E99',
+  teal: '#159A9C',
+  warning: '#D88B18',
+  white: '#FFFFFF',
+  muted: '#9FB3C8',
+  iconMuted: '#829AB1',
+  divider: '#627D98',
+  inputBg: '#0A2736',
+  inputBorder: '#163E52',
+  inputFocusBg: '#0D3144',
+  secondaryBtnBg: '#0E3042',
+  secondaryBtnBorder: '#184D67',
+  errorBg: '#3B141A',
+  errorBorder: '#8B1C25',
+  errorText: '#FCA5A5',
+  graphicBg: '#0C2D3E',
+  graphicBorder: '#194B61',
+} as const;

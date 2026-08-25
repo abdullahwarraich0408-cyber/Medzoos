@@ -10,7 +10,12 @@ const ACTION_ICONS: Record<string, string> = {
   order_medicine: 'pill',
   book_lab: 'test-tube',
   emergency_alert: 'phone-alert',
+  call_emergency: 'phone-alert',
+  find_emergency_room: 'hospital-building',
   health_plan: 'clipboard-pulse',
+  symptom_tracker: 'chart-timeline-variant',
+  pharmacy: 'pharmacy',
+  follow_up: 'calendar-clock',
   follow_up_reminder: 'calendar-clock',
   family_notification: 'account-group',
   schedule_reminder: 'bell-ring',
@@ -26,7 +31,8 @@ type CopilotActionCardProps = {
 
 export function CopilotActionCard({ action, onPress, isPrimary }: CopilotActionCardProps) {
   const icon = ACTION_ICONS[action.type] ?? 'arrow-right-circle';
-  const isEmergency = action.type === 'emergency_alert';
+  const isEmergency =
+    action.type === 'emergency_alert' || action.type === 'call_emergency';
 
   return (
     <Pressable

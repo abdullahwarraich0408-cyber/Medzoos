@@ -19,12 +19,24 @@ export type CopilotIntent =
   | 'family'
   | 'general';
 
+export type TriageLevel =
+  | 'EMERGENCY'
+  | 'URGENT'
+  | 'ROUTINE'
+  | 'SELF_CARE'
+  | 'NEEDS_MORE_INFORMATION';
+
 export type CopilotActionType =
   | 'book_doctor'
   | 'order_medicine'
   | 'book_lab'
   | 'emergency_alert'
+  | 'call_emergency'
+  | 'find_emergency_room'
   | 'health_plan'
+  | 'symptom_tracker'
+  | 'pharmacy'
+  | 'follow_up'
   | 'follow_up_reminder'
   | 'family_notification'
   | 'schedule_reminder'
@@ -33,15 +45,17 @@ export type CopilotActionType =
 
 export type CopilotAction = {
   id: string;
-  type: CopilotActionType;
+  type: CopilotActionType | string;
   label: string;
   reason: string;
   /** Navigation target for mobile deep links */
   navigation?: {
-    tab: 'Home' | 'Health' | 'You' | 'Copilot';
+    tab?: 'Home' | 'Health' | 'You' | 'Copilot' | string;
     screen: string;
     params?: Record<string, unknown>;
   };
+  targetScreen?: string;
+  params?: Record<string, unknown>;
   priority: number;
 };
 
@@ -121,7 +135,10 @@ export type CopilotMessagePayload = {
   text: string;
   timestamp: string;
   riskLevel?: RiskLevel;
-  intent?: CopilotIntent;
+  triageLevel?: TriageLevel | string;
+  emergency?: boolean;
+  reasonCode?: string;
+  intent?: CopilotIntent | string;
   /** Educational hypotheses — not diagnoses */
   differentials?: DifferentialHypothesis[];
   reasoning?: string[];
@@ -129,6 +146,8 @@ export type CopilotMessagePayload = {
   disclaimer?: string;
   healthSummary?: string;
   suggestedReplies?: string[];
+  providers?: unknown;
+  metadata?: Record<string, unknown>;
 };
 
 export type CopilotTurnResult = {

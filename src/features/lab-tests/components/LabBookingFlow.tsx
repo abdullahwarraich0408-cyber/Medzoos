@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -26,6 +25,9 @@ import type { LabTestsStackParamList } from '../../../navigation/types';
 import { useLocationContext } from '../../../lib/location/LocationContext';
 import type { DetectedLocation } from '../../../lib/location/types';
 import { UseLocationButton } from '../../../components/location/UseLocationButton';
+import { StripeCheckoutModal } from '../../../components/payments/StripeCheckoutModal';
+import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { TIME_SLOTS } from '../data/mockLabTests';
 import { ReadPrescriptionSection } from './ReadPrescriptionSection';
 
@@ -70,6 +72,9 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
     new Date().toISOString().slice(0, 10),
   );
   const [prescriptionUrl, setPrescriptionUrl] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cod'>('stripe');
+  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const detailsValid =
     patient.name.trim() &&
@@ -79,15 +84,17 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
   const submitBooking = async () => {
     if (!selectedSlot) return;
 
+    setPaying(true);
     try {
-      await bookLabTest.mutateAsync({
+      const method = collectionType === 'HOME' ? 'stripe' : paymentMethod;
+      const booking = await bookLabTest.mutateAsync({
         lab_test_id: test.id,
         patient_name: patient.name.trim(),
         patient_gender: patient.gender || undefined,
         patient_age: patient.age ? Number(patient.age) : undefined,
         collection_type: collectionType,
         time_slot: selectedSlot,
-        payment_method: 'cod',
+        payment_method: method,
         collection_date: new Date(collectionDate).toISOString(),
         collection_address:
           collectionType === 'HOME'
@@ -95,12 +102,30 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
             : undefined,
         prescription_url: prescriptionUrl || undefined,
       });
+
+      if (method === 'stripe') {
+        const bookingId =
+          (booking as { booking?: { id?: string }; id?: string }).booking?.id ||
+          (booking as { id?: string }).id;
+        if (!bookingId) {
+          throw new Error('Lab booking created but missing id for Stripe payment.');
+        }
+        const payment = await startStripeCheckout({
+          purpose: 'lab',
+          booking_ids: [bookingId],
+        });
+        setStripeUrl(payment.checkoutUrl);
+        return;
+      }
+
       setStep(4);
     } catch (error) {
       Alert.alert(
         'Booking failed',
         error instanceof Error ? error.message : 'Could not book lab test.',
       );
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -193,7 +218,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
       )}
 
       {step === 2 && (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
           <Field label="Patient name">
             <TextInput
               style={styles.input}
@@ -311,11 +336,11 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
             activeOpacity={0.85}>
             <Text style={styles.primaryBtnText}>Continue to Slot</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
 
       {step === 3 && (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
           <Field label="Collection date">
             <TextInput
               style={styles.input}
@@ -357,28 +382,65 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
             <SummaryRow label="Patient" value={patient.name} />
           </View>
 
-          <View style={styles.secureRow}>
-            <Icon name="lock-outline" size={14} color={colors.neutral500} />
-            <Text style={styles.secureText}>
-              Pay on collection — no online payment required.
-            </Text>
-          </View>
+          {collectionType === 'VISIT_LAB' ? (
+            <View style={styles.paymentBlock}>
+              <Text style={styles.sectionTitle}>Payment method</Text>
+              {(
+                [
+                  { id: 'stripe' as const, label: 'Pay online (Stripe)' },
+                  { id: 'cod' as const, label: 'Pay cash at lab' },
+                ] as const
+              ).map(method => (
+                <TouchableOpacity
+                  key={method.id}
+                  style={[
+                    styles.paymentRow,
+                    paymentMethod === method.id && styles.paymentRowActive,
+                  ]}
+                  onPress={() => setPaymentMethod(method.id)}
+                  activeOpacity={0.85}>
+                  <Text style={styles.paymentLabel}>{method.label}</Text>
+                  <Icon
+                    name={
+                      paymentMethod === method.id
+                        ? 'radiobox-marked'
+                        : 'radiobox-blank'
+                    }
+                    size={20}
+                    color={colors.brandPrimary}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.secureRow}>
+              <Icon name="credit-card-outline" size={14} color={colors.neutral500} />
+              <Text style={styles.secureText}>
+                Home collection requires online Stripe payment.
+              </Text>
+            </View>
+          )}
 
           <TouchableOpacity
             style={[
               styles.primaryBtn,
-              (!selectedSlot || bookLabTest.isPending) && styles.btnDisabled,
+              (!selectedSlot || bookLabTest.isPending || paying) &&
+                styles.btnDisabled,
             ]}
             onPress={handleConfirmBooking}
-            disabled={!selectedSlot || bookLabTest.isPending}
+            disabled={!selectedSlot || bookLabTest.isPending || paying}
             activeOpacity={0.85}>
-            {bookLabTest.isPending ? (
+            {bookLabTest.isPending || paying ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.primaryBtnText}>Confirm Booking</Text>
+              <Text style={styles.primaryBtnText}>
+                {collectionType === 'HOME' || paymentMethod === 'stripe'
+                  ? 'Confirm & pay with Stripe'
+                  : 'Confirm Booking'}
+              </Text>
             )}
           </TouchableOpacity>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
 
       {step === 4 && (
@@ -411,6 +473,25 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
         </View>
       )}
 
+      <StripeCheckoutModal
+        visible={Boolean(stripeUrl)}
+        checkoutUrl={stripeUrl}
+        onPaid={() => {
+          setStripeUrl(null);
+          setStep(4);
+        }}
+        onCancelled={() => {
+          setStripeUrl(null);
+          Alert.alert(
+            'Payment cancelled',
+            'Booking was created but payment was not completed.',
+          );
+        }}
+        onError={message => {
+          setStripeUrl(null);
+          Alert.alert('Payment failed', message);
+        }}
+      />
     </View>
   );
 }
@@ -603,6 +684,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  paymentBlock: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: healthOs.cardBorder,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    backgroundColor: colors.white,
+  },
+  paymentRowActive: {
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandLight,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.inkHeadline,
   },
   secureText: { fontSize: 12, color: colors.neutral500 },
   primaryBtn: {

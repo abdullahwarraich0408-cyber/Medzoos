@@ -25,10 +25,6 @@ import {
 import type { PharmaciesStackParamList, MedicinesStackParamList } from '../../../navigation/types';
 
 import { MedicineCard } from '../components/MedicineCard';
-import {
-  getMedicineById,
-  getSimilarMedicines,
-} from '../data/mockMedicines';
 
 type ProductRoute = RouteProp<
   MedicinesStackParamList | PharmaciesStackParamList,
@@ -48,18 +44,15 @@ export function ProductDetailScreen() {
 
   const { data: apiProduct, isLoading } = useProduct(productId);
   const { data: allProducts = [] } = useProducts();
-  const mockProduct = getMedicineById(productId);
-  const product = apiProduct || mockProduct;
+  const product = apiProduct;
 
   const [quantity, setQuantity] = useState(1);
 
-  const similar = apiProduct
-    ? allProducts
-        .filter(
-          item => item.id !== productId && item.category === apiProduct.category,
-        )
-        .slice(0, 4)
-    : getSimilarMedicines(productId);
+  const similar = allProducts
+    .filter(
+      item => item.id !== productId && item.category === apiProduct?.category,
+    )
+    .slice(0, 4);
 
   const outOfStock = product?.stock === 0;
 

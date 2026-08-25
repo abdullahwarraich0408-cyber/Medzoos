@@ -7,7 +7,7 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native';
-import { colors } from '../../../theme';
+import { authUi } from '../authUi';
 
 const LENGTH = 6;
 
@@ -88,6 +88,7 @@ export function OtpInput({ value, onChange, error }: OtpInputProps) {
 const styles = StyleSheet.create({
   wrap: {
     marginBottom: 24,
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
@@ -99,24 +100,25 @@ const styles = StyleSheet.create({
     height: 56,
     maxWidth: 56,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: authUi.inputBorder,
     borderRadius: 14,
     textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    backgroundColor: colors.brandMist,
+    color: authUi.white,
+    backgroundColor: authUi.inputBg,
   },
   boxFilled: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.white,
+    borderColor: authUi.accent,
+    backgroundColor: authUi.inputFocusBg,
   },
   boxError: {
-    borderColor: '#D92D20',
+    borderColor: authUi.errorBorder,
   },
   error: {
     marginTop: 8,
     fontSize: 13,
-    color: '#D92D20',
+    fontWeight: '600',
+    color: authUi.errorText,
   },
 });

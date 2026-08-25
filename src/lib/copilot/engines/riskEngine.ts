@@ -105,6 +105,50 @@ export function assessRisk(
     };
   }
 
+  const isBackPain =
+    /\bback|spine|kamar|lumbar\b/i.test(lower) ||
+    /lower back|upper back|neck/i.test(answers.location || '');
+
+  if (isBackPain) {
+    if (answers.leg_symptoms === 'Yes') {
+      score += 35;
+      factors.push('Leg numbness, tingling, or weakness');
+      reasoning.push('Neurological symptoms with back pain need prompt clinical review.');
+    }
+    if (answers.bladder_bowel === 'Yes') {
+      score += 50;
+      factors.push('Bladder or bowel control change');
+      reasoning.push('New bladder/bowel changes with back pain can be an emergency.');
+    }
+    if (answers.severity?.includes('9') || answers.severity?.includes('Worst') || answers.severity?.includes('7–8')) {
+      score += 20;
+      factors.push('Severe back pain');
+    }
+    return {
+      level: scoreToLevel(score),
+      score,
+      factors,
+      reasoning:
+        reasoning.length > 0
+          ? reasoning
+          : ['Many back pains are mechanical and improve with gentle movement and rest.'],
+      differentials: [
+        { condition: 'Mechanical / muscle strain', confidence: 'medium' },
+        { condition: 'Disc-related irritation', confidence: 'low' },
+      ],
+    };
+  }
+
+  if (intent === 'lifestyle') {
+    return {
+      level: 'low',
+      score: 5,
+      factors: ['Lifestyle / exercise request'],
+      reasoning: ['No emergency red flags detected from your message.'],
+      differentials: [],
+    };
+  }
+
   if (intent === 'mental_health') {
     if (/\bsuicid|kill myself|end my life\b/i.test(lower)) {
       return criticalAssessment(['Possible self-harm language'], message);

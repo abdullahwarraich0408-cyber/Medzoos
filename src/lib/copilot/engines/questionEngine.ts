@@ -1,4 +1,5 @@
 import type { CopilotIntent, CopilotQuestion, HealthContext } from '../types';
+import { wantsExerciseGuidance } from './intentDetection';
 
 type QuestionTemplate = {
   id: string;
@@ -8,7 +9,7 @@ type QuestionTemplate = {
   skipIfKnown?: (ctx: HealthContext, answers: Record<string, string>) => boolean;
 };
 
-const SYMPTOM_QUESTIONS: QuestionTemplate[] = [
+const CHEST_PAIN_QUESTIONS: QuestionTemplate[] = [
   {
     id: 'location',
     text: 'Where exactly do you feel the pain or discomfort?',
@@ -62,6 +63,52 @@ const SYMPTOM_QUESTIONS: QuestionTemplate[] = [
   },
 ];
 
+const BACK_PAIN_QUESTIONS: QuestionTemplate[] = [
+  {
+    id: 'location',
+    text: 'Where is the back pain mainly located?',
+    options: ['Lower back', 'Upper back', 'Neck', 'Side of back', 'Whole back'],
+  },
+  {
+    id: 'onset',
+    text: 'When did this start?',
+    options: ['Today', 'A few days ago', 'About a week', 'Over a week ago'],
+  },
+  {
+    id: 'severity',
+    text: 'How severe is it on a scale of 1–10?',
+    options: ['1–3 Mild', '4–6 Moderate', '7–8 Severe', '9–10 Worst ever'],
+  },
+  {
+    id: 'leg_symptoms',
+    text: 'Any numbness, tingling, or weakness in your legs?',
+    options: ['Yes', 'No', 'Not sure'],
+  },
+  {
+    id: 'bladder_bowel',
+    text: 'Any new trouble controlling bladder or bowel?',
+    options: ['Yes', 'No'],
+  },
+];
+
+const GENERAL_PAIN_QUESTIONS: QuestionTemplate[] = [
+  {
+    id: 'location',
+    text: 'Where do you feel the pain or discomfort?',
+    options: ['Head', 'Throat', 'Abdomen', 'Back', 'Joints / limbs', 'Other'],
+  },
+  {
+    id: 'onset',
+    text: 'When did this start?',
+    options: ['Just now', 'Today', 'A few days ago', 'Over a week ago'],
+  },
+  {
+    id: 'severity',
+    text: 'How severe is it on a scale of 1–10?',
+    options: ['1–3 Mild', '4–6 Moderate', '7–8 Severe', '9–10 Worst ever'],
+  },
+];
+
 const FEVER_QUESTIONS: QuestionTemplate[] = [
   {
     id: 'duration',
@@ -100,6 +147,14 @@ const REPORT_QUESTIONS: QuestionTemplate[] = [
   },
 ];
 
+function isChestRelated(message: string): boolean {
+  return /\bchest|heart|cardio|angina\b/i.test(message);
+}
+
+function isBackRelated(message: string): boolean {
+  return /\bback|spine|kamar|lumbar|neck pain\b/i.test(message);
+}
+
 export function getQuestionsForIntent(
   intent: CopilotIntent,
   message: string,
@@ -108,11 +163,22 @@ export function getQuestionsForIntent(
 ): CopilotQuestion[] {
   let templates: QuestionTemplate[] = [];
 
+  // Exercise / lifestyle: answer directly — no chest-style questionnaire
+  if (intent === 'lifestyle' || wantsExerciseGuidance(message)) {
+    return [];
+  }
+
   if (intent === 'symptoms') {
     if (/\bfever\b/i.test(message)) {
       templates = FEVER_QUESTIONS;
+    } else if (isChestRelated(message)) {
+      templates = CHEST_PAIN_QUESTIONS;
+    } else if (isBackRelated(message)) {
+      templates = BACK_PAIN_QUESTIONS;
+    } else if (/\bpain|ache|hurt|sore\b/i.test(message)) {
+      templates = GENERAL_PAIN_QUESTIONS;
     } else {
-      templates = SYMPTOM_QUESTIONS;
+      templates = GENERAL_PAIN_QUESTIONS;
     }
   } else if (intent === 'medicine') {
     templates = MEDICINE_QUESTIONS;

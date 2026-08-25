@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   Pressable,
   StyleSheet,
   Alert,
@@ -13,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import type { CommunityStackParamList } from '../../../navigation/types';
 import type { GroupMember } from '../../../lib/community/types';
@@ -72,7 +72,7 @@ export function AddGroupMemberScreen() {
       headerMode="stack"
       showSearch={false}
       showCart={false}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <Text style={styles.hint}>
           Search by name to add someone to {group?.name || 'this group'}.
         </Text>
@@ -107,7 +107,7 @@ export function AddGroupMemberScreen() {
             ) : null}
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenLayout>
   );
 }

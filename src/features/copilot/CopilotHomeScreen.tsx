@@ -6,8 +6,6 @@ import {
   StyleSheet,
   TextInput,
   Pressable,
-  KeyboardAvoidingView,
-  Platform,
   Linking,
   ActivityIndicator,
 } from 'react-native';
@@ -17,6 +15,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
+import { KeyboardAvoidingContainer } from '../../components/keyboard';
 import { HealthPageHeader } from '../health/components/hub/HealthPageHeader';
 import { CollapsibleSection, SimpleMessage } from '../../design-system';
 import { CopilotMessageBubble } from './components/CopilotMessageBubble';
@@ -53,6 +52,7 @@ export function CopilotHomeScreen() {
     messages,
     session,
     isReady,
+    isThinking,
     isLoading,
     initializeSession,
     sendMessage,
@@ -79,16 +79,16 @@ export function CopilotHomeScreen() {
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
-  }, [messages.length]);
+  }, [messages.length, isThinking]);
 
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      if (!trimmed || isThinking) return;
       sendMessage(trimmed);
       setInput('');
     },
-    [sendMessage],
+    [sendMessage, isThinking],
   );
 
   const handleNewChat = useCallback(() => {
@@ -99,13 +99,37 @@ export function CopilotHomeScreen() {
 
   const handleActionPress = useCallback(
     (action: CopilotAction) => {
-      if (action.type === 'emergency_alert') {
+      if (
+        action.type === 'emergency_alert' ||
+        action.type === 'call_emergency' ||
+        action.params?.phone === '1122'
+      ) {
         Linking.openURL('tel:1122');
         return;
       }
 
       const nav = action.navigation;
-      if (!nav) return;
+      if (!nav?.screen) {
+        // Fallback: structured targetScreen without nested navigation
+        if (action.targetScreen === 'DoctorsList') {
+          navigateToServices(navigation, 'DoctorsList', action.params);
+        } else if (action.targetScreen === 'LabTestsList') {
+          navigateToServices(navigation, 'LabTestsList', action.params);
+        } else if (action.targetScreen === 'HospitalsList') {
+          navigateToServices(navigation, 'HospitalsList', action.params);
+        } else if (
+          action.targetScreen === 'MedicinesList' ||
+          action.targetScreen === 'HealthHome'
+        ) {
+          navigateToTabScreen(
+            navigation,
+            'Health',
+            action.targetScreen,
+            action.params,
+          );
+        }
+        return;
+      }
 
       if (nav.tab === 'Home' && nav.screen === 'Services') {
         const params = nav.params as { screen?: string; params?: object } | undefined;
@@ -117,7 +141,12 @@ export function CopilotHomeScreen() {
         return;
       }
 
-      navigateToTabScreen(navigation, nav.tab as any, nav.screen, nav.params);
+      navigateToTabScreen(
+        navigation,
+        (nav.tab as any) || 'Home',
+        nav.screen,
+        nav.params,
+      );
     },
     [navigation],
   );
@@ -137,9 +166,7 @@ export function CopilotHomeScreen() {
           <Icon name="square-edit-outline" size={22} color={colors.primary700} />
         </Pressable>
       }>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingContainer style={styles.flex}>
         <ScrollView
           ref={scrollRef}
           style={styles.scroll}
@@ -174,6 +201,15 @@ export function CopilotHomeScreen() {
             />
           ))}
 
+          {isThinking ? (
+            <View style={styles.thinkingContainer}>
+              <View style={styles.thinkingBubble}>
+                <ActivityIndicator size="small" color={colors.primary700} style={styles.thinkingSpinner} />
+                <Text style={styles.thinkingText}>Medzoos is thinking...</Text>
+              </View>
+            </View>
+          ) : null}
+
           {messages.length === 0 && isReady ? (
             <>
               <SimpleMessage message={copilotCopy.welcome} tone="info" />
@@ -205,16 +241,21 @@ export function CopilotHomeScreen() {
             onSubmitEditing={() => handleSend(input)}
             returnKeyType="send"
             multiline
+            editable={!isThinking}
           />
           <Pressable
-            style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, (!input.trim() || isThinking) && styles.sendBtnDisabled]}
             onPress={() => handleSend(input)}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isThinking}
             accessibilityLabel="Send message">
-            <Icon name="send" size={20} color={colors.white} />
+            {isThinking ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <Icon name="send" size={20} color={colors.white} />
+            )}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
 }
@@ -312,5 +353,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.primary700,
+  },
+  thinkingContainer: {
+    alignSelf: 'flex-start',
+    marginVertical: spacing.xs,
+  },
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceBase,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: healthOs.messageBorder,
+  },
+  thinkingSpinner: {
+    marginRight: 4,
+  },
+  thinkingText: {
+    fontSize: 13,
+    color: colors.ink600,
+    fontWeight: '500',
   },
 });

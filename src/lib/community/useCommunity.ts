@@ -4,16 +4,6 @@ import { communityApi } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { moderatePostContent } from './moderation';
 import {
-  MOCK_BUDDIES,
-  MOCK_BUDDY_SUGGESTIONS,
-  MOCK_CHALLENGES,
-  MOCK_COMMUNITY_PROFILE,
-  MOCK_GROUPS,
-  MOCK_POSTS,
-  MOCK_WEEKLY_REPORT,
-} from './mockData';
-import {
-  mockMembersForGroup,
   suggestedProgressStep,
   withBuddyAdded,
   withChallengeMembership,
@@ -32,13 +22,33 @@ import type {
   HealthChallenge,
   HealthGroup,
   GroupMember,
+  WeeklyReport,
 } from './types';
 
-function pickList<T>(api: T[] | undefined, fallback: T[], preferMock: boolean): T[] {
-  if (preferMock) return fallback;
-  if (api && api.length > 0) return api;
-  return fallback;
-}
+const EMPTY_COMMUNITY_PROFILE: CommunityProfile = {
+  displayName: 'You',
+  healthLevel: 1,
+  healthScore: 0,
+  xp: 0,
+  coins: 0,
+  followers: 0,
+  following: 0,
+  postsCount: 0,
+  contributionScore: 0,
+  badges: [],
+};
+
+const EMPTY_WEEKLY_REPORT: WeeklyReport = {
+  weekLabel: '',
+  healthScoreChange: 0,
+  medicineAdherence: 0,
+  stepsTotal: 0,
+  waterGlasses: 0,
+  sleepAverage: '—',
+  streakSummary: '',
+  topAchievement: '',
+  aiRecommendation: '',
+};
 
 export function useCommunity() {
   const { isAuthenticated } = useAuth();
@@ -129,42 +139,32 @@ export function useCommunity() {
   const apiGroupsLive = (groupsQuery.data?.length ?? 0) > 0 && !groupsQuery.isError;
   const apiChallengesLive =
     (challengesQuery.data?.length ?? 0) > 0 && !challengesQuery.isError;
-  const usingMockCommunity =
-    !apiGroupsLive || !apiChallengesLive || postsQuery.isError;
+  const usingMockCommunity = false;
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['community'] });
   }, [queryClient]);
 
   const seedGroups = useMemo(
-    () => pickList(groupsQuery.data, MOCK_GROUPS, !apiGroupsLive),
-    [groupsQuery.data, apiGroupsLive],
+    () => groupsQuery.data ?? [],
+    [groupsQuery.data],
   );
   const seedChallenges = useMemo(
-    () => pickList(challengesQuery.data, MOCK_CHALLENGES, !apiChallengesLive),
-    [challengesQuery.data, apiChallengesLive],
+    () => challengesQuery.data ?? [],
+    [challengesQuery.data],
   );
   const seedBuddies = useMemo(() => {
-    if (!isAuthenticated) return MOCK_BUDDIES;
-    if ((buddiesQuery.data?.length ?? 0) > 0) return buddiesQuery.data!;
-    if (buddiesQuery.isError || buddiesQuery.isFetched) return MOCK_BUDDIES;
-    return buddiesQuery.data ?? MOCK_BUDDIES;
-  }, [
-    isAuthenticated,
-    buddiesQuery.data,
-    buddiesQuery.isError,
-    buddiesQuery.isFetched,
-  ]);
+    if (!isAuthenticated) return [];
+    return buddiesQuery.data ?? [];
+  }, [isAuthenticated, buddiesQuery.data]);
   const seedSuggestions = useMemo(() => {
-    if (!isAuthenticated) return MOCK_BUDDY_SUGGESTIONS;
-    if ((suggestionsQuery.data?.length ?? 0) > 0) return suggestionsQuery.data!;
-    return MOCK_BUDDY_SUGGESTIONS;
+    if (!isAuthenticated) return [];
+    return suggestionsQuery.data ?? [];
   }, [isAuthenticated, suggestionsQuery.data]);
 
   const posts = useMemo(() => {
-    if (postsQuery.isError || !(postsQuery.data?.length ?? 0)) return MOCK_POSTS;
-    return postsQuery.data ?? MOCK_POSTS;
-  }, [postsQuery.data, postsQuery.isError]);
+    return postsQuery.data ?? [];
+  }, [postsQuery.data]);
 
   const groups = groupsState ?? seedGroups;
   const challenges = challengesState ?? seedChallenges;
@@ -179,8 +179,8 @@ export function useCommunity() {
     );
   }, [suggestionsState, seedSuggestions, buddies]);
 
-  const profile = profileState ?? profileQuery.data ?? MOCK_COMMUNITY_PROFILE;
-  const weeklyReport = weeklyReportQuery.data ?? MOCK_WEEKLY_REPORT;
+  const profile = profileState ?? profileQuery.data ?? EMPTY_COMMUNITY_PROFILE;
+  const weeklyReport = weeklyReportQuery.data ?? EMPTY_WEEKLY_REPORT;
 
   const filteredPosts = useMemo(() => {
     switch (feedFilter) {
@@ -606,7 +606,7 @@ export function useCommunity() {
       const coinsEarned = Math.max(10, Math.round(challenge.xpReward / 5));
       setChallengesState(withChallengeRewardClaimed(current, challengeId));
       setProfileState(prev => {
-        const base = prev ?? profileQuery.data ?? MOCK_COMMUNITY_PROFILE;
+        const base = prev ?? profileQuery.data ?? EMPTY_COMMUNITY_PROFILE;
         const badges = new Set(base.badges || []);
         if (challenge.badgeName) badges.add(challenge.badgeName);
         return {
@@ -683,20 +683,10 @@ export function useCommunity() {
           requiresJoin: Boolean(data.requiresJoin ?? requiresJoin),
         };
       } catch {
-        const fallback = MOCK_POSTS.filter(p => {
-          if (!group) return false;
-          const hay = `${p.category} ${p.content}`.toLowerCase();
-          return group.name
-            .toLowerCase()
-            .split(/\s+/)
-            .some(word => word.length > 3 && hay.includes(word.toLowerCase()));
-        });
-        const postsForGroup = group?.isJoined ? fallback : [];
-        queryClient.setQueryData(
-          ['community', 'group-posts', groupId],
-          postsForGroup,
-        );
-        return { posts: postsForGroup, requiresJoin };
+        return {
+          posts: [] as CommunityPost[],
+          requiresJoin,
+        };
       }
     },
     [groupsState, seedGroups, queryClient],
@@ -730,24 +720,22 @@ export function useCommunity() {
       if (isAuthenticated) {
         try {
           const data = await communityApi.getGroupMembers(groupId);
-          if ((data.members?.length ?? 0) > 0) {
-            return {
-              members: (data.members || []).map(m => ({
-                id: m.id,
-                name: m.name,
-                role: m.role,
-              })),
-              canManage: Boolean(data.canManage),
-            };
-          }
+          return {
+            members: (data.members || []).map(m => ({
+              id: m.id,
+              name: m.name,
+              role: m.role,
+            })),
+            canManage: Boolean(data.canManage),
+          };
         } catch {
-          // fall through to mock
+          return { members: [] as GroupMember[], canManage: false };
         }
       }
 
       return {
-        members: mockMembersForGroup(group),
-        canManage: Boolean(group.isJoined && group.moderators.includes('You')),
+        members: [] as GroupMember[],
+        canManage: false,
       };
     },
     [isAuthenticated, groupsState, seedGroups],
@@ -773,9 +761,7 @@ export function useCommunity() {
         const data = await communityApi.searchUsers(query.trim());
         return data.users || [];
       } catch {
-        return MOCK_BUDDY_SUGGESTIONS.filter(s =>
-          s.name.toLowerCase().includes(query.trim().toLowerCase()),
-        ).map(s => ({ id: s.id, name: s.name }));
+        return [];
       }
     },
     [isAuthenticated],
@@ -879,9 +865,10 @@ export function useCommunity() {
     ]);
   }, [postsQuery, groupsQuery, challengesQuery, buddiesQuery, profileQuery]);
 
-  const communityApiError = usingMockCommunity
-    ? 'Showing demo community data. Join, challenges, and buddies still work on this device.'
-    : null;
+  const communityApiError =
+    postsQuery.isError && groupsQuery.isError && challengesQuery.isError
+      ? 'Could not load community data. Pull to refresh.'
+      : null;
 
   return {
     posts: filteredPosts,

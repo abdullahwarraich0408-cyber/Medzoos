@@ -81,6 +81,28 @@ export function formatFirebaseAuthError(error: unknown): string {
   }
 
   if (
+    message.includes('Google OAuth is misconfigured') ||
+    message.includes('Google Sign-In is misconfigured') ||
+    message.includes('DEVELOPER_ERROR') ||
+    message.includes('ApiException: 10')
+  ) {
+    if (__DEV__) {
+      console.warn(
+        '[Google Sign-In] Android OAuth client missing or SHA-1 mismatch. See docs/FIREBASE_AUTH_SETUP.md',
+      );
+    }
+    return 'Google sign-in is temporarily unavailable. Please use email and password, or try again later.';
+  }
+
+  if (message.includes('Google sign-in was cancelled')) {
+    return 'Google sign-in was cancelled.';
+  }
+
+  if (message.includes('Play Services')) {
+    return message;
+  }
+
+  if (
     message.includes('Invalid OTP') ||
     message.includes('Invalid authentication') ||
     message.includes('Invalid dev test') ||

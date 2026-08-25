@@ -31,9 +31,9 @@ import {
   sendPhoneOtp,
   setPendingAuthAction,
   signInWithAppleIdToken,
-  signInWithGoogleIdToken,
   verifyPhoneOtp,
 } from '../firebase/auth';
+import { signInWithGoogleIdToken, signOutGoogle } from './googleOAuth';
 import { normalizePhoneNumber } from './phoneUtils';
 import {
   isDevTestOtp,
@@ -304,8 +304,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = useCallback(async () => {
     const idToken = await signInWithGoogleIdToken();
-    return completeFirebaseLogin(idToken);
-  }, [completeFirebaseLogin]);
+    const deviceId = await getDeviceId();
+    const data = await authApi.googleLogin({
+      idToken,
+      deviceId,
+      platform: getAuthPlatform(),
+    });
+    const tokens = {
+      accessToken: data.accessToken ?? data.tokens?.accessToken,
+      refreshToken: data.refreshToken ?? data.tokens?.refreshToken,
+    };
+    if (!tokens.accessToken) {
+      throw new Error('Invalid Google authentication response');
+    }
+    const sessionUser = mapUser(data.user);
+    await applySession(sessionUser, tokens);
+    return sessionUser;
+  }, [applySession]);
 
   const loginWithApple = useCallback(async () => {
     const idToken = await signInWithAppleIdToken();
@@ -320,6 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setIsAuthenticated(false);
     queryClient.clear();
+    void signOutGoogle();
 
     if (!accessToken && !refreshToken) return;
 

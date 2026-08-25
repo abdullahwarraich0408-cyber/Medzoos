@@ -5,12 +5,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import type { AccountStackParamList } from '../../../navigation/types';
-import { spacing, colors } from '../../../theme';
 import { AuthScreenLayout } from '../components/AuthScreenLayout';
 import { AuthPrimaryButton } from '../components/AuthButtons';
 import { OtpInput } from '../components/OtpInput';
 import { formatFirebaseAuthError } from '../../../lib/auth/firebaseErrors';
 import { continueAfterAuth } from '../../../lib/auth/needsProfileCompletion';
+import { authUi } from '../authUi';
 
 const RESEND_SECONDS = 60;
 
@@ -37,7 +37,8 @@ export function OtpVerifyScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AccountStackParamList>>();
   const route = useRoute<RouteProp<AccountStackParamList, 'OtpVerify'>>();
-  const { completePhoneLogin, startPhoneLogin, consumePendingAction } = useAuth();
+  const { completePhoneLogin, startPhoneLogin, consumePendingAction } =
+    useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,9 @@ export function OtpVerifyScreen() {
     return () => clearTimeout(timer);
   }, [seconds]);
 
-  const finish = (sessionUser: { name?: string | null; email?: string | null } | null) => {
+  const finish = (
+    sessionUser: { name?: string | null; email?: string | null } | null,
+  ) => {
     consumePendingAction();
     continueAfterAuth(navigation, sessionUser);
   };
@@ -96,8 +99,7 @@ export function OtpVerifyScreen() {
     <AuthScreenLayout
       title="Enter verification code"
       subtitle={`We sent a 6-digit code to ${maskPhone(phone)}.`}
-      kicker="Verify phone"
-      compact>
+      badge="VERIFY PHONE">
       <OtpInput value={code} onChange={setCode} error={error} />
 
       <AuthPrimaryButton
@@ -105,7 +107,6 @@ export function OtpVerifyScreen() {
         loading={loading}
         loadingLabel="Verifying..."
         disabled={code.trim().length < 6}
-        showArrow={false}
         onPress={handleVerify}
       />
 
@@ -118,7 +119,9 @@ export function OtpVerifyScreen() {
             disabled={sending}
             accessibilityRole="button"
             accessibilityLabel="Resend OTP">
-            <Text style={styles.link}>{sending ? 'Sending a new code...' : 'Resend OTP'}</Text>
+            <Text style={styles.link}>
+              {sending ? 'Sending a new code...' : 'Resend OTP'}
+            </Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -135,21 +138,21 @@ export function OtpVerifyScreen() {
 const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
-    marginTop: spacing.xl,
-    gap: spacing.sm,
+    marginTop: 24,
+    gap: 10,
   },
   hint: {
     fontSize: 14,
-    color: colors.neutral600,
+    color: authUi.muted,
   },
   link: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+    fontWeight: '700',
+    color: authUi.accent,
   },
   linkMuted: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: authUi.muted,
   },
 });

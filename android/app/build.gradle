@@ -88,7 +88,10 @@ android {
         externalNativeBuild {
             cmake {
                 // Long Windows paths (spaces + node_modules) break default 250-char object paths
-                arguments "-DCMAKE_OBJECT_PATH_MAX=512"
+                // -g1: line-tables-only debug info — much less RAM than full -g for Reanimated C++
+                arguments "-DCMAKE_OBJECT_PATH_MAX=512",
+                    "-DCMAKE_CXX_FLAGS_DEBUG=-g1 -O1",
+                    "-DCMAKE_C_FLAGS_DEBUG=-g1 -O1"
             }
         }
     }
@@ -99,15 +102,21 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('medcare-upload.keystore')
+            storePassword 'medcare123'
+            keyAlias 'medcare'
+            keyPassword 'medcare123'
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
+            // Upload keystore (SHA-1 registered for Google Sign-In Android OAuth).
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

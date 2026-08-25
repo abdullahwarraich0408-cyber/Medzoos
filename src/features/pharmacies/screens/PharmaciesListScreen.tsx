@@ -13,7 +13,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { useVendors } from '../../../lib/hooks/useApi';
 import type { Pharmacy } from '../../../lib/mappers/vendor';
-import { NEARBY_PHARMACIES } from '../../home/data/homeData';
 import { PharmacyListCard } from '../components/PharmacyListCard';
 import { colors, spacing, radius, TAB_BAR_CLEARANCE, shadows } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
@@ -24,40 +23,13 @@ import type { PharmaciesStackParamList } from '../../../navigation/types';
 
 type Nav = NativeStackNavigationProp<PharmaciesStackParamList, 'PharmaciesList'>;
 
-function mapMockToPharmacy(
-  mock: (typeof NEARBY_PHARMACIES)[number],
-  index: number,
-): Pharmacy {
-  const slug = mock.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return {
-    id: `mock-${index}`,
-    slug,
-    name: mock.name,
-    rating: mock.rating,
-    reviews: mock.reviews,
-    deliveryTime: mock.time,
-    distanceKm: parseFloat(mock.distance) || (index + 1) * 1.2,
-    distance: mock.distance,
-    status: mock.open ? 'open' : 'closed',
-    open: mock.open,
-    verified: true,
-    bgImage: mock.bgImage,
-    productCount: 120,
-    description: `${mock.name} — verified pharmacy partner.`,
-  };
-}
-
 export function PharmaciesListScreen() {
   const navigation = useNavigation<Nav>();
   const { data: apiPharmacies = [], isLoading, isError, refetch, isFetching } = useVendors();
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  const pharmacies = useMemo(() => {
-    if (apiPharmacies.length > 0) return apiPharmacies;
-    if (!isError) return [];
-    return NEARBY_PHARMACIES.map(mapMockToPharmacy);
-  }, [apiPharmacies, isError]);
+  const pharmacies = apiPharmacies;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -140,7 +112,13 @@ export function PharmaciesListScreen() {
         {isLoading && pharmacies.length === 0 ? (
           <Text style={styles.empty}>Loading pharmacies...</Text>
         ) : filtered.length === 0 ? (
-          <Text style={styles.empty}>No pharmacies match your search.</Text>
+          <Text style={styles.empty}>
+            {isError
+              ? 'Could not load pharmacies. Pull to refresh.'
+              : search.trim()
+                ? 'No pharmacies match your search.'
+                : 'No pharmacies available yet.'}
+          </Text>
         ) : (
           <View style={styles.list}>
             {filtered.map(pharmacy => (

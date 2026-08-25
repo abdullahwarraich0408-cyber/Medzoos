@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   Pressable,
   TextInput,
@@ -12,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { CollapsibleSection, SimpleMessage } from '../../../design-system';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import { BUDDY_RELATIONS } from '../../../lib/community/mockData';
@@ -72,7 +72,7 @@ export function AddBuddyScreen() {
       showSearch={false}
       showCart={false}
       onBackPress={() => navigation.goBack()}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <SimpleMessage
           message={
             isAuthenticated
@@ -141,7 +141,7 @@ export function AddBuddyScreen() {
             </Text>
           ))}
         </CollapsibleSection>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenLayout>
   );
 }

@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -16,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import { navigateToSignIn, navigateToOrders } from '../../../lib/auth/navigation';
 import { useCart, useCreateOrder } from '../../../lib/hooks/useApi';
@@ -31,8 +31,11 @@ import { navigateContinueShopping } from '../../../lib/navigation/medicineFlow';
 import { useLocationContext } from '../../../lib/location/LocationContext';
 import type { DetectedLocation } from '../../../lib/location/types';
 import { UseLocationButton } from '../../../components/location/UseLocationButton';
+import { StripeCheckoutModal } from '../../../components/payments/StripeCheckoutModal';
+import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
 
 type CheckoutItem = CartItem | GuestCartItem;
+type PaymentChoice = 'stripe' | 'cod';
 
 export function CheckoutScreen() {
   const insets = useSafeAreaInsets();
@@ -48,6 +51,9 @@ export function CheckoutScreen() {
   const [guestItems, setGuestItems] = useState<GuestCartItem[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [orderId, setOrderId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>('stripe');
+  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const [address, setAddress] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -102,6 +108,7 @@ export function CheckoutScreen() {
       return;
     }
 
+    setPaying(true);
     try {
       const result = await createOrder.mutateAsync({
         items: cartItems.map(item => ({
@@ -114,24 +121,49 @@ export function CheckoutScreen() {
           city: address.city.trim(),
           zip: address.zip.trim() || '00000',
         },
-        payment_method: 'cod',
+        payment_method: paymentMethod,
       });
 
       const created =
         result.orders ||
         (result.order ? [result.order] : []);
-      const id =
-        (created[0] as { id?: string })?.id || `ORD-${Date.now()}`;
+      const orderIds = created
+        .map(order => (order as { id?: string })?.id)
+        .filter((id): id is string => Boolean(id));
+      const id = orderIds[0] || `ORD-${Date.now()}`;
+      setOrderId(id);
+
+      if (paymentMethod === 'stripe') {
+        const orderTotal = created.reduce(
+          (sum, order) =>
+            sum + (Number((order as { total_amount?: number }).total_amount) || 0),
+          0,
+        );
+        const payment = await startStripeCheckout({
+          purpose: 'order',
+          order_ids: orderIds,
+          total_amount: orderTotal || total,
+        });
+        setStripeUrl(payment.checkoutUrl);
+        return;
+      }
 
       await clearGuestCart();
-      setOrderId(id);
       setStep(2);
     } catch (error) {
       Alert.alert(
         'Checkout failed',
         error instanceof Error ? error.message : 'Could not place order.',
       );
+    } finally {
+      setPaying(false);
     }
+  };
+
+  const handleStripePaid = async () => {
+    setStripeUrl(null);
+    await clearGuestCart();
+    setStep(2);
   };
 
   if (step === 2) {
@@ -147,7 +179,8 @@ export function CheckoutScreen() {
           </View>
           <Text style={styles.successTitle}>Order Placed!</Text>
           <Text style={styles.successSub}>
-            Your order {orderId} has been confirmed. Pay on delivery.
+            Your order {orderId} has been confirmed
+            {paymentMethod === 'cod' ? '. Pay on delivery.' : '.'}
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
@@ -178,7 +211,7 @@ export function CheckoutScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView
+        <KeyboardAwareScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
@@ -265,32 +298,84 @@ export function CheckoutScreen() {
               />
             </View>
 
-            <View style={styles.codBanner}>
-              <Icon name="cash" size={20} color={colors.brandPrimary} />
-              <Text style={styles.codText}>
-                Cash on delivery — pay when your order arrives.
-              </Text>
-            </View>
+            <Text style={styles.paymentTitle}>Payment method</Text>
+            {(
+              [
+                {
+                  id: 'stripe' as const,
+                  label: 'Pay online (Stripe)',
+                  note: 'Secure card payment',
+                },
+                {
+                  id: 'cod' as const,
+                  label: 'Cash on delivery',
+                  note: 'Pay when your order arrives',
+                },
+              ] as const
+            ).map(method => (
+              <TouchableOpacity
+                key={method.id}
+                style={[
+                  styles.paymentRow,
+                  paymentMethod === method.id && styles.paymentRowActive,
+                ]}
+                onPress={() => setPaymentMethod(method.id)}
+                activeOpacity={0.85}>
+                <View>
+                  <Text style={styles.paymentLabel}>{method.label}</Text>
+                  <Text style={styles.paymentNote}>{method.note}</Text>
+                </View>
+                <Icon
+                  name={
+                    paymentMethod === method.id
+                      ? 'radiobox-marked'
+                      : 'radiobox-blank'
+                  }
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+              </TouchableOpacity>
+            ))}
 
             <TouchableOpacity
               style={[
                 styles.primaryBtn,
-                createOrder.isPending && styles.btnDisabled,
+                (createOrder.isPending || paying) && styles.btnDisabled,
               ]}
               onPress={handlePlaceOrder}
-              disabled={createOrder.isPending}
+              disabled={createOrder.isPending || paying}
               activeOpacity={0.85}>
-              {createOrder.isPending ? (
+              {createOrder.isPending || paying ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={styles.primaryBtnText}>
-                  Place Order · PKR {total.toLocaleString()}
+                  {paymentMethod === 'stripe' ? 'Pay with Stripe' : 'Place Order'}{' '}
+                  · PKR {total.toLocaleString()}
                 </Text>
               )}
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
+
+      <StripeCheckoutModal
+        visible={Boolean(stripeUrl)}
+        checkoutUrl={stripeUrl}
+        onPaid={() => {
+          void handleStripePaid();
+        }}
+        onCancelled={() => {
+          setStripeUrl(null);
+          Alert.alert(
+            'Payment cancelled',
+            'Your order was created but payment was not completed. You can pay from Orders later if available.',
+          );
+        }}
+        onError={message => {
+          setStripeUrl(null);
+          Alert.alert('Payment failed', message);
+        }}
+      />
     </ScreenLayout>
   );
 }
@@ -394,6 +479,39 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   codText: { flex: 1, fontSize: 13, color: colors.neutral800 },
+  paymentTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.inkHeadline,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: healthOs.cardBorder,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  paymentRowActive: {
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandLight,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.inkHeadline,
+  },
+  paymentNote: {
+    fontSize: 12,
+    color: colors.neutral500,
+    marginTop: 2,
+  },
   primaryBtn: {
     height: 48,
     borderRadius: radius.md,

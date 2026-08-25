@@ -24,6 +24,7 @@ import {
   formatConsultations,
   type Doctor,
 } from '../../../lib/mappers/doctor';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 
 import type { DoctorsStackParamList } from '../../../navigation/types';
 import {
@@ -38,6 +39,8 @@ import {
   toLocalDateValue,
 } from '../utils/bookingUtils';
 import { bookingUi, useBookingLayout } from '../utils/bookingUi';
+import { StripeCheckoutModal } from '../../../components/payments/StripeCheckoutModal';
+import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
 import { DoctorSlotPicker } from './DoctorSlotPicker';
 import { BookingAuthModal } from './BookingAuthModal';
 import { ConsultOptionRow } from './ConsultOptionRow';
@@ -284,7 +287,9 @@ export function AppointmentFlow({
   const [selectedDate, setSelectedDate] = useState(
     toLocalDateValue(new Date()),
   );
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cod'>('stripe');
+  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
+  const [payingOnline, setPayingOnline] = useState(false);
   const [sharePrescriptions, setSharePrescriptions] = useState(true);
   const [shareLabReports, setShareLabReports] = useState(true);
   const [shareMedicines, setShareMedicines] = useState(true);
@@ -323,11 +328,12 @@ export function AppointmentFlow({
       return;
     }
 
+    setPayingOnline(true);
     try {
-      await bookAppointment.mutateAsync({
+      const result = await bookAppointment.mutateAsync({
         doctor_id: doctor.id,
         slot: selectedSlot,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod === 'stripe' ? 'stripe' : 'cod',
         appointment_date: appointmentDateIso,
         reason:
           purpose === 'consultation'
@@ -343,12 +349,36 @@ export function AppointmentFlow({
           share_documents: shareDocuments,
         },
       });
+
+      const booked =
+        (result as { appointment?: Record<string, unknown> }).appointment ||
+        (result as Record<string, unknown>);
+      const appointmentId = String(
+        (booked as { id?: string; appointment_id?: string }).id ||
+          (booked as { appointment_id?: string }).appointment_id ||
+          '',
+      );
+
+      if (paymentMethod === 'stripe') {
+        if (!appointmentId) {
+          throw new Error('Appointment created but missing id for Stripe payment.');
+        }
+        const payment = await startStripeCheckout({
+          purpose: 'appointment',
+          appointment_id: appointmentId,
+        });
+        setStripeUrl(payment.checkoutUrl);
+        return;
+      }
+
       setStep(3);
     } catch (error) {
       Alert.alert(
         'Booking failed',
         error instanceof Error ? error.message : 'Could not book appointment.',
       );
+    } finally {
+      setPayingOnline(false);
     }
   };
 
@@ -446,7 +476,7 @@ export function AppointmentFlow({
       )}
 
       {step === 2 && (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
           <TouchableOpacity
             style={styles.backLink}
             onPress={() => setStep(1)}
@@ -554,8 +584,8 @@ export function AppointmentFlow({
           {(
             [
               {
-                id: 'card' as const,
-                label: 'Online Payment',
+                id: 'stripe' as const,
+                label: 'Pay online (Stripe)',
                 note: `PKR ${selectedOption.fee.toLocaleString()}`,
               },
               {
@@ -609,16 +639,26 @@ export function AppointmentFlow({
               style={[
                 styles.primaryBtn,
                 layout.isTablet && styles.primaryBtnTablet,
-                (bookAppointment.isPending || !patientName.trim()) &&
+                (bookAppointment.isPending ||
+                  payingOnline ||
+                  !patientName.trim()) &&
                   styles.primaryBtnDisabled,
               ]}
               onPress={handleConfirmBooking}
-              disabled={bookAppointment.isPending || !patientName.trim()}
+              disabled={
+                bookAppointment.isPending ||
+                payingOnline ||
+                !patientName.trim()
+              }
               activeOpacity={0.85}>
-              {bookAppointment.isPending ? (
+              {bookAppointment.isPending || payingOnline ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.primaryBtnText}>Confirm booking</Text>
+                <Text style={styles.primaryBtnText}>
+                  {paymentMethod === 'stripe'
+                    ? 'Confirm & pay with Stripe'
+                    : 'Confirm booking'}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -629,7 +669,7 @@ export function AppointmentFlow({
               Secure payment · pending until doctor confirms
             </Text>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
 
       {step === 3 && (
@@ -700,6 +740,26 @@ export function AppointmentFlow({
         consultOption={selectedOption}
         selectedDate={selectedDate}
         selectedSlot={selectedSlot}
+      />
+
+      <StripeCheckoutModal
+        visible={Boolean(stripeUrl)}
+        checkoutUrl={stripeUrl}
+        onPaid={() => {
+          setStripeUrl(null);
+          setStep(3);
+        }}
+        onCancelled={() => {
+          setStripeUrl(null);
+          Alert.alert(
+            'Payment cancelled',
+            'Appointment was created but payment was not completed.',
+          );
+        }}
+        onError={message => {
+          setStripeUrl(null);
+          Alert.alert('Payment failed', message);
+        }}
       />
     </View>
   );

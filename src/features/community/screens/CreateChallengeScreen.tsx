@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { useCommunityContext } from '../../../lib/community/CommunityContext';
 import type { CommunityStackParamList } from '../../../navigation/types';
 import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
@@ -57,7 +58,7 @@ export function CreateChallengeScreen() {
 
   return (
     <ScreenLayout title="Create challenge" headerMode="stack" showSearch={false} showCart={false}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <Text style={styles.label}>Challenge title</Text>
         <TextInput
           style={styles.input}
@@ -117,7 +118,7 @@ export function CreateChallengeScreen() {
             {submitting ? 'Creating...' : 'Launch challenge'}
           </Text>
         </Pressable>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenLayout>
   );
 }

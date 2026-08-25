@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TextInput,
   Pressable,
@@ -12,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
+import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import {
   pickPrescriptionImage,
@@ -97,7 +97,7 @@ function UploadMedicalDocumentContent() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KeyboardAwareScrollView contentContainerStyle={styles.content}>
       <Text style={styles.lead}>
         Add a record from outside Medzoos. It stays in your health record and is
         clearly marked as uploaded by you.
@@ -189,7 +189,7 @@ function UploadMedicalDocumentContent() {
           <Text style={styles.saveText}>Save to health record</Text>
         )}
       </Pressable>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

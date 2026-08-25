@@ -4,7 +4,6 @@ import { useGamification } from '../../../lib/gamification/useGamification';
 import { useFamilyDashboard, useFamilyVault } from '../../../lib/hooks/useApi';
 import { useMedicinesHub } from '../../medicines/hooks/useMedicinesHub';
 import {
-  DEFAULT_ACTIVITY,
   type HealthActivityItem,
   type HealthAttentionItem,
 } from '../data/healthHubData';
@@ -103,15 +102,6 @@ export function useHealthHubOverview() {
         icon: 'file-chart-outline',
         screen: 'LabReports',
       });
-    } else if (!isAuthenticated || reports.length === 0) {
-      // Demo fallback so the hub always teaches the flow
-      attention.push({
-        id: 'demo-report',
-        title: 'CBC report ready',
-        message: 'View sample results in Reports.',
-        icon: 'file-chart-outline',
-        screen: 'LabReports',
-      });
     }
 
     if (upcomingVisit === 'Today') {
@@ -159,9 +149,6 @@ export function useHealthHubOverview() {
           : 'Soon',
       });
     });
-    if (activity.length === 0) {
-      activity.push(...DEFAULT_ACTIVITY);
-    }
 
     const badges = {
       reports:
@@ -183,7 +170,7 @@ export function useHealthHubOverview() {
     };
 
     return {
-      healthScore: profile.healthScore ?? 85,
+      healthScore: profile.healthScore ?? 0,
       activePrescriptions: activeCount,
       reportsReady,
       familyCount,
@@ -209,7 +196,6 @@ export function useHealthHubOverview() {
     meds.activeMedicines,
     meds.refillMedicines,
     meds.todayReminders,
-    isAuthenticated,
   ]);
 
   return overview;
