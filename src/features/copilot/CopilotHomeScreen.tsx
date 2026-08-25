@@ -108,6 +108,15 @@ export function CopilotHomeScreen() {
         return;
       }
 
+      // Track Symptoms should continue smoothly in chat without closing the conversation
+      if (
+        action.type === 'symptom_tracker' ||
+        action.label === 'Track Symptoms'
+      ) {
+        sendMessage('How can I monitor these symptoms safely and what red flags should I watch for?');
+        return;
+      }
+
       const nav = action.navigation;
       if (!nav?.screen) {
         // Fallback: structured targetScreen without nested navigation
