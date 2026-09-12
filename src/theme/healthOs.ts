@@ -10,12 +10,12 @@ export const iconScheme = {
 
 /** Health OS design tokens — calm, readable, minimal */
 export const healthOs = {
-  scoreGradient: ['#082B3F', '#17618E'] as const,
+  scoreGradient: ['#0C4554', '#105568'] as const,
   scoreRingTrack: colors.primary100,
   cardBorder: colors.border,
-  copilotGlow: '#6366F1',
-  copilotGlowDark: '#4F46E5',
-  copilotSurface: '#EEF2FF',
+  copilotGlow: '#105568',
+  copilotGlowDark: '#0C4554',
+  copilotSurface: '#E4F0F3',
   doctorBlue: '#2563EB',
   doctorBlueBg: '#EFF6FF',
   labGreen: '#059669',
@@ -40,7 +40,7 @@ export const healthOs = {
   glassWhite: 'rgba(255, 255, 255, 0.92)',
   tabBarLight: colors.white,
   tabBarDark: '#1C1C1E',
-  tabBarCopilot: '#6366F1',
+  tabBarCopilot: '#105568',
   messageBg: colors.surfaceSubtle,
   messageBorder: colors.neutral200,
 } as const;

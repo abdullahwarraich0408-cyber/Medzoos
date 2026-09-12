@@ -3,19 +3,19 @@
  * Prefer semantic names; legacy brand* aliases map to these for compatibility.
  */
 export const colors = {
-  // Primary scale
+  // Primary scale — aligned to Home teal (#105568)
   primary900: '#082B3F',
-  primary800: '#124362',
-  primary700: '#17618E',
+  primary800: '#0C4554',
+  primary700: '#105568',
   primary600: '#415F78',
   primary500: '#5B84A0',
   primary400: '#7A99AD',
   primary300: '#99CAF3',
   primary200: '#C6E3F4',
-  primary100: '#DEEEF9',
+  primary100: '#E4F0F3',
 
-  // Surfaces
-  background: '#F0F6FB',
+  // Surfaces — page wash matches Home (#FFFFFF)
+  background: '#FFFFFF',
   surface: '#FDFEFE',
   surfaceBlue: '#EBF3FA',
   border: '#DEE4E8',
@@ -28,7 +28,7 @@ export const colors = {
   textDisabled: '#97ADBD',
 
   // Icons
-  iconPrimary: '#17618E',
+  iconPrimary: '#105568',
   iconMuted: '#7A99AD',
   iconWhite: '#FFFFFF',
 
@@ -49,32 +49,32 @@ export const colors = {
   transparent: 'transparent',
 
   // ——— Legacy aliases (keep existing screens working) ———
-  brandPrimary: '#17618E',
-  brandDark: '#082B3F',
+  brandPrimary: '#105568',
+  brandDark: '#0C4554',
   brandDarker: '#081F29',
-  brandMedium: '#124362',
-  buttonStart: '#082B3F',
-  buttonEnd: '#17618E',
-  brandBanner: '#5B829C',
-  brandLight: '#DEEEF9',
-  brandMist: '#F0F6FB',
-  brandHighlight: '#17618E',
-  brandSoft: '#DEEEF9',
-  brandPale: '#99CAF3',
+  brandMedium: '#0C4554',
+  buttonStart: '#0C4554',
+  buttonEnd: '#105568',
+  brandBanner: '#105568',
+  brandLight: '#E4F0F3',
+  brandMist: '#FFFFFF',
+  brandHighlight: '#105568',
+  brandSoft: '#E4F0F3',
+  brandPale: '#C5DCE2',
 
   ink900: '#082B3F',
   ink800: '#124362',
   inkHeadline: '#082B3F',
 
   surfaceBase: '#FDFEFE',
-  surfaceSubtle: '#F0F6FB',
+  surfaceSubtle: '#FFFFFF',
   surfaceRaised: '#FDFEFE',
   surfaceOverlay: '#EBF3FA',
 
-  appBgStart: '#F0F6FB',
-  appBgEnd: '#F0F6FB',
+  appBgStart: '#FFFFFF',
+  appBgEnd: '#FFFFFF',
 
-  neutral100: '#F0F6FB',
+  neutral100: '#FFFFFF',
   neutral200: '#DEE4E8',
   neutral300: '#C6E3F4',
   neutral400: '#97ADBD',

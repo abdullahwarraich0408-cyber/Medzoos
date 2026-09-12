@@ -1,12 +1,22 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import type { CopilotAction, CopilotMessagePayload } from '../../../lib/copilot/types';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Platform,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import type {
+  CopilotAction,
+  CopilotMessagePayload,
+} from '../../../lib/copilot/types';
 import { CopilotRiskBadge } from './CopilotRiskBadge';
 import { CopilotActionCard } from './CopilotActionCard';
 import { copilotCopy } from '../../../lib/copy/uiMessages';
 import { MEDICAL_DISCLAIMER } from '../../../lib/copilot/engines/riskEngine';
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs, healthOsTypography } from '../../../theme/healthOs';
+import { copilotBrand } from '../copilotBrand';
+import { spacing, radius } from '../../../theme';
 
 type CopilotMessageBubbleProps = {
   message: CopilotMessagePayload;
@@ -22,10 +32,17 @@ export function CopilotMessageBubble({
   const isUser = message.role === 'user';
 
   return (
-    <View style={styles.block}>
-      <Text style={styles.roleLabel}>
-        {isUser ? copilotCopy.youLabel : copilotCopy.copilotLabel}
-      </Text>
+    <View style={[styles.block, isUser && styles.blockUser]}>
+      <View style={[styles.roleRow, isUser && styles.roleRowUser]}>
+        {!isUser ? (
+          <View style={styles.aiAvatar}>
+            <Icon name="robot-outline" size={12} color={copilotBrand.onAccent} />
+          </View>
+        ) : null}
+        <Text style={[styles.roleLabel, isUser && styles.roleLabelUser]}>
+          {isUser ? copilotCopy.youLabel : copilotCopy.copilotLabel}
+        </Text>
+      </View>
 
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
         {!isUser && (message.triageLevel || message.riskLevel) ? (
@@ -42,7 +59,9 @@ export function CopilotMessageBubble({
           </View>
         ) : null}
 
-        <Text style={[styles.text, isUser && styles.userText]}>{message.text}</Text>
+        <Text style={[styles.text, isUser && styles.userText]}>
+          {message.text}
+        </Text>
 
         {!isUser && message.differentials && message.differentials.length > 0 ? (
           <View style={styles.diffBlock}>
@@ -75,7 +94,9 @@ export function CopilotMessageBubble({
         ) : null}
       </View>
 
-      {!isUser && message.suggestedReplies && message.suggestedReplies.length > 0 ? (
+      {!isUser &&
+      message.suggestedReplies &&
+      message.suggestedReplies.length > 0 ? (
         <View style={styles.suggestions}>
           {message.suggestedReplies.map(reply => (
             <Pressable
@@ -92,64 +113,139 @@ export function CopilotMessageBubble({
 }
 
 const styles = StyleSheet.create({
-  block: { gap: spacing.xs, marginBottom: spacing.md },
-  roleLabel: healthOsTypography.label,
-  bubble: { borderRadius: radius.lg, padding: spacing.lg, maxWidth: '100%' },
+  block: {
+    gap: 6,
+    marginBottom: spacing.md,
+    alignItems: 'flex-start',
+  },
+  blockUser: {
+    alignItems: 'flex-end',
+  },
+  roleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 2,
+  },
+  roleRowUser: {
+    justifyContent: 'flex-end',
+  },
+  aiAvatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: copilotBrand.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    color: copilotBrand.muted,
+  },
+  roleLabelUser: {
+    color: copilotBrand.accentSoft,
+  },
+  bubble: {
+    borderRadius: 18,
+    padding: spacing.md,
+    maxWidth: '100%',
+  },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: colors.brandPrimary,
-    maxWidth: '90%',
+    backgroundColor: copilotBrand.accent,
+    maxWidth: '88%',
+    borderBottomRightRadius: 6,
   },
   aiBubble: {
     alignSelf: 'stretch',
-    backgroundColor: colors.surfaceBase,
+    backgroundColor: copilotBrand.card,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    gap: spacing.md,
+    borderColor: copilotBrand.border,
+    gap: spacing.sm + 2,
+    borderBottomLeftRadius: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: copilotBrand.ink,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
   },
-  text: healthOsTypography.messageBody,
-  userText: { color: colors.white },
+  text: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+    color: copilotBrand.ink,
+  },
+  userText: {
+    color: copilotBrand.onAccent,
+  },
   riskRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.xs,
   },
   triageMeta: {
-    ...healthOsTypography.label,
     fontSize: 11,
-    color: colors.neutral500,
+    fontWeight: '600',
+    color: copilotBrand.muted,
   },
   diffBlock: {
-    backgroundColor: colors.surfaceSubtle,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: copilotBrand.page,
+    borderRadius: 14,
+    padding: spacing.sm + 2,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: copilotBrand.border,
   },
-  diffTitle: { ...healthOsTypography.label, marginBottom: spacing.xs },
-  diffItem: { ...healthOsTypography.messageBody, fontSize: 13, color: colors.neutral700 },
-  actions: { gap: spacing.sm },
-  actionsTitle: { ...healthOsTypography.messageTitle, fontSize: 14 },
-  disclaimer: {
-    ...healthOsTypography.messageBody,
+  diffTitle: {
     fontSize: 11,
-    color: colors.neutral500,
+    fontWeight: '800',
+    color: copilotBrand.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  diffItem: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: copilotBrand.ink,
+  },
+  actions: { gap: spacing.sm },
+  actionsTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: copilotBrand.ink,
+  },
+  disclaimer: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: copilotBrand.muted,
     fontStyle: 'italic',
   },
   suggestions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
+    gap: 8,
+    marginTop: 2,
   },
   suggestionChip: {
-    backgroundColor: colors.surfaceBase,
+    backgroundColor: copilotBrand.soft,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderColor: copilotBrand.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  suggestionText: { ...healthOsTypography.messageBody, fontSize: 13, color: colors.brandPrimary },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: copilotBrand.accent,
+  },
 });

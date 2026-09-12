@@ -1,5 +1,6 @@
 import { ImageSourcePropType } from 'react-native';
 import { iconScheme } from '../../../theme';
+import { homeBrand } from '../../dashboard/homeBrand';
 
 export type HomeSlideAction =
   | 'prescription'
@@ -40,64 +41,63 @@ export function fallbackImageForAction(
   return IMAGE_BY_ACTION[action] || IMAGE_BY_ACTION.pharmacy;
 }
 
-/** First-time home posters */
+/** First-time home posters — same slot structure as offer slides */
 export const HOME_HERO_SLIDES: HomePromoSlide[] = [
   {
     id: 'prescription',
-    label: 'Easy Medicine Ordering',
-    title: 'Upload a prescription, get your medicines',
-    description:
-      'Have a prescription? Upload it securely and continue your medicine order.',
-    cta: 'Upload Prescription',
-    bg: '#156A96',
+    label: 'Pharmacy',
+    title: 'Upload a prescription',
+    description: 'Order medicines securely in a few taps.',
+    cta: 'Upload now',
+    bg: homeBrand.bannerMid,
     action: 'prescription',
+    badge: 'Secure',
     image: IMAGE_BY_ACTION.prescription,
   },
   {
     id: 'consult',
-    label: 'Doctor Consultations',
-    title: 'Consult a doctor from wherever you are',
-    description:
-      'Book an online or in-clinic consultation with healthcare professionals.',
-    cta: 'Find a Doctor',
-    bg: '#0E7A72',
+    label: 'Consult',
+    title: 'Talk to a doctor today',
+    description: 'Online or in-clinic — book in minutes.',
+    cta: 'Find a doctor',
+    bg: homeBrand.bannerDeep,
     action: 'doctors',
+    badge: 'Online',
     image: IMAGE_BY_ACTION.doctors,
   },
   {
     id: 'medicines',
-    label: 'Online Pharmacy',
-    title: 'Find and order the medicines you need',
-    description:
-      'Search medicines and healthcare products from pharmacies on Medzoos.',
-    cta: 'Shop Medicines',
-    bg: '#124362',
+    label: 'Medicines',
+    title: 'Order medicines fast',
+    description: 'Search from trusted pharmacies.',
+    cta: 'Shop medicines',
+    bg: homeBrand.bannerSoft,
     action: 'medicines',
+    badge: 'Delivery',
     image: IMAGE_BY_ACTION.medicines,
   },
   {
     id: 'labs',
-    label: 'Diagnostic Services',
-    title: 'Book lab tests with home sampling',
-    description:
-      'Find diagnostic tests and request home sample collection where available.',
-    cta: 'Book a Lab Test',
-    bg: '#1A7A88',
+    label: 'Labs',
+    title: 'Book lab tests easily',
+    description: 'Home sampling where you need it.',
+    cta: 'Book a test',
+    bg: homeBrand.bannerMid,
     action: 'labs',
-    badge: 'Home Sampling Available',
+    badge: 'Home sampling',
     image: IMAGE_BY_ACTION.labs,
   },
 ];
 
-/** Returning-user offer posters */
+/** Returning-user offer posters — matched lengths for uniform banner layout */
 export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
   {
     id: 'offer-meds',
     label: 'Limited offer',
     title: 'Flat 25% off on medicines',
-    description: 'Save on medicines from pharmacies on Medzoos.',
+    description: 'Save on medicines from pharmacies.',
     cta: 'Shop now',
-    bg: '#156A96',
+    bg: homeBrand.bannerMid,
     action: 'medicines',
     badge: '25% OFF',
     image: IMAGE_BY_ACTION.medicines,
@@ -105,20 +105,21 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
   {
     id: 'offer-doctors',
     label: 'Doctor offer',
-    title: 'First consult from the comfort of home',
-    description: 'Book an online consultation with a Medzoos doctor.',
+    title: 'First consult from home',
+    description: 'Book an online doctor consultation.',
     cta: 'Book now',
-    bg: '#0E7A72',
+    bg: homeBrand.bannerDeep,
     action: 'doctors',
+    badge: 'Online',
     image: IMAGE_BY_ACTION.doctors,
   },
   {
     id: 'offer-labs',
     label: 'Lab offer',
     title: 'Lab tests with home sampling',
-    description: 'Book diagnostic tests with home sample collection.',
+    description: 'Book diagnostic tests near you.',
     cta: 'Book test',
-    bg: '#1A7A88',
+    bg: homeBrand.bannerSoft,
     action: 'labs',
     badge: 'Home sampling',
     image: IMAGE_BY_ACTION.labs,
@@ -126,11 +127,12 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
   {
     id: 'offer-hospitals',
     label: 'Hospital offer',
-    title: 'Hospital care, booked in minutes',
-    description: 'Book visits at leading hospitals on Medzoos.',
+    title: 'Hospital care, booked fast',
+    description: 'Book visits at leading hospitals.',
     cta: 'Find hospitals',
-    bg: '#124362',
+    bg: homeBrand.bannerDeep,
     action: 'hospitals',
+    badge: 'Book visit',
     image: IMAGE_BY_ACTION.hospitals,
   },
 ];
@@ -497,3 +499,4 @@ export const TRUST_ITEMS = [
   { icon: 'backup-restore', title: 'Easy Returns', subtitle: '7 Days Return Policy' },
   { icon: 'headset', title: '24/7 Support', subtitle: 'We are here to help' },
 ];
+

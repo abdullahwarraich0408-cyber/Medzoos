@@ -12,7 +12,6 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors } from '../../theme';
 import {
   TAB_BAR_CENTER_LIFT,
   TAB_BAR_HEIGHT,
@@ -23,6 +22,18 @@ import { getTabRootScreen } from '../../navigation/tabBarVisibility';
 
 const COPILOT_MARK = require('../../assets/branding/tab-copilot-mark.png');
 
+/** Tab bar brand — same teal as Home / Doctors (#105568). */
+const tabBrand = {
+  ink: '#0C4554',
+  accent: '#105568',
+  soft: '#E4F0F3',
+  mist: '#C5DCE2',
+  card: '#FFFFFF',
+  muted: '#7A929C',
+  border: 'rgba(16, 85, 104, 0.14)',
+  onAccent: '#FFFFFF',
+} as const;
+
 type TabConfig = {
   name: keyof MainTabParamList;
   label: string;
@@ -32,8 +43,18 @@ type TabConfig = {
 };
 
 const TABS: TabConfig[] = [
-  { name: 'Home', label: 'Home', icon: 'home', iconFocused: 'home' },
-  { name: 'Health', label: 'Health', icon: 'heart', iconFocused: 'heart' },
+  {
+    name: 'Home',
+    label: 'Home',
+    icon: 'home-outline',
+    iconFocused: 'home',
+  },
+  {
+    name: 'Health',
+    label: 'Health',
+    icon: 'heart-outline',
+    iconFocused: 'heart',
+  },
   {
     name: 'Copilot',
     label: 'Medzoos',
@@ -44,15 +65,20 @@ const TABS: TabConfig[] = [
   {
     name: 'Community',
     label: 'Community',
-    icon: 'account-group',
+    icon: 'account-group-outline',
     iconFocused: 'account-group',
   },
-  { name: 'You', label: 'You', icon: 'account', iconFocused: 'account' },
+  {
+    name: 'You',
+    label: 'You',
+    icon: 'account-outline',
+    iconFocused: 'account',
+  },
 ];
 
 const BAR_H_PADDING = 4;
-const CENTER_SIZE = 44;
-const CENTER_RING = 50;
+const CENTER_SIZE = 46;
+const CENTER_RING = 54;
 const ICON_SIZE = 22;
 
 type CustomBottomTabBarProps = BottomTabBarProps & {
@@ -112,7 +138,6 @@ function SideTab({
       accessibilityLabel={accessibilityLabel}
       hitSlop={6}>
       <Animated.View style={[styles.tabInner, { transform: [{ scale }] }]}>
-        {/* Circle highlight — solid bg avoids Android transparent+overflow icon bug */}
         <View
           style={[
             styles.iconCircle,
@@ -121,7 +146,7 @@ function SideTab({
           <Icon
             name={(isFocused ? iconFocused : icon) as never}
             size={ICON_SIZE}
-            color={isFocused ? colors.primary700 : '#415F78'}
+            color={isFocused ? tabBrand.onAccent : tabBrand.muted}
             style={styles.tabIcon}
           />
         </View>
@@ -130,6 +155,7 @@ function SideTab({
           numberOfLines={1}>
           {label}
         </Text>
+        {isFocused ? <View style={styles.activeDot} /> : <View style={styles.activeDotSpacer} />}
       </Animated.View>
     </Pressable>
   );
@@ -194,138 +220,146 @@ export function BottomTabBar({
     <View
       style={[
         styles.shell,
-        { height: occupiedHeight },
-        !visible && styles.shellHidden,
+        visible ? { height: occupiedHeight } : styles.shellHidden,
       ]}
       pointerEvents={visible ? 'box-none' : 'none'}
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}>
-      <View
-        style={[styles.wrapper, { paddingBottom: bottomPad }]}
-        pointerEvents={visible ? 'box-none' : 'none'}>
+      {visible ? (
         <View
-          style={styles.barStage}
-          pointerEvents={visible ? 'box-none' : 'none'}>
-          <View
-            style={[styles.floatingBar, !visible && styles.floatingBarHidden]}>
-            <View
-              style={styles.barInner}
-              pointerEvents={visible ? 'auto' : 'none'}>
-              {TABS.map((tab, index) => {
-                const route = state.routes.find(r => r.name === tab.name);
-                if (!route) return null;
+          style={[styles.wrapper, { paddingBottom: bottomPad }]}
+          pointerEvents="box-none">
+          <View style={styles.barStage} pointerEvents="box-none">
+            <View style={styles.floatingBar}>
+              <View style={styles.barInner} pointerEvents="auto">
+                {TABS.map((tab, index) => {
+                  const route = state.routes.find(r => r.name === tab.name);
+                  if (!route) return null;
 
-                const isFocused = activeIndex === index;
+                  const isFocused = activeIndex === index;
 
-                if (tab.isCenter) {
+                  if (tab.isCenter) {
+                    return (
+                      <View key={tab.name} style={styles.centerSlot}>
+                        <Text
+                          style={[
+                            styles.centerLabel,
+                            isFocused && styles.centerLabelActive,
+                          ]}>
+                          {tab.label}
+                        </Text>
+                        {isFocused ? (
+                          <View style={styles.activeDot} />
+                        ) : (
+                          <View style={styles.activeDotSpacer} />
+                        )}
+                      </View>
+                    );
+                  }
+
                   return (
-                    <View key={tab.name} style={styles.centerSlot}>
-                      <Text
-                        style={[
-                          styles.centerLabel,
-                          isFocused && styles.centerLabelActive,
-                        ]}>
-                        {tab.label}
-                      </Text>
-                    </View>
+                    <SideTab
+                      key={tab.name}
+                      label={tab.label}
+                      icon={tab.icon}
+                      iconFocused={tab.iconFocused}
+                      isFocused={isFocused}
+                      disabled={!visible}
+                      accessibilityLabel={
+                        descriptors[route.key]?.options
+                          .tabBarAccessibilityLabel ?? tab.label
+                      }
+                      onPress={() => handleTabPress(index, isFocused)}
+                      onLongPress={() =>
+                        navigation.emit({
+                          type: 'tabLongPress',
+                          target: route.key,
+                        })
+                      }
+                    />
                   );
-                }
+                })}
+              </View>
+            </View>
 
-                return (
-                  <SideTab
-                    key={tab.name}
-                    label={tab.label}
-                    icon={tab.icon}
-                    iconFocused={tab.iconFocused}
-                    isFocused={isFocused}
-                    disabled={!visible}
-                    accessibilityLabel={
-                      descriptors[route.key]?.options
-                        .tabBarAccessibilityLabel ?? tab.label
-                    }
-                    onPress={() => handleTabPress(index, isFocused)}
-                    onLongPress={() =>
-                      navigation.emit({
-                        type: 'tabLongPress',
-                        target: route.key,
-                      })
-                    }
-                  />
-                );
-              })}
+            <View style={styles.centerFabSlot} pointerEvents="box-none">
+              <Pressable
+                style={styles.centerFab}
+                onPress={() => handleTabPress(centerIndex, centerFocused)}
+                onPressIn={() =>
+                  Animated.spring(fabScale, {
+                    toValue: 0.94,
+                    useNativeDriver: true,
+                    friction: 6,
+                  }).start()
+                }
+                onPressOut={() =>
+                  Animated.spring(fabScale, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                    friction: 5,
+                  }).start()
+                }
+                onLongPress={() => {
+                  const route = state.routes.find(r => r.name === 'Copilot');
+                  if (route) {
+                    navigation.emit({
+                      type: 'tabLongPress',
+                      target: route.key,
+                    });
+                  }
+                }}
+                disabled={!visible}
+                accessibilityRole="button"
+                accessibilityState={{
+                  selected: centerFocused,
+                  disabled: !visible,
+                }}
+                accessibilityLabel="Medzoos">
+                <Animated.View
+                  style={[
+                    styles.centerRing,
+                    centerFocused && styles.centerRingActive,
+                    { transform: [{ scale: fabScale }] },
+                  ]}>
+                  <View
+                    style={[
+                      styles.centerBtn,
+                      centerFocused && styles.centerBtnActive,
+                    ]}>
+                    <Image
+                      source={COPILOT_MARK}
+                      style={styles.centerLogo}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </Animated.View>
+              </Pressable>
             </View>
           </View>
-
-          <View style={styles.centerFabSlot} pointerEvents="box-none">
-            <Pressable
-              style={styles.centerFab}
-              onPress={() => handleTabPress(centerIndex, centerFocused)}
-              onPressIn={() =>
-                Animated.spring(fabScale, {
-                  toValue: 0.94,
-                  useNativeDriver: true,
-                  friction: 6,
-                }).start()
-              }
-              onPressOut={() =>
-                Animated.spring(fabScale, {
-                  toValue: 1,
-                  useNativeDriver: true,
-                  friction: 5,
-                }).start()
-              }
-              onLongPress={() => {
-                const route = state.routes.find(r => r.name === 'Copilot');
-                if (route) {
-                  navigation.emit({ type: 'tabLongPress', target: route.key });
-                }
-              }}
-              disabled={!visible}
-              accessibilityRole="button"
-              accessibilityState={{
-                selected: centerFocused,
-                disabled: !visible,
-              }}
-              accessibilityLabel="Medzoos">
-              <Animated.View
-                style={[
-                  styles.centerRing,
-                  centerFocused && styles.centerRingActive,
-                  { transform: [{ scale: fabScale }] },
-                ]}>
-                <View
-                  style={[
-                    styles.centerBtn,
-                    centerFocused && styles.centerBtnActive,
-                  ]}>
-                  <Image
-                    source={COPILOT_MARK}
-                    style={styles.centerLogo}
-                    resizeMode="contain"
-                  />
-                </View>
-              </Animated.View>
-            </Pressable>
-          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  /** Floats over screen content — no solid band behind the pill. */
   shell: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     backgroundColor: 'transparent',
     overflow: 'visible',
+    zIndex: 100,
+    elevation: 100,
   },
   shellHidden: {
     height: 0,
     overflow: 'hidden',
     opacity: 0,
-  },
-  wash: {
-    ...StyleSheet.absoluteFill,
   },
   wrapper: {
     ...StyleSheet.absoluteFill,
@@ -334,6 +368,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: TAB_BAR_CENTER_LIFT,
     overflow: 'visible',
+    backgroundColor: 'transparent',
   },
   barStage: {
     width: '100%',
@@ -343,21 +378,18 @@ const styles = StyleSheet.create({
   floatingBar: {
     width: '100%',
     borderRadius: 26,
-    backgroundColor: '#FFFFFF',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(8, 43, 63, 0.1)',
+    backgroundColor: tabBrand.card,
+    borderWidth: 1,
+    borderColor: tabBrand.border,
     ...Platform.select({
       ios: {
-        shadowColor: '#082B3F',
+        shadowColor: tabBrand.ink,
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 20,
+        shadowOpacity: 0.1,
+        shadowRadius: 18,
       },
       android: { elevation: 10 },
     }),
-  },
-  floatingBarHidden: {
-    opacity: 0,
   },
   barInner: {
     flexDirection: 'row',
@@ -365,7 +397,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: TAB_BAR_HEIGHT,
     paddingHorizontal: BAR_H_PADDING,
-    paddingBottom: 8,
+    paddingBottom: 6,
     paddingTop: 6,
   },
   tabCell: {
@@ -380,16 +412,18 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginBottom: 1,
+    overflow: 'hidden',
   },
   iconCircleIdle: {
-    backgroundColor: 'rgba(222, 238, 249, 0.35)',
+    backgroundColor: 'transparent',
   },
   iconCircleActive: {
-    backgroundColor: colors.primary100,
+    backgroundColor: tabBrand.accent,
+    borderRadius: 999,
   },
   tabIcon: {
     includeFontPadding: false,
@@ -397,22 +431,34 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: 0.1,
-    color: '#415F78',
+    color: tabBrand.muted,
     textAlign: 'center',
     marginTop: 1,
   },
   tabLabelActive: {
-    color: colors.primary800,
-    fontWeight: '700',
+    color: tabBrand.accent,
+    fontWeight: '800',
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: tabBrand.accent,
+    marginTop: 3,
+  },
+  activeDotSpacer: {
+    width: 4,
+    height: 4,
+    marginTop: 3,
   },
   centerSlot: {
     width: 56,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingBottom: 2,
-    paddingTop: 28,
+    paddingBottom: 0,
+    paddingTop: 30,
   },
   centerFabSlot: {
     position: 'absolute',
@@ -434,35 +480,36 @@ const styles = StyleSheet.create({
     borderRadius: CENTER_RING / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary100,
-    borderWidth: 1,
-    borderColor: colors.primary200,
+    backgroundColor: tabBrand.soft,
+    borderWidth: 2,
+    borderColor: tabBrand.card,
   },
   centerRingActive: {
-    backgroundColor: colors.primary200,
-    borderColor: colors.primary400,
+    backgroundColor: tabBrand.accent,
+    borderColor: tabBrand.soft,
   },
   centerBtn: {
     width: CENTER_SIZE,
     height: CENTER_SIZE,
     borderRadius: CENTER_SIZE / 2,
-    backgroundColor: colors.white,
+    backgroundColor: tabBrand.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: colors.primary200,
+    borderColor: tabBrand.mist,
     ...Platform.select({
       ios: {
-        shadowColor: '#082B3F',
+        shadowColor: tabBrand.ink,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.14,
+        shadowOpacity: 0.12,
         shadowRadius: 8,
       },
       android: { elevation: 6 },
     }),
   },
   centerBtnActive: {
-    borderColor: colors.primary700,
+    borderColor: tabBrand.accent,
+    backgroundColor: tabBrand.soft,
   },
   centerLogo: {
     width: 26,
@@ -470,12 +517,12 @@ const styles = StyleSheet.create({
   },
   centerLabel: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: 0.1,
-    color: '#415F78',
+    color: tabBrand.muted,
   },
   centerLabelActive: {
-    color: colors.primary800,
-    fontWeight: '700',
+    color: tabBrand.accent,
+    fontWeight: '800',
   },
 });

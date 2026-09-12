@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { colors, spacing, radius, shadows } from '../../../theme';
 import { calmLayout } from '../../../theme/calmLayout';
+import { homeBrand } from '../homeBrand';
 import { getApiBaseUrl } from '../../../config/api';
 import { useContentItems } from '../hooks/useContentItems';
 
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     width: 260,
     minHeight: 132,
     borderRadius: radius.lg,
-    backgroundColor: colors.primary700,
+    backgroundColor: homeBrand.main,
     overflow: 'hidden',
     ...shadows.cardSoft,
   },

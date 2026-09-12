@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { PatientMedicine } from '../../../medicines/data/medicineModel';
-import { colors, spacing, radius } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { spacing } from '../../../../theme';
+import { calmLayout } from '../../../../theme/calmLayout';
+import { healthBrand } from '../../healthBrand';
 
 type HealthActiveMedsStripProps = {
   medicines: PatientMedicine[];
@@ -21,9 +22,12 @@ export function HealthActiveMedsStrip({
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>Active medicines</Text>
-        <Pressable onPress={onSeeAll} hitSlop={8}>
+        <View style={styles.header}>
+          <Text style={styles.sectionTitle}>Active medicines</Text>
+        </View>
+        <Pressable onPress={onSeeAll} hitSlop={8} style={styles.seeAllBtn}>
           <Text style={styles.seeAll}>See all</Text>
+          <Icon name="chevron-right" size={16} color={healthBrand.accent} />
         </Pressable>
       </View>
 
@@ -34,7 +38,7 @@ export function HealthActiveMedsStrip({
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             onPress={() => onMedicinePress(med.medicineId)}>
             <View style={styles.iconWrap}>
-              <Icon name="pill" size={16} color={colors.primary700} />
+              <Icon name="pill" size={16} color={healthBrand.onAccent} />
             </View>
             <View style={styles.body}>
               <Text style={styles.name} numberOfLines={1}>
@@ -45,7 +49,7 @@ export function HealthActiveMedsStrip({
                   'Active'}
               </Text>
             </View>
-            <Icon name="chevron-right" size={18} color={colors.textMuted} />
+            <Icon name="chevron-right" size={18} color={healthBrand.muted} />
           </Pressable>
         ))}
       </View>
@@ -54,49 +58,71 @@ export function HealthActiveMedsStrip({
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md },
+  section: {
+    paddingHorizontal: calmLayout.screenPadding,
+    gap: spacing.md,
+  },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
+  header: { flex: 1, gap: 4, minWidth: 0 },
   sectionTitle: {
-    ...healthOsTypography.sectionTitle,
+    fontSize: 20,
+    fontWeight: '700',
+    color: healthBrand.ink,
+    letterSpacing: -0.3,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingBottom: 2,
   },
   seeAll: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.primary700,
+    color: healthBrand.accent,
   },
   list: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    backgroundColor: healthBrand.card,
+    borderRadius: 18,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    ...Platform.select({
+      ios: {
+        shadowColor: healthBrand.ink,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+      },
+      android: { elevation: 1 },
+    }),
   },
-  pressed: { backgroundColor: colors.primary100 },
+  pressed: { opacity: 0.92 },
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary100,
+    borderRadius: 12,
+    backgroundColor: healthBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   body: { flex: 1, gap: 2, minWidth: 0 },
   name: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontWeight: '700',
+    color: healthBrand.ink,
   },
   meta: {
     fontSize: 12,
-    color: colors.textMuted,
+    fontWeight: '500',
+    color: healthBrand.muted,
   },
 });

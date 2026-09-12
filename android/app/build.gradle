@@ -87,12 +87,15 @@ android {
         versionName "1.0"
         externalNativeBuild {
             cmake {
-                // Long Windows paths (spaces + node_modules) break default 250-char object paths
                 // -g1: line-tables-only debug info — much less RAM than full -g for Reanimated C++
-                arguments "-DCMAKE_OBJECT_PATH_MAX=512",
-                    "-DCMAKE_CXX_FLAGS_DEBUG=-g1 -O1",
+                arguments "-DCMAKE_CXX_FLAGS_DEBUG=-g1 -O1",
                     "-DCMAKE_C_FLAGS_DEBUG=-g1 -O1"
             }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            buildStagingDirectory file("C:/b/c")
         }
     }
     signingConfigs {

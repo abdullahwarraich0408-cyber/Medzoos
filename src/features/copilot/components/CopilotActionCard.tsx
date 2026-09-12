@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { CopilotAction } from '../../../lib/copilot/types';
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs, healthOsTypography } from '../../../theme/healthOs';
+import { copilotBrand } from '../copilotBrand';
+import { spacing } from '../../../theme';
 
 const ACTION_ICONS: Record<string, string> = {
   book_doctor: 'doctor',
@@ -29,7 +29,11 @@ type CopilotActionCardProps = {
   isPrimary?: boolean;
 };
 
-export function CopilotActionCard({ action, onPress, isPrimary }: CopilotActionCardProps) {
+export function CopilotActionCard({
+  action,
+  onPress,
+  isPrimary,
+}: CopilotActionCardProps) {
   const icon = ACTION_ICONS[action.type] ?? 'arrow-right-circle';
   const isEmergency =
     action.type === 'emergency_alert' || action.type === 'call_emergency';
@@ -51,22 +55,38 @@ export function CopilotActionCard({ action, onPress, isPrimary }: CopilotActionC
           ]}>
           <Icon
             name={icon}
-            size={22}
-            color={isPrimary || isEmergency ? colors.white : colors.brandPrimary}
+            size={20}
+            color={
+              isPrimary || isEmergency
+                ? copilotBrand.onAccent
+                : copilotBrand.accent
+            }
           />
         </View>
         <View style={styles.content}>
-          <Text style={[styles.label, (isPrimary || isEmergency) && styles.labelLight]}>
+          <Text
+            style={[
+              styles.label,
+              (isPrimary || isEmergency) && styles.labelLight,
+            ]}>
             {action.label}
           </Text>
-          <Text style={[styles.reason, (isPrimary || isEmergency) && styles.reasonLight]}>
+          <Text
+            style={[
+              styles.reason,
+              (isPrimary || isEmergency) && styles.reasonLight,
+            ]}>
             {action.reason}
           </Text>
         </View>
         <Icon
           name="chevron-right"
           size={20}
-          color={isPrimary || isEmergency ? colors.white : colors.neutral400}
+          color={
+            isPrimary || isEmergency
+              ? copilotBrand.onAccent
+              : copilotBrand.mist
+          }
         />
       </View>
     </Pressable>
@@ -75,34 +95,43 @@ export function CopilotActionCard({ action, onPress, isPrimary }: CopilotActionC
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surfaceBase,
-    borderRadius: radius.lg,
+    backgroundColor: copilotBrand.page,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
+    borderColor: copilotBrand.border,
+    padding: spacing.md,
   },
   cardPrimary: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: copilotBrand.accent,
+    borderColor: copilotBrand.accent,
   },
   cardEmergency: {
     backgroundColor: '#DC2626',
     borderColor: '#DC2626',
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2 },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: `${colors.brandPrimary}15`,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: copilotBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapPrimary: { backgroundColor: 'rgba(255,255,255,0.2)' },
   iconWrapEmergency: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  content: { flex: 1, gap: 2 },
-  label: { ...healthOsTypography.messageTitle, fontSize: 15 },
-  labelLight: { color: colors.white },
-  reason: { ...healthOsTypography.messageBody, fontSize: 13, color: colors.neutral600 },
+  content: { flex: 1, gap: 2, minWidth: 0 },
+  label: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: copilotBrand.ink,
+  },
+  labelLight: { color: copilotBrand.onAccent },
+  reason: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: copilotBrand.muted,
+  },
   reasonLight: { color: 'rgba(255,255,255,0.85)' },
 });

@@ -6,8 +6,10 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
   PhoneSignIn: undefined;
   OtpVerify: {
-    phone: string;
-    confirmation: import('../types/auth').PhoneLoginConfirmation;
+    phone?: string;
+    email?: string;
+    mode?: 'email' | 'phone';
+    confirmation?: import('../types/auth').PhoneLoginConfirmation;
   };
   CompleteProfile: undefined;
 };
@@ -25,6 +27,7 @@ export type AccountStackParamList = {
   Payments: undefined;
   Notifications: undefined;
   Settings: undefined;
+  PrivacySecurity: undefined;
   Support: undefined;
 } & AuthStackParamList;
 

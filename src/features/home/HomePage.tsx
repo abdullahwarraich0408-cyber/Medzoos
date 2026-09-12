@@ -163,7 +163,9 @@ export function HomePage() {
         }>
         {/* Search */}
         <View style={styles.searchBar}>
-          <Icon name="magnify" size={20} color={colors.brandPrimary} />
+          <View style={styles.searchIconTile}>
+            <Icon name="magnify" size={20} color={colors.brandPrimary} />
+          </View>
           <TextInput
             style={styles.searchInput}
             placeholder="Search medicines, doctors, lab tests..."
@@ -174,10 +176,14 @@ export function HomePage() {
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
-          {searchQuery.length > 0 && Platform.OS === 'android' && (
+          {searchQuery.length > 0 && Platform.OS === 'android' ? (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
               <Icon name="close-circle" size={18} color={colors.neutral500} />
             </Pressable>
+          ) : (
+            <View style={styles.searchFilterBadge}>
+              <Icon name="tune-variant" size={18} color={colors.brandPrimary} />
+            </View>
           )}
         </View>
 
@@ -412,27 +418,46 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: TAB_BAR_CLEARANCE,
-    gap: spacing.xl,
+    gap: spacing.md,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    height: 52,
+    marginTop: spacing.sm,
     backgroundColor: colors.white,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: Platform.OS === 'ios' ? spacing.md : spacing.sm,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingRight: 14,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: 'rgba(91, 130, 156, 0.18)',
     ...shadows.card,
+  },
+  searchIconTile: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(91, 130, 156, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
+    fontWeight: '500',
     color: colors.neutral900,
     padding: 0,
+  },
+  searchFilterBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(91, 130, 156, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroRow: {
     gap: spacing.md,

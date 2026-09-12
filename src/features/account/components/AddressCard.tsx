@@ -1,10 +1,9 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { Address } from '../../../lib/api';
-
+import { addressesBrand } from '../accountScreenBrands';
+import { spacing, radius } from '../../../theme';
 
 type AddressCardProps = {
   address: Address;
@@ -21,8 +20,8 @@ export function AddressCard({ address, onDelete }: AddressCardProps) {
 
   return (
     <View style={styles.card}>
-      <View style={styles.iconWrap}>
-        <Icon name="map-marker" size={22} color={colors.brandPrimary} />
+      <View style={styles.pin}>
+        <Icon name="map-marker" size={20} color={addressesBrand.onAccent} />
       </View>
       <View style={styles.body}>
         <View style={styles.titleRow}>
@@ -42,7 +41,7 @@ export function AddressCard({ address, onDelete }: AddressCardProps) {
       </View>
       {onDelete ? (
         <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
-          <Icon name="trash-can-outline" size={18} color={colors.statusDanger} />
+          <Icon name="trash-can-outline" size={18} color={addressesBrand.danger} />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -54,22 +53,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    backgroundColor: addressesBrand.card,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
+    borderColor: addressesBrand.border,
+    padding: spacing.md,
   },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandLight,
+  pin: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: addressesBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: { flex: 1 },
+  body: { flex: 1, minWidth: 0 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -79,30 +77,34 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: addressesBrand.ink,
   },
   defaultBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: addressesBrand.soft,
   },
   defaultText: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.white,
+    color: addressesBrand.accent,
     textTransform: 'uppercase',
   },
   street: {
     fontSize: 14,
-    color: colors.neutral600,
+    color: addressesBrand.muted,
     marginTop: 4,
     lineHeight: 20,
   },
   city: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: addressesBrand.muted,
     marginTop: 2,
   },
-  deleteBtn: { padding: spacing.xs },
+  deleteBtn: {
+    padding: spacing.xs,
+    borderRadius: 10,
+    backgroundColor: addressesBrand.dangerSoft,
+  },
 });

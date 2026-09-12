@@ -1,160 +1,250 @@
-import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Platform,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing } from '../../../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, spacing, radius } from '../../../theme';
+import { homeBrand } from '../homeBrand';
 
 type HomeGreetingProps = {
   firstName: string;
   fullName?: string;
-  avatarUrl?: string | null;
-  unreadCount?: number;
-  onProfilePress?: () => void;
+  locationLabel?: string;
+  searchQuery: string;
+  onChangeSearch: (value: string) => void;
+  onSubmitSearch: () => void;
   onMenuPress?: () => void;
+  onLocationPress?: () => void;
   onNotificationsPress?: () => void;
+  unreadCount?: number;
 };
 
-/** Home-only greeting (no global top bar on this tab). */
+/**
+ * Full-bleed dark trust header — menu, location, greeting, search.
+ */
 export function HomeGreeting({
   firstName,
   fullName,
-  avatarUrl,
-  unreadCount = 0,
-  onProfilePress,
+  locationLabel = 'Pakistan',
+  searchQuery,
+  onChangeSearch,
+  onSubmitSearch,
   onMenuPress,
+  onLocationPress,
   onNotificationsPress,
+  unreadCount = 0,
 }: HomeGreetingProps) {
-  const displayName = fullName?.trim() || firstName;
+  const insets = useSafeAreaInsets();
+  const displayName = (fullName?.trim() || firstName || 'there').split(' ')[0];
+
+  const locationTitle = useMemo(() => {
+    const label = (locationLabel || 'Pakistan').trim();
+    // Prefer city/area only — drop long address tails
+    const short = label.split(',')[0]?.trim() || label;
+    if (short.length <= 14) return short;
+    return `${short.slice(0, 12).trim()}…`;
+  }, [locationLabel]);
+
+  const topPad =
+    Math.max(insets.top, Platform.OS === 'android' ? 12 : 0) + spacing.sm;
 
   return (
-    <View style={styles.row}>
-      <Pressable
-        style={styles.identity}
-        onPress={onProfilePress}
-        accessibilityRole="button"
-        accessibilityLabel="Open profile">
-        <View style={styles.avatarRing}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitial}>
-                {(firstName || 'U').charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.copy}>
-          <Text style={styles.hello}>Hello</Text>
-          <Text style={styles.name} numberOfLines={1}>
-            {displayName}!
-          </Text>
-        </View>
-      </Pressable>
+    <View
+      style={[
+        styles.header,
+        {
+          paddingTop: topPad,
+          paddingLeft: Math.max(insets.left, spacing.lg),
+          paddingRight: Math.max(insets.right, spacing.lg),
+        },
+      ]}>
+      <View style={styles.topRow}>
+        <Pressable
+          style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
+          onPress={onMenuPress}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          hitSlop={6}>
+          <Icon name="menu" size={20} color={homeBrand.onMain} />
+        </Pressable>
 
-      <View style={styles.actions}>
-        {onNotificationsPress ? (
+        <View style={styles.topActions}>
+          {onNotificationsPress ? (
+            <Pressable
+              style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
+              onPress={onNotificationsPress}
+              accessibilityLabel="Notifications"
+              hitSlop={6}>
+              <Icon name="bell-outline" size={18} color={homeBrand.onMain} />
+              {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
+            </Pressable>
+          ) : null}
+
           <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-            onPress={onNotificationsPress}
-            accessibilityLabel="Notifications"
-            hitSlop={8}>
-            <Icon name="bell-outline" size={22} color={colors.primary900} />
-            {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
+            style={({ pressed }) => [styles.locationChip, pressed && styles.pressed]}
+            onPress={onLocationPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Current location ${locationTitle}`}>
+            <Icon name="map-marker" size={14} color={homeBrand.onMain} />
+            <Text style={styles.locationName} numberOfLines={1}>
+              {locationTitle}
+            </Text>
+            <Icon name="chevron-down" size={14} color="rgba(255,255,255,0.8)" />
           </Pressable>
-        ) : null}
-        {onMenuPress ? (
-          <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-            onPress={onMenuPress}
-            accessibilityLabel="Open menu"
-            hitSlop={8}>
-            <Icon name="menu" size={22} color={colors.primary900} />
-          </Pressable>
-        ) : null}
+        </View>
+      </View>
+
+      <View style={styles.greetingBlock}>
+        <Text style={styles.helloText} numberOfLines={1}>
+          Hello, {displayName}
+        </Text>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          Find the best medical care for you
+        </Text>
+      </View>
+
+      <View style={styles.searchWrap}>
+        <Pressable style={styles.searchBar} onPress={onSubmitSearch}>
+          <Icon name="magnify" size={20} color={homeBrand.muted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search doctors, specialties..."
+            placeholderTextColor={homeBrand.muted}
+            value={searchQuery}
+            onChangeText={onChangeSearch}
+            onSubmitEditing={onSubmitSearch}
+            returnKeyType="search"
+          />
+          <View style={styles.filterBtn}>
+            <Icon name="tune-variant" size={18} color={homeBrand.main} />
+          </View>
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  identity: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  avatarRing: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    padding: 2,
-    backgroundColor: colors.primary100,
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  avatar: {
+  header: {
     width: '100%',
-    height: '100%',
-    borderRadius: 24,
+    alignSelf: 'stretch',
+    backgroundColor: homeBrand.header,
+    paddingBottom: spacing.lg,
   },
-  avatarFallback: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  topActions: {
     flex: 1,
-    borderRadius: 24,
-    backgroundColor: colors.primary100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    minWidth: 0,
+  },
+  iconOutline: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInitial: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.primary800,
+  notifDot: {
+    position: 'absolute',
+    top: 7,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.error,
+    borderWidth: 1,
+    borderColor: homeBrand.main,
   },
-  copy: {
-    flex: 1,
-    gap: 2,
-  },
-  hello: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.primary800,
-    letterSpacing: -0.3,
-  },
-  actions: {
+  locationChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 4,
+    maxWidth: 128,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surfaceBlue,
+  locationName: {
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: homeBrand.onMain,
+  },
+  greetingBlock: {
+    marginTop: spacing.lg,
+    gap: 4,
+    paddingRight: spacing.md,
+  },
+  helloText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: homeBrand.onMain,
+    letterSpacing: -0.4,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.78)',
+    lineHeight: 18,
+  },
+  searchWrap: {
+    marginTop: spacing.lg,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 50,
+    backgroundColor: colors.white,
+    borderRadius: radius.pill,
+    paddingLeft: 16,
+    paddingRight: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: homeBrand.main,
+    padding: 0,
+    margin: 0,
+  },
+  filterBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: homeBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: {
     opacity: 0.88,
-    backgroundColor: colors.primary100,
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.error,
-    borderWidth: 1.5,
-    borderColor: colors.background,
   },
 });

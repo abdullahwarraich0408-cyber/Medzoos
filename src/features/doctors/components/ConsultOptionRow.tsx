@@ -1,9 +1,8 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { doctorsBrand } from '../doctorsBrand';
+import { spacing, radius } from '../../../theme';
 import type { ConsultOption } from '../utils/consultOptions';
 
 type ConsultOptionRowProps = {
@@ -18,7 +17,7 @@ export function ConsultOptionRow({
   compact = false,
 }: ConsultOptionRowProps) {
   const isOnline = option.type === 'online';
-  const icon = isOnline ? 'video' : 'hospital-building';
+  const icon = isOnline ? 'video-outline' : 'hospital-building';
 
   return (
     <TouchableOpacity
@@ -27,7 +26,7 @@ export function ConsultOptionRow({
       activeOpacity={0.85}
       disabled={!onPress}>
       <View style={[styles.iconWrap, isOnline && styles.iconWrapOnline]}>
-        <Icon name={icon} size={20} color={colors.brandPrimary} />
+        <Icon name={icon} size={compact ? 18 : 20} color={doctorsBrand.accent} />
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={1}>
@@ -35,24 +34,30 @@ export function ConsultOptionRow({
         </Text>
         {option.location ? (
           <View style={styles.locationRow}>
-            <Icon name="map-marker" size={11} color={colors.neutral500} />
+            <Icon name="map-marker" size={11} color={doctorsBrand.muted} />
             <Text style={styles.subtitle} numberOfLines={1}>
               {option.location}
             </Text>
           </View>
         ) : option.subtitle ? (
-          <Text style={styles.subtitle}>{option.subtitle}</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {option.subtitle}
+          </Text>
         ) : null}
         <View style={styles.availRow}>
-          <View style={styles.availDot} />
-          <Text style={styles.availability}>{option.availability}</Text>
+          <View style={styles.availPill}>
+            <View style={styles.availDot} />
+            <Text style={styles.availability}>{option.availability}</Text>
+          </View>
         </View>
       </View>
       <View style={styles.priceCol}>
         <Text style={styles.fee}>PKR {option.fee.toLocaleString()}</Text>
-        {onPress && (
-          <Icon name="chevron-right" size={16} color={colors.neutral500} />
-        )}
+        {onPress ? (
+          <View style={styles.chevronWrap}>
+            <Icon name="chevron-right" size={16} color={doctorsBrand.accent} />
+          </View>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -64,24 +69,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.lg,
-    borderRadius: radius.lg,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    backgroundColor: colors.white,
+    borderColor: doctorsBrand.border,
+    backgroundColor: doctorsBrand.page,
+    ...Platform.select({
+      ios: {
+        shadowColor: doctorsBrand.ink,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+      },
+      android: { elevation: 1 },
+    }),
   },
   rowCompact: {
-    padding: spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    gap: spacing.sm,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceSubtle,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: doctorsBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapOnline: {
-    backgroundColor: colors.brandMist,
+    backgroundColor: doctorsBrand.glaze,
   },
   body: {
     flex: 1,
@@ -90,7 +106,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: doctorsBrand.ink,
   },
   locationRow: {
     flexDirection: 'row',
@@ -100,33 +116,50 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 11,
-    color: colors.neutral500,
+    color: doctorsBrand.muted,
     flex: 1,
+    marginTop: 2,
   },
   availRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
+    marginTop: 6,
+  },
+  availPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: doctorsBrand.successSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
   },
   availDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.statusSuccess,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: doctorsBrand.success,
   },
   availability: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.statusSuccess,
+    fontSize: 10,
+    fontWeight: '700',
+    color: doctorsBrand.success,
   },
   priceCol: {
     alignItems: 'flex-end',
-    gap: 4,
+    gap: 6,
   },
   fee: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.inkHeadline,
+    fontSize: 13,
+    fontWeight: '800',
+    color: doctorsBrand.accent,
+  },
+  chevronWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: doctorsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

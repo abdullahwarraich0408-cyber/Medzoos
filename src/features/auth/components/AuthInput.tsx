@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    color: authUi.white,
+    color: authUi.ink,
     paddingVertical: 0,
     paddingHorizontal: 0,
   },

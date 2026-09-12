@@ -13,18 +13,24 @@ export const YOU_ACTIVITY_LINKS = [
   {
     id: 'orders',
     title: 'Orders',
+    subtitle: 'Medicines, labs and deliveries',
+    icon: 'package-variant-closed',
     tab: 'You' as const,
     screen: 'OrdersList' as const,
   },
   {
     id: 'appointments',
     title: 'Appointments',
+    subtitle: 'Upcoming and past visits',
+    icon: 'calendar-clock',
     tab: 'You' as const,
     screen: 'Appointments' as const,
   },
   {
     id: 'lab-reports',
     title: 'Lab reports',
+    subtitle: 'Results and history',
+    icon: 'flask-outline',
     tab: 'Health' as const,
     screen: 'LabReports' as const,
   },
@@ -36,7 +42,7 @@ export const YOU_PROFILE_ACTIONS = [
     id: 'edit-profile',
     title: 'Edit profile',
     tab: 'You' as const,
-    screen: 'Profile' as const,
+    screen: 'Settings' as const,
   },
   {
     id: 'family',
@@ -122,7 +128,7 @@ export const ACCOUNT_SETTINGS = [
     icon: 'shield-lock-outline',
     iconColor: iconScheme.color,
     iconBg: iconScheme.bg,
-    screen: 'Settings' as const,
+    screen: 'PrivacySecurity' as const,
   },
   {
     id: 'support',

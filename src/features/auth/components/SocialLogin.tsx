@@ -54,7 +54,7 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
           accessibilityRole="button"
           accessibilityLabel="Continue with Apple">
           <Icon name="apple" size={18} color={authUi.white} />
-          <Text style={styles.btnText}>
+          <Text style={styles.appleText}>
             {loading === 'apple' ? 'Connecting...' : 'Continue with Apple'}
           </Text>
         </TouchableOpacity>
@@ -84,6 +84,11 @@ const styles = StyleSheet.create({
     borderColor: '#184D67',
   },
   btnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: authUi.ink,
+  },
+  appleText: {
     fontSize: 14,
     fontWeight: '700',
     color: authUi.white,

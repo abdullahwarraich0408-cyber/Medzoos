@@ -7,6 +7,7 @@ export type RawProduct = {
   formula?: string;
   category?: string;
   requires_prescription?: boolean;
+  prescription_required?: boolean;
   price?: number;
   stock?: number;
   image_url?: string;
@@ -46,7 +47,7 @@ export function mapProductToMedicine(product: RawProduct): Medicine | null {
     brand: product.category || 'Generic',
     vendor: product.vendor?.business_name || 'Verified Pharmacy',
     category: product.category || 'OTC',
-    prescriptionRequired: Boolean(product.requires_prescription),
+    prescriptionRequired: Boolean(product.prescription_required ?? product.requires_prescription),
     price: product.price ?? 0,
     stock: product.stock ?? 0,
     deliveryEta: 'Same day',

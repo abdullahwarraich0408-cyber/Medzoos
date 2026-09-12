@@ -20,6 +20,9 @@ import type {
   HospitalsStackParamList,
 } from '../../../navigation/types';
 import { spacing } from '../../../theme';
+import { getStackHeaderPaddingTop } from '../../../theme/layout';
+import { stackScreenTitleStyle } from '../../../theme/appBrand';
+import { StackBackButton } from '../../../components/navigation/StackBackButton';
 import { AppointmentFlow } from '../components/AppointmentFlow';
 import { bookingUi, useBookingLayout } from '../utils/bookingUi';
 
@@ -69,32 +72,22 @@ export function DoctorBookingScreen() {
         style={[
           styles.topNav,
           {
-            paddingTop: insets.top + 8,
+            paddingTop: getStackHeaderPaddingTop(insets.top),
             paddingHorizontal: layout.pad,
           },
         ]}>
         <View
           style={[styles.topNavInner, { maxWidth: layout.contentMaxWidth }]}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.navBtn,
-              {
-                width: layout.navBtn,
-                height: layout.navBtn,
-                borderRadius: layout.navBtn / 2,
-              },
-              pressed && styles.pressed,
-            ]}
+          <StackBackButton
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               }
             }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={12}>
-            <Icon name="arrow-left" size={22} color={bookingUi.ink} />
-          </Pressable>
+          />
+          <Text style={styles.topTitle} numberOfLines={1}>
+            Booking
+          </Text>
           <Pressable
             style={({ pressed }) => [
               styles.navBtn,
@@ -189,6 +182,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  topTitle: {
+    flex: 1,
+    ...stackScreenTitleStyle,
+    paddingHorizontal: spacing.sm,
   },
   navBtn: {
     backgroundColor: bookingUi.white,

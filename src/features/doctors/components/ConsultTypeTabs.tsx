@@ -1,9 +1,8 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { doctorsBrand } from '../doctorsBrand';
+import { spacing, radius } from '../../../theme';
 import type { ConsultType } from '../data/mockDoctors';
 
 const TABS: Array<{
@@ -12,7 +11,7 @@ const TABS: Array<{
   icon: string;
 }> = [
   { id: 'in_person', label: 'In-Person', icon: 'hospital-building' },
-  { id: 'online', label: 'Online', icon: 'video' },
+  { id: 'online', label: 'Online', icon: 'video-outline' },
 ];
 
 type ConsultTypeTabsProps = {
@@ -27,7 +26,7 @@ export function ConsultTypeTabs({
   onlineCount = 0,
 }: ConsultTypeTabsProps) {
   return (
-    <View style={styles.wrap}>
+    <View style={styles.track}>
       {TABS.map(tab => {
         const isActive = value === tab.id;
         return (
@@ -35,20 +34,26 @@ export function ConsultTypeTabs({
             key={tab.id}
             style={[styles.tab, isActive && styles.tabActive]}
             onPress={() => onChange(tab.id)}
-            activeOpacity={0.8}>
+            activeOpacity={0.85}>
             <Icon
               name={tab.icon}
-              size={18}
-              color={isActive ? colors.brandPrimary : colors.neutral500}
+              size={16}
+              color={isActive ? doctorsBrand.onAccent : doctorsBrand.muted}
             />
             <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
               {tab.label}
             </Text>
-            {tab.id === 'online' && onlineCount > 0 && (
-              <View style={styles.onlineBadge}>
-                <Text style={styles.onlineBadgeText}>{onlineCount} online</Text>
+            {tab.id === 'online' && onlineCount > 0 ? (
+              <View style={[styles.onlineBadge, isActive && styles.onlineBadgeActive]}>
+                <Text
+                  style={[
+                    styles.onlineBadgeText,
+                    isActive && styles.onlineBadgeTextActive,
+                  ]}>
+                  {onlineCount}
+                </Text>
               </View>
-            )}
+            ) : null}
           </TouchableOpacity>
         );
       })}
@@ -57,46 +62,54 @@ export function ConsultTypeTabs({
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  track: {
     flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    gap: 4,
+    padding: 4,
+    borderRadius: radius.xl,
+    backgroundColor: doctorsBrand.soft,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
+    borderColor: doctorsBrand.border,
+    marginBottom: spacing.md,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.transparent,
+    gap: 6,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.lg,
   },
   tabActive: {
-    borderBottomColor: colors.brandPrimary,
-    backgroundColor: `${colors.brandLight}66`,
+    backgroundColor: doctorsBrand.accent,
   },
   tabLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.neutral500,
+    fontWeight: '700',
+    color: doctorsBrand.muted,
   },
   tabLabelActive: {
-    color: colors.brandPrimary,
+    color: doctorsBrand.onAccent,
   },
   onlineBadge: {
-    backgroundColor: '#f59e0b26',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
+    minWidth: 20,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 5,
+    backgroundColor: doctorsBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onlineBadgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   onlineBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: colors.statusWarning,
+    fontWeight: '800',
+    color: doctorsBrand.accent,
+  },
+  onlineBadgeTextActive: {
+    color: doctorsBrand.onAccent,
   },
 });

@@ -8,6 +8,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
@@ -24,7 +25,8 @@ import {
   NotificationItemCard,
 } from '../components/NotificationPrefToggle';
 import { useNotifications } from '../../../lib/notifications';
-import { colors, spacing, TAB_BAR_CLEARANCE } from '../../../theme';
+import { notificationsBrand } from '../accountScreenBrands';
+import { spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
 
 function formatNotificationTime(time?: string) {
   if (!time) return undefined;
@@ -82,6 +84,8 @@ function NotificationsContent() {
     });
   }, [profileData.recentNotifications, pushNotifications]);
 
+  const unreadCount = recent.filter(item => !item.read).length;
+
   const togglePref = (key: keyof NonNullable<ProfileData['notificationPrefs']>) => {
     const next = {
       ...profileData,
@@ -131,58 +135,83 @@ function NotificationsContent() {
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) },
+        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg },
       ]}
       showsVerticalScrollIndicator={false}>
-      <Text style={styles.subtitle}>
-        Control order alerts, appointment reminders, offers, and health tips.
-      </Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Icon name="bell-ring-outline" size={22} color={notificationsBrand.accent} />
+        </View>
+        <View style={styles.heroText}>
+          <Text style={styles.pageTitle}>Alerts inbox</Text>
+          <Text style={styles.subtitle}>
+            Orders, visits, offers, and health tips.
+          </Text>
+        </View>
+        {unreadCount > 0 ? (
+          <View style={styles.unreadPill}>
+            <Text style={styles.unreadPillText}>{unreadCount} new</Text>
+          </View>
+        ) : null}
+      </View>
 
       {!permissionGranted ? (
         <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Push notifications are off</Text>
-          <Text style={styles.bannerText}>
-            Enable alerts for order updates, appointments, and health reminders.
-          </Text>
-          <Pressable
-            style={styles.bannerBtn}
-            onPress={handleEnablePush}
-            disabled={registering}>
-            <Text style={styles.bannerBtnText}>
-              {registering ? 'Enabling…' : 'Enable notifications'}
+          <View style={styles.bannerIcon}>
+            <Icon name="bell-off-outline" size={20} color={notificationsBrand.warning} />
+          </View>
+          <View style={styles.bannerBody}>
+            <Text style={styles.bannerTitle}>Push is off</Text>
+            <Text style={styles.bannerText}>
+              Enable alerts for order updates, appointments, and reminders.
             </Text>
-          </Pressable>
+            <Pressable
+              style={styles.bannerBtn}
+              onPress={handleEnablePush}
+              disabled={registering}>
+              <Text style={styles.bannerBtnText}>
+                {registering ? 'Enabling…' : 'Enable notifications'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      ) : null}
-
-      <Pressable style={styles.testBtn} onPress={handleTestPush}>
-        <Text style={styles.testBtnText}>Send test notification</Text>
-      </Pressable>
+      ) : (
+        <Pressable style={styles.testBtn} onPress={handleTestPush}>
+          <Icon name="send-outline" size={16} color={notificationsBrand.accent} />
+          <Text style={styles.testBtnText}>Send test notification</Text>
+        </Pressable>
+      )}
 
       {isLoading ? (
         <ActivityIndicator
           size="large"
-          color={colors.brandPrimary}
+          color={notificationsBrand.accent}
           style={styles.loader}
         />
       ) : (
         <>
           <Text style={styles.sectionTitle}>Preferences</Text>
-          {NOTIFICATION_PREF_LABELS.map(pref => (
-            <NotificationPrefToggle
-              key={pref.id}
-              label={pref.label}
-              description={pref.desc}
-              value={Boolean(prefs?.[pref.id])}
-              onToggle={() => togglePref(pref.id)}
-            />
-          ))}
+          <View style={styles.prefs}>
+            {NOTIFICATION_PREF_LABELS.map(pref => (
+              <NotificationPrefToggle
+                key={pref.id}
+                label={pref.label}
+                description={pref.desc}
+                value={Boolean(prefs?.[pref.id])}
+                onToggle={() => togglePref(pref.id)}
+              />
+            ))}
+          </View>
+
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Recent</Text>
+            {recent.length > 0 ? (
+              <Text style={styles.sectionMeta}>{recent.length}</Text>
+            ) : null}
+          </View>
 
           {recent.length > 0 ? (
-            <>
-              <Text style={[styles.sectionTitle, styles.sectionGap]}>
-                Recent
-              </Text>
+            <View style={styles.list}>
               {recent.map(item => (
                 <NotificationItemCard
                   key={item.id}
@@ -197,9 +226,14 @@ function NotificationsContent() {
                   }}
                 />
               ))}
-            </>
+            </View>
           ) : (
-            <Text style={styles.emptyText}>No notifications yet.</Text>
+            <View style={styles.emptyRecent}>
+              <Icon name="bell-outline" size={22} color={notificationsBrand.muted} />
+              <Text style={styles.emptyText}>
+                No notifications yet. You’ll see order and visit updates here.
+              </Text>
+            </View>
           )}
         </>
       )}
@@ -209,7 +243,11 @@ function NotificationsContent() {
 
 export function NotificationsScreen() {
   return (
-    <ScreenLayout headerMode="stack" title="Notifications" showSearch={false}>
+    <ScreenLayout
+      headerMode="stack"
+      title="Notifications"
+      showSearch={false}
+      backgroundColor={notificationsBrand.page}>
       <RequireAuthGate
         title="Sign in for notifications"
         subtitle="Manage notification preferences after signing in."
@@ -222,70 +260,141 @@ export function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: notificationsBrand.card,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: notificationsBrand.border,
+    padding: spacing.md,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: notificationsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroText: { flex: 1, minWidth: 0, gap: 2 },
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: notificationsBrand.ink,
+  },
   subtitle: {
-    fontSize: 14,
-    color: colors.neutral500,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
+    fontSize: 13,
+    lineHeight: 18,
+    color: notificationsBrand.muted,
+  },
+  unreadPill: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: notificationsBrand.accent,
+  },
+  unreadPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: notificationsBrand.onAccent,
   },
   banner: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.brandLight,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.md,
+    backgroundColor: notificationsBrand.warningSoft,
+    borderRadius: radius.xl,
+    padding: spacing.md,
   },
+  bannerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: notificationsBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerBody: { flex: 1, gap: spacing.sm },
   bannerTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: notificationsBrand.ink,
   },
   bannerText: {
     fontSize: 13,
-    color: colors.neutral600,
+    color: notificationsBrand.muted,
     lineHeight: 18,
   },
   bannerBtn: {
     alignSelf: 'flex-start',
-    marginTop: spacing.xs,
-    backgroundColor: colors.brandPrimary,
-    borderRadius: 999,
+    backgroundColor: notificationsBrand.accent,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
   bannerBtnText: {
-    color: colors.white,
+    color: notificationsBrand.onAccent,
     fontWeight: '700',
     fontSize: 13,
   },
   testBtn: {
     alignSelf: 'flex-start',
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: notificationsBrand.accent,
+    backgroundColor: notificationsBrand.card,
   },
   testBtnText: {
-    color: colors.brandPrimary,
-    fontWeight: '600',
+    color: notificationsBrand.accent,
+    fontWeight: '700',
     fontSize: 13,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: spacing.md,
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  sectionGap: { marginTop: spacing.lg },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: notificationsBrand.ink,
+  },
+  sectionMeta: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: notificationsBrand.muted,
+    backgroundColor: notificationsBrand.soft,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  prefs: { gap: spacing.sm },
+  list: { gap: spacing.sm },
   loader: { marginVertical: spacing.xxxl },
+  emptyRecent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: notificationsBrand.soft,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+  },
   emptyText: {
-    marginTop: spacing.lg,
-    fontSize: 14,
-    color: colors.neutral500,
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: notificationsBrand.muted,
   },
 });

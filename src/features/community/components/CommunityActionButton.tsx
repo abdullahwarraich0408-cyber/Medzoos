@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { spacing } from '../../../theme';
+import { communityBrand } from '../communityBrand';
 
 type CommunityActionButtonProps = {
   label: string;
@@ -18,7 +19,7 @@ export function CommunityActionButton({
     <Pressable
       style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
       onPress={onPress}>
-      <Icon name={icon} size={18} color={colors.white} />
+      <Icon name={icon} size={18} color={communityBrand.onAccent} />
       <Text style={styles.text}>{label}</Text>
     </Pressable>
   );
@@ -30,16 +31,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: '#0E304B',
+    backgroundColor: communityBrand.accent,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    ...shadows.cardSoft,
+    paddingVertical: 14,
+    borderRadius: 18,
+    ...Platform.select({
+      ios: {
+        shadowColor: communityBrand.accentDeep,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+      },
+      android: { elevation: 3 },
+    }),
   },
-  btnPressed: { opacity: 0.92 },
+  btnPressed: { opacity: 0.92, transform: [{ scale: 0.99 }] },
   text: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.white,
+    color: communityBrand.onAccent,
   },
 });

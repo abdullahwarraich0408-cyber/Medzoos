@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  StatusBar,
+  Platform,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
@@ -10,9 +16,11 @@ import { HealthActiveMedsStrip } from './components/hub/HealthActiveMedsStrip';
 import { HealthActivityTimeline } from './components/hub/HealthActivityTimeline';
 import { useHealthHubOverview } from './hooks/useHealthHubOverview';
 import { useAuth } from '../../lib/auth/AuthContext';
+import { navigateToMainTabs } from '../../lib/auth/navigation';
 import type { HealthStackParamList } from '../../navigation/types';
-import { colors, TAB_BAR_CLEARANCE } from '../../theme';
+import { TAB_BAR_CLEARANCE } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
+import { healthBrand } from './healthBrand';
 
 type HealthNav = NativeStackNavigationProp<HealthStackParamList>;
 
@@ -45,23 +53,39 @@ export function HealthHomePage() {
     }
   }, [overview.refetchAll]);
 
+  const handleBackPress = useCallback(() => {
+    navigateToMainTabs(navigation, 'Home', 'Dashboard');
+  }, [navigation]);
+
   return (
-    <ScreenLayout title="Health" showSearch={false} showCart={false}>
+    <ScreenLayout
+      hideHeader
+      backgroundColor={healthBrand.page}
+      embedSafeAreaInChildren>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={Platform.OS === 'android'}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary700}
-            colors={[colors.primary700]}
+            tintColor={healthBrand.accent}
+            colors={[healthBrand.accent]}
           />
         }>
         <HealthPageHeader
-          title={firstName ? `Hi, ${firstName}` : 'Health'}
-          subtitle="Medicines, reports, and records"
+          variant="vault"
+          firstName={firstName}
+          title={firstName || 'Your vault'}
+          subtitle="Records, medicines, and care history — kept calm and clear."
+          onBackPress={handleBackPress}
         />
 
         <HealthAttentionSection items={attention} navigation={navigation} />
@@ -91,10 +115,13 @@ export function HealthHomePage() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: 'transparent' },
+  scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   scrollContent: {
-    padding: calmLayout.screenPadding,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
     gap: 28,
+    width: '100%',
   },
 });

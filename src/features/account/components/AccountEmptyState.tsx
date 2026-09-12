@@ -1,46 +1,64 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
+import { accountTeal } from '../accountScreenBrands';
+import { spacing, radius } from '../../../theme';
 
 type AccountEmptyStateProps = {
   icon: string;
   title: string;
   subtitle?: string;
+  action?: React.ReactNode;
 };
 
-export function AccountEmptyState({ icon, title, subtitle }: AccountEmptyStateProps) {
+export function AccountEmptyState({
+  icon,
+  title,
+  subtitle,
+  action,
+}: AccountEmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <Icon name={icon} size={44} color={colors.neutral300} />
+      <View style={styles.iconWell}>
+        <Icon name={icon} size={28} color={accountTeal.accent} />
+      </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {action}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    backgroundColor: accountTeal.card,
+    borderRadius: radius.xxl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.xxxl,
+    borderColor: accountTeal.border,
+    paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing.xl,
     alignItems: 'center',
   },
+  iconWell: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: accountTeal.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
+    marginTop: spacing.md,
     fontSize: 16,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    marginTop: spacing.md,
+    color: accountTeal.ink,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
-    color: colors.neutral500,
     marginTop: spacing.sm,
+    fontSize: 13,
+    lineHeight: 19,
+    color: accountTeal.muted,
     textAlign: 'center',
-    lineHeight: 20,
   },
 });

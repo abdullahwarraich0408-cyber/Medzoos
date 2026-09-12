@@ -14,7 +14,7 @@ import { authUi } from '../authUi';
 
 const RESEND_SECONDS = 60;
 
-function maskPhone(phone: string) {
+function maskPhone(phone?: string) {
   const digits = String(phone || '').replace(/\D/g, '');
   if (digits.length < 4) return 'your registered number';
   const last4 = digits.slice(-4);
@@ -23,7 +23,7 @@ function maskPhone(phone: string) {
 }
 
 function otpMessage(err: unknown) {
-  const message = formatFirebaseAuthError(err);
+  const message = err instanceof Error ? err.message : formatFirebaseAuthError(err);
   if (/invalid otp|incorrect|wrong code/i.test(message)) {
     return 'The OTP is incorrect. Please try again.';
   }
@@ -37,8 +37,13 @@ export function OtpVerifyScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AccountStackParamList>>();
   const route = useRoute<RouteProp<AccountStackParamList, 'OtpVerify'>>();
-  const { completePhoneLogin, startPhoneLogin, consumePendingAction } =
-    useAuth();
+  const {
+    completePhoneLogin,
+    startPhoneLogin,
+    verifyEmailOtp,
+    resendEmailOtp,
+    consumePendingAction,
+  } = useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +51,8 @@ export function OtpVerifyScreen() {
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [confirmation, setConfirmation] = useState(route.params.confirmation);
 
-  const { phone } = route.params;
+  const { phone, email, mode } = route.params;
+  const isEmailMode = mode === 'email' || !!email;
 
   useEffect(() => {
     if (seconds <= 0) return undefined;
@@ -70,8 +76,15 @@ export function OtpVerifyScreen() {
     setError('');
     setLoading(true);
     try {
-      const sessionUser = await completePhoneLogin(confirmation, code.trim());
-      finish(sessionUser);
+      if (isEmailMode && email) {
+        const sessionUser = await verifyEmailOtp(email, code.trim());
+        finish(sessionUser);
+      } else if (confirmation) {
+        const sessionUser = await completePhoneLogin(confirmation, code.trim());
+        finish(sessionUser);
+      } else {
+        setError('Missing verification details. Please try registering again.');
+      }
     } catch (err) {
       setError(otpMessage(err));
     } finally {
@@ -84,12 +97,16 @@ export function OtpVerifyScreen() {
     setSending(true);
     setError('');
     try {
-      const next = await startPhoneLogin(phone);
-      setConfirmation(next);
+      if (isEmailMode && email) {
+        await resendEmailOtp(email);
+      } else if (phone) {
+        const next = await startPhoneLogin(phone);
+        setConfirmation(next);
+      }
       setCode('');
       setSeconds(RESEND_SECONDS);
     } catch (err) {
-      setError(formatFirebaseAuthError(err));
+      setError(otpMessage(err));
     } finally {
       setSending(false);
     }
@@ -98,8 +115,12 @@ export function OtpVerifyScreen() {
   return (
     <AuthScreenLayout
       title="Enter verification code"
-      subtitle={`We sent a 6-digit code to ${maskPhone(phone)}.`}
-      badge="VERIFY PHONE">
+      subtitle={
+        isEmailMode
+          ? `We sent a 6-digit code to ${email}.`
+          : `We sent a 6-digit code to ${maskPhone(phone)}.`
+      }
+      badge={isEmailMode ? 'VERIFY EMAIL' : 'VERIFY PHONE'}>
       <OtpInput value={code} onChange={setCode} error={error} />
 
       <AuthPrimaryButton
@@ -127,8 +148,10 @@ export function OtpVerifyScreen() {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="Change phone number">
-          <Text style={styles.linkMuted}>Change phone number</Text>
+          accessibilityLabel="Back">
+          <Text style={styles.linkMuted}>
+            {isEmailMode ? 'Change email address' : 'Change phone number'}
+          </Text>
         </TouchableOpacity>
       </View>
     </AuthScreenLayout>

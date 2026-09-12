@@ -30,7 +30,7 @@ The mobile app (`app/medCare`) is the **customer-facing React Native app** for A
 | 6 | **Lab Panel** | `Frontend/LabPanel/` | 3004 | Lab bookings, tests, reports |
 | 7 | **Mobile App** | `app/medCare/` | Metro 8081 | React Native customer app |
 
-All frontends talk to the same API base: `/api` on port **5000** (local) or `https://medmarket.asrar.dev/api` (production).
+All frontends talk to the same API base: `/api` on port **5000** (local) or `https://backend.medzoos.com/api` (production).
 
 ---
 
@@ -349,7 +349,7 @@ export const ANDROID_USE_EMULATOR = false;     // true → 10.0.2.2
 
 | Target | API URL |
 |--------|---------|
-| Production | `https://medmarket.asrar.dev/api` |
+| Production | `https://backend.medzoos.com/api` |
 | Android emulator | `http://10.0.2.2:5000/api` |
 | Physical device (same Wi‑Fi) | `http://<LAN_IP>:5000/api` |
 | iOS simulator | `http://localhost:5000/api` |

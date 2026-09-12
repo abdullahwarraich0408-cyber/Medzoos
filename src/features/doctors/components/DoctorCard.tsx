@@ -10,7 +10,8 @@ import {
   Pressable,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, shadows, cardStyles } from '../../../theme';
+import { doctorsBrand } from '../doctorsBrand';
+import { spacing, radius } from '../../../theme';
 import type { Doctor } from '../../../lib/mappers/doctor';
 import type { ConsultType } from '../data/mockDoctors';
 import {
@@ -24,14 +25,25 @@ type DoctorCardProps = {
   doctor: Doctor;
   consultType: ConsultType;
   hospitalContext?: string | null;
+  favorited?: boolean;
+  onToggleFavorite?: (doctor: Doctor) => void;
   onViewProfile?: (doctor: Doctor) => void;
   onBook?: (doctor: Doctor, option: ConsultOption) => void;
 };
+
+function experienceLabel(doctor: Doctor) {
+  if (doctor.experienceYears > 0) {
+    return `${doctor.experienceYears}+ Years Experience`;
+  }
+  return doctor.experience || 'Experienced';
+}
 
 export function DoctorCard({
   doctor,
   consultType,
   hospitalContext = null,
+  favorited = false,
+  onToggleFavorite,
   onViewProfile,
   onBook,
 }: DoctorCardProps) {
@@ -54,6 +66,7 @@ export function DoctorCard({
       : []
     : inPersonOptions;
   const bookableOptions = displayOptions;
+  const primaryFee = bookableOptions[0]?.fee ?? doctor.fee ?? null;
 
   const handleBookClick = () => {
     if (bookableOptions.length > 1) {
@@ -73,69 +86,80 @@ export function DoctorCard({
   return (
     <>
       <View style={styles.card}>
-        <View style={styles.topRow}>
-          <TouchableOpacity
-            style={styles.profileRow}
-            activeOpacity={onViewProfile ? 0.85 : 1}
-            onPress={() => onViewProfile?.(doctor)}
-            disabled={!onViewProfile}>
-            <View style={styles.photoWrap}>
-              <Image source={{ uri: doctor.photo }} style={styles.photo} />
-              {doctor.online && <View style={styles.onlineDot} />}
-            </View>
-            <View style={styles.info}>
-              <Text style={styles.name}>{doctor.name}</Text>
-              <Text style={styles.specialty}>{doctor.specialty}</Text>
-              <Text style={styles.qualification} numberOfLines={2}>
-                {doctor.qualifications?.[0] || doctor.hospital}
+        <TouchableOpacity
+          style={styles.main}
+          activeOpacity={0.88}
+          onPress={() => onViewProfile?.(doctor)}
+          disabled={!onViewProfile}>
+          <Image source={{ uri: doctor.photo }} style={styles.photo} />
+
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
+                {doctor.name}
               </Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.experience}>{doctor.experience}</Text>
-                <View style={styles.ratingRow}>
-                  <Icon name="star" size={14} color={colors.rating} />
-                  <Text style={styles.rating}>{doctor.rating}</Text>
-                  <Text style={styles.reviews}>({doctor.reviews} Reviews)</Text>
-                </View>
+              <View style={styles.verified}>
+                <Icon name="check" size={10} color={doctorsBrand.onAccent} />
               </View>
             </View>
+
+            <Text style={styles.specialty} numberOfLines={1}>
+              {doctor.specialty}
+            </Text>
+
+            <View style={styles.expPill}>
+              <Text style={styles.expText}>{experienceLabel(doctor)}</Text>
+            </View>
+
+            <View style={styles.ratingRow}>
+              <Icon name="star" size={14} color={doctorsBrand.star} />
+              <Text style={styles.rating}>{doctor.rating.toFixed(1)}</Text>
+              <Text style={styles.reviews}>({doctor.reviews} Reviews)</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.side}>
+          <TouchableOpacity
+            style={styles.heartBtn}
+            onPress={() => onToggleFavorite?.(doctor)}
+            hitSlop={8}
+            activeOpacity={0.75}>
+            <Icon
+              name={favorited ? 'heart' : 'heart-outline'}
+              size={20}
+              color={favorited ? doctorsBrand.danger : doctorsBrand.muted}
+            />
           </TouchableOpacity>
 
-          <View style={styles.actions}>
-            {isOnlineTab && onlineOption && (
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => onBook?.(doctor, onlineOption)}
-                activeOpacity={0.85}>
-                <Icon name="video" size={16} color={colors.brandPrimary} />
-                <Text style={styles.secondaryBtnText}>Video</Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.sideBottom}>
+            {doctor.online ? (
+              <View style={styles.onlineChip}>
+                <View style={styles.onlineDot} />
+                <Text style={styles.onlineText}>Online</Text>
+              </View>
+            ) : doctor.availableToday ? (
+              <Text style={styles.availHint}>Today</Text>
+            ) : null}
+
+            {primaryFee != null && primaryFee > 0 ? (
+              <Text style={styles.feeHint}>
+                PKR {primaryFee.toLocaleString()}
+              </Text>
+            ) : null}
+
             <TouchableOpacity
               style={[
-                styles.primaryBtn,
-                bookableOptions.length === 0 && styles.primaryBtnDisabled,
+                styles.bookBtn,
+                bookableOptions.length === 0 && styles.bookBtnDisabled,
               ]}
               onPress={handleBookClick}
               disabled={bookableOptions.length === 0}
               activeOpacity={0.85}>
-              <Icon name="calendar" size={16} color={colors.white} />
-              <Text style={styles.primaryBtnText}>Book</Text>
+              <Text style={styles.bookBtnText}>Book Now</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {displayOptions.length > 0 && (
-          <View style={styles.options}>
-            {displayOptions.map(option => (
-              <ConsultOptionRow
-                key={option.id}
-                option={option}
-                compact
-                onPress={opt => onBook?.(doctor, opt)}
-              />
-            ))}
-          </View>
-        )}
       </View>
 
       <Modal
@@ -143,10 +167,14 @@ export function DoctorCard({
         transparent
         animationType="slide"
         onRequestClose={() => setShowBookModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowBookModal(false)}>
-          <Pressable style={styles.modalSheet} onPress={e => e.stopPropagation()}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowBookModal(false)}>
+          <Pressable
+            style={styles.modalSheet}
+            onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Choose consultation type</Text>
+            <Text style={styles.modalTitle}>Choose consultation</Text>
             <Text style={styles.modalSub}>{doctor.name}</Text>
             <ScrollView style={styles.modalList}>
               {bookableOptions.map(option => (
@@ -167,139 +195,153 @@ export function DoctorCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...cardStyles.listCard,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  topRow: {
-    gap: spacing.lg,
-  },
-  profileRow: {
     flexDirection: 'row',
-    gap: spacing.lg,
+    alignItems: 'stretch',
+    gap: spacing.sm,
+    backgroundColor: doctorsBrand.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: doctorsBrand.border,
+    padding: spacing.md,
   },
-  photoWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: colors.neutral100,
+  main: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    minWidth: 0,
   },
   photo: {
-    width: '100%',
-    height: '100%',
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.statusSuccess,
-    borderWidth: 2,
-    borderColor: colors.white,
+    width: 88,
+    height: 88,
+    borderRadius: 16,
+    backgroundColor: doctorsBrand.soft,
   },
   info: {
     flex: 1,
     minWidth: 0,
+    gap: 5,
+    paddingTop: 2,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   name: {
+    flexShrink: 1,
     fontSize: 16,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: doctorsBrand.ink,
+    letterSpacing: -0.2,
+  },
+  verified: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: doctorsBrand.success,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   specialty: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
-    marginTop: 2,
+    fontWeight: '500',
+    color: doctorsBrand.muted,
   },
-  qualification: {
-    fontSize: 12,
-    color: colors.neutral500,
-    marginTop: 4,
-    lineHeight: 17,
+  expPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: doctorsBrand.successSoft,
   },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  experience: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.inkHeadline,
+  expText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: doctorsBrand.success,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: 2,
   },
   rating: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: doctorsBrand.ink,
   },
   reviews: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: doctorsBrand.muted,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  side: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    minWidth: 96,
   },
-  secondaryBtn: {
-    flex: 1,
-    flexDirection: 'row',
+  heartBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    height: 44,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.white,
   },
-  secondaryBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+  sideBottom: {
+    alignItems: 'flex-end',
+    gap: 6,
   },
-  primaryBtn: {
-    flex: 1,
+  onlineChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandPrimary,
+    gap: 4,
   },
-  primaryBtnDisabled: {
-    opacity: 0.5,
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: doctorsBrand.success,
   },
-  primaryBtnText: {
-    fontSize: 13,
+  onlineText: {
+    fontSize: 10,
     fontWeight: '700',
-    color: colors.white,
+    color: doctorsBrand.success,
   },
-  options: {
-    marginTop: spacing.lg,
-    gap: spacing.sm,
+  availHint: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: doctorsBrand.accentSoft,
+  },
+  feeHint: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: doctorsBrand.ink,
+  },
+  bookBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: doctorsBrand.accent,
+    backgroundColor: doctorsBrand.card,
+  },
+  bookBtnDisabled: {
+    opacity: 0.4,
+  },
+  bookBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: doctorsBrand.accent,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(12,26,46,0.45)',
+    backgroundColor: 'rgba(12, 69, 84, 0.45)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: doctorsBrand.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: spacing.lg,
     maxHeight: '70%',
   },
@@ -307,18 +349,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.neutral300,
+    backgroundColor: doctorsBrand.mist,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: doctorsBrand.ink,
   },
   modalSub: {
     fontSize: 14,
-    color: colors.neutral500,
+    color: doctorsBrand.muted,
     marginTop: 4,
     marginBottom: spacing.lg,
   },

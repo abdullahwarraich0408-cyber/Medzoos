@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontWeight: '700',
-    color: authUi.white,
+    color: authUi.ink,
     backgroundColor: authUi.inputBg,
   },
   boxFilled: {

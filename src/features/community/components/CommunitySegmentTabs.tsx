@@ -1,7 +1,8 @@
 import React from 'react';
-import { Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Text, Pressable, StyleSheet, ScrollView, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { spacing } from '../../../theme';
+import { communityBrand } from '../communityBrand';
 
 export type CommunitySegment = {
   id: string;
@@ -32,11 +33,16 @@ export function CommunitySegmentTabs({
             key={seg.id}
             style={[styles.tab, isActive && styles.tabActive]}
             onPress={() => onChange(seg.id)}>
-            <Icon
-              name={seg.icon}
-              size={16}
-              color={isActive ? colors.white : colors.primary700}
-            />
+            <View
+              style={[styles.iconDot, isActive && styles.iconDotActive]}>
+              <Icon
+                name={seg.icon}
+                size={15}
+                color={
+                  isActive ? communityBrand.onAccent : communityBrand.accentDeep
+                }
+              />
+            </View>
             <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
               {seg.label}
             </Text>
@@ -56,25 +62,33 @@ const styles = StyleSheet.create({
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: 8,
+    paddingLeft: 8,
+    paddingRight: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: communityBrand.card,
   },
   tabActive: {
-    backgroundColor: colors.primary700,
-    borderColor: colors.primary700,
-    ...shadows.cardSoft,
+    backgroundColor: communityBrand.ink,
+  },
+  iconDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 12,
+    backgroundColor: communityBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconDotActive: {
+    backgroundColor: communityBrand.accent,
   },
   tabText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary700,
+    fontWeight: '700',
+    color: communityBrand.ink,
   },
   tabTextActive: {
-    color: colors.white,
+    color: communityBrand.onAccent,
   },
 });

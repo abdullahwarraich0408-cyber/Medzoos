@@ -1,5 +1,3 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
 import {
   View,
@@ -8,7 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { notificationsBrand } from '../accountScreenBrands';
+import { spacing, radius } from '../../../theme';
 
 type NotificationPrefToggleProps = {
   label: string;
@@ -32,8 +32,11 @@ export function NotificationPrefToggle({
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: colors.neutral300, true: colors.brandPrimary }}
-        thumbColor={colors.white}
+        trackColor={{
+          false: notificationsBrand.mist,
+          true: notificationsBrand.accent,
+        }}
+        thumbColor={notificationsBrand.card}
       />
     </View>
   );
@@ -59,11 +62,21 @@ export function NotificationItemCard({
       style={[styles.card, !read && styles.cardUnread]}
       activeOpacity={0.85}
       onPress={onPress}>
+      <View style={[styles.dot, !read && styles.dotUnread]} />
       <View style={styles.cardBody}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardMessage}>{message}</Text>
+        <View style={styles.cardTop}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          {time ? <Text style={styles.time}>{time}</Text> : null}
+        </View>
+        <Text style={styles.cardMessage} numberOfLines={2}>
+          {message}
+        </Text>
       </View>
-      {time ? <Text style={styles.time}>{time}</Text> : null}
+      {!read ? (
+        <Icon name="circle-medium" size={18} color={notificationsBrand.accent} />
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -74,51 +87,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
-    backgroundColor: colors.surfaceSubtle,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
+    backgroundColor: notificationsBrand.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: notificationsBrand.border,
+    padding: spacing.md,
   },
   text: { flex: 1 },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.inkHeadline,
+    fontWeight: '700',
+    color: notificationsBrand.ink,
   },
   desc: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: notificationsBrand.muted,
     marginTop: 2,
     lineHeight: 17,
   },
   card: {
     flexDirection: 'row',
-    gap: spacing.md,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: notificationsBrand.card,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
+    borderColor: notificationsBrand.border,
+    padding: spacing.md,
   },
   cardUnread: {
-    borderColor: colors.brandLight,
-    backgroundColor: `${colors.brandPrimary}08`,
+    backgroundColor: notificationsBrand.soft,
+    borderColor: notificationsBrand.mist,
   },
-  cardBody: { flex: 1 },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+    backgroundColor: notificationsBrand.mist,
+  },
+  dotUnread: {
+    backgroundColor: notificationsBrand.accent,
+  },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
   cardTitle: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: notificationsBrand.ink,
   },
   cardMessage: {
     fontSize: 13,
-    color: colors.neutral600,
+    color: notificationsBrand.muted,
     marginTop: 4,
     lineHeight: 18,
   },
   time: {
     fontSize: 11,
-    color: colors.neutral500,
+    fontWeight: '600',
+    color: notificationsBrand.muted,
   },
 });

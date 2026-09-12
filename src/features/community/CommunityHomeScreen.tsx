@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Text,
   ScrollView,
@@ -6,18 +6,22 @@ import {
   Pressable,
   View,
   RefreshControl,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
-import { HealthPageHeader } from '../health/components/hub/HealthPageHeader';
 import { useCommunityContext } from '../../lib/community/CommunityContext';
 import { FEED_FILTERS } from '../../lib/community/mockData';
 import { communityCopy } from '../../lib/copy/uiMessages';
+import { navigateToMainTabs } from '../../lib/auth/navigation';
 import type { CommunityStackParamList } from '../../navigation/types';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
+import { spacing, TAB_BAR_CLEARANCE } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
+import { communityBrand } from './communityBrand';
+import { CommunityHeader } from './components/CommunityHeader';
 import { CommunitySegmentTabs } from './components/CommunitySegmentTabs';
 import { CommunityActionButton } from './components/CommunityActionButton';
 import { CommunityEmptyState } from './components/CommunityEmptyState';
@@ -36,13 +40,7 @@ const SEGMENTS = [
   { id: 'activity', label: 'My activity', icon: 'account-heart-outline' },
 ];
 
-function SectionHeader({
-  title,
-  hint,
-}: {
-  title: string;
-  hint?: string;
-}) {
+function SectionHeader({ title, hint }: { title: string; hint?: string }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -138,263 +136,273 @@ export function CommunityHomeScreen() {
           : null;
 
   return (
-    <ScreenLayout title="Community" showSearch={false} showCart={false}>
+    <ScreenLayout
+      hideHeader
+      backgroundColor={communityBrand.page}
+      embedSafeAreaInChildren>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={Platform.OS === 'android'}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary700}
-            colors={[colors.primary700]}
+            tintColor={communityBrand.accent}
+            colors={[communityBrand.accent]}
           />
         }>
-        <HealthPageHeader subtitle={communityCopy.pageHint} />
-
-        <CommunitySegmentTabs
-          segments={SEGMENTS}
-          active={segment}
-          onChange={setSegment}
+        <CommunityHeader
+          title="Community"
+          subtitle={communityCopy.pageHint}
+          onBackPress={() =>
+            navigateToMainTabs(navigation, 'Home', 'Dashboard')
+          }
         />
 
-        <View style={styles.contextRow}>
-          <Icon name="information-outline" size={16} color={colors.primary700} />
-          <Text style={styles.contextText}>{segmentHint}</Text>
-        </View>
-
-        {tabAction ? (
-          <CommunityActionButton
-            label={tabAction.label}
-            onPress={tabAction.onPress}
+        <View style={styles.body}>
+          <CommunitySegmentTabs
+            segments={SEGMENTS}
+            active={segment}
+            onChange={setSegment}
           />
-        ) : null}
 
-        {communityApiError ? (
-          <View style={styles.infoBox}>
-            <Icon name="information-outline" size={16} color={colors.primary700} />
-            <Text style={styles.infoBoxText}>{communityApiError}</Text>
+          <View style={styles.contextRow}>
+            <View style={styles.contextIcon}>
+              <Icon
+                name="lightbulb-on-outline"
+                size={16}
+                color={communityBrand.accentDeep}
+              />
+            </View>
+            <Text style={styles.contextText}>{segmentHint}</Text>
           </View>
-        ) : null}
 
-        {segment === 'feed' && (
-          <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterStrip}
-              contentContainerStyle={styles.filters}>
-              {FEED_FILTERS.map(f => (
-                <Pressable
-                  key={f.id}
-                  style={[
-                    styles.chip,
-                    feedFilter === f.id && styles.chipActive,
-                  ]}
-                  onPress={() => setFeedFilter(f.id)}>
-                  <Text
+          {tabAction ? (
+            <CommunityActionButton
+              label={tabAction.label}
+              onPress={tabAction.onPress}
+            />
+          ) : null}
+
+          {communityApiError ? (
+            <View style={styles.infoBox}>
+              <Icon
+                name="information-outline"
+                size={16}
+                color={communityBrand.accentDeep}
+              />
+              <Text style={styles.infoBoxText}>{communityApiError}</Text>
+            </View>
+          ) : null}
+
+          {segment === 'feed' && (
+            <>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterStrip}
+                contentContainerStyle={styles.filters}>
+                {FEED_FILTERS.map(f => (
+                  <Pressable
+                    key={f.id}
                     style={[
-                      styles.chipText,
-                      feedFilter === f.id && styles.chipTextActive,
-                    ]}>
-                    {f.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            {posts.length === 0 ? (
-              <CommunityEmptyState
-                icon="post-outline"
-                title="No posts yet"
-                subtitle="Be the first to share a health update or question."
-                actionLabel="Share an update"
-                onAction={() =>
-                  requireAuth(
-                    () => navigation.navigate('CreatePost'),
-                    'Sign in to share a health update.',
-                  )
-                }
-              />
-            ) : (
-              <View style={styles.list}>
-                {posts.map(post => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onPress={() =>
-                      navigation.navigate('PostDetail', { postId: post.id })
-                    }
-                    onLike={() => likePost(post.id)}
-                  />
+                      styles.chip,
+                      feedFilter === f.id && styles.chipActive,
+                    ]}
+                    onPress={() => setFeedFilter(f.id)}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        feedFilter === f.id && styles.chipTextActive,
+                      ]}>
+                      {f.label}
+                    </Text>
+                  </Pressable>
                 ))}
-              </View>
-            )}
-          </>
-        )}
+              </ScrollView>
 
-        {segment === 'groups' && (
-          <View style={styles.list}>
-            {joinedGroups.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="Your groups"
-                  hint="Groups you already joined"
+              {posts.length === 0 ? (
+                <CommunityEmptyState
+                  icon="post-outline"
+                  title="No posts yet"
+                  subtitle="Be the first to share a health update or question."
                 />
-                {joinedGroups.map(group => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    onPress={() =>
-                      navigation.navigate('GroupDetail', { groupId: group.id })
-                    }
-                    onToggleJoin={() => handleToggleGroup(group.id)}
-                  />
-                ))}
-              </>
-            ) : (
-              <CommunityEmptyState
-                icon="account-group-outline"
-                title="No groups yet"
-                subtitle="Join a support group to meet people with similar goals."
-                actionLabel="Create a group"
-                onAction={() =>
-                  requireAuth(
-                    () => navigation.navigate('CreateGroup'),
-                    'Sign in to create a support group.',
-                  )
-                }
-              />
-            )}
+              ) : (
+                <View style={styles.list}>
+                  {posts.map(post => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onPress={() =>
+                        navigation.navigate('PostDetail', { postId: post.id })
+                      }
+                      onLike={() => likePost(post.id)}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
 
-            {discoverGroups.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="Discover groups"
-                  hint="Tap Join to become a member"
+          {segment === 'groups' && (
+            <View style={styles.list}>
+              {joinedGroups.length > 0 ? (
+                <>
+                  <SectionHeader
+                    title="Your groups"
+                    hint="Groups you already joined"
+                  />
+                  {joinedGroups.map(group => (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      onPress={() =>
+                        navigation.navigate('GroupDetail', {
+                          groupId: group.id,
+                        })
+                      }
+                      onToggleJoin={() => handleToggleGroup(group.id)}
+                    />
+                  ))}
+                </>
+              ) : (
+                <CommunityEmptyState
+                  icon="account-group-outline"
+                  title="No groups yet"
+                  subtitle="Join a support group to meet people with similar goals."
                 />
-                {discoverGroups.map(group => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    onPress={() =>
-                      navigation.navigate('GroupDetail', { groupId: group.id })
-                    }
-                    onToggleJoin={() => handleToggleGroup(group.id)}
-                  />
-                ))}
-              </>
-            ) : null}
-          </View>
-        )}
+              )}
 
-        {segment === 'challenges' && (
-          <View style={styles.list}>
-            {joinedChallenges.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="Your challenges"
-                  hint="Track progress and earn rewards"
+              {discoverGroups.length > 0 ? (
+                <>
+                  <SectionHeader
+                    title="Discover groups"
+                    hint="Tap Join to become a member"
+                  />
+                  {discoverGroups.map(group => (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      onPress={() =>
+                        navigation.navigate('GroupDetail', {
+                          groupId: group.id,
+                        })
+                      }
+                      onToggleJoin={() => handleToggleGroup(group.id)}
+                    />
+                  ))}
+                </>
+              ) : null}
+            </View>
+          )}
+
+          {segment === 'challenges' && (
+            <View style={styles.list}>
+              {joinedChallenges.length > 0 ? (
+                <>
+                  <SectionHeader
+                    title="Your challenges"
+                    hint="Track progress and earn rewards"
+                  />
+                  {joinedChallenges.map(ch => (
+                    <ChallengeCard
+                      key={ch.id}
+                      challenge={ch}
+                      onPress={() =>
+                        navigation.navigate('ChallengeDetail', {
+                          challengeId: ch.id,
+                        })
+                      }
+                      onUpdateProgress={() =>
+                        navigation.navigate('ChallengeDetail', {
+                          challengeId: ch.id,
+                        })
+                      }
+                    />
+                  ))}
+                </>
+              ) : (
+                <CommunityEmptyState
+                  icon="trophy-outline"
+                  title="No challenges yet"
+                  subtitle="Join a challenge to build healthy habits with others."
                 />
-                {joinedChallenges.map(ch => (
-                  <ChallengeCard
-                    key={ch.id}
-                    challenge={ch}
-                    onPress={() =>
-                      navigation.navigate('ChallengeDetail', {
-                        challengeId: ch.id,
-                      })
-                    }
-                    onUpdateProgress={() =>
-                      navigation.navigate('ChallengeDetail', {
-                        challengeId: ch.id,
-                      })
-                    }
-                  />
-                ))}
-              </>
-            ) : (
-              <CommunityEmptyState
-                icon="trophy-outline"
-                title="No challenges yet"
-                subtitle="Join a challenge to build healthy habits with others."
-                actionLabel="Create a challenge"
-                onAction={() =>
-                  requireAuth(
-                    () => navigation.navigate('CreateChallenge'),
-                    'Sign in to create a health challenge.',
-                  )
-                }
-              />
-            )}
+              )}
 
-            {discoverChallenges.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="Discover challenges"
-                  hint="Pick one and start tracking today"
-                />
-                {discoverChallenges.map(ch => (
-                  <ChallengeCard
-                    key={ch.id}
-                    challenge={ch}
-                    onPress={() =>
-                      navigation.navigate('ChallengeDetail', {
-                        challengeId: ch.id,
-                      })
-                    }
-                    onJoin={() => handleToggleChallenge(ch.id)}
+              {discoverChallenges.length > 0 ? (
+                <>
+                  <SectionHeader
+                    title="Discover challenges"
+                    hint="Pick one and start tracking today"
                   />
-                ))}
-              </>
-            ) : null}
-          </View>
-        )}
+                  {discoverChallenges.map(ch => (
+                    <ChallengeCard
+                      key={ch.id}
+                      challenge={ch}
+                      onPress={() =>
+                        navigation.navigate('ChallengeDetail', {
+                          challengeId: ch.id,
+                        })
+                      }
+                      onJoin={() => handleToggleChallenge(ch.id)}
+                    />
+                  ))}
+                </>
+              ) : null}
+            </View>
+          )}
 
-        {segment === 'activity' && (
-          <CommunityMyActivity
-            rows={[
-              {
-                icon: 'star-circle-outline',
-                title: 'Rewards & XP',
-                subtitle: `${profile.xp.toLocaleString()} XP · ${profile.coins} coins · ${(profile.badges || []).length} badges`,
-                onPress: () => setSegment('challenges'),
-              },
-              {
-                icon: 'account-heart-outline',
-                title: 'Health buddies',
-                subtitle: `${buddies.length} people keeping you accountable`,
-                onPress: () => navigation.navigate('Buddies'),
-              },
-              {
-                icon: 'post-outline',
-                title: 'My posts',
-                subtitle: `${profile.postsCount} post${profile.postsCount === 1 ? '' : 's'} shared`,
-                onPress: () => setSegment('feed'),
-              },
-              {
-                icon: 'account-group-outline',
-                title: 'Joined groups',
-                subtitle: `${joinedGroups.length} group${joinedGroups.length === 1 ? '' : 's'}`,
-                onPress: () => setSegment('groups'),
-              },
-              {
-                icon: 'trophy-outline',
-                title: 'Joined challenges',
-                subtitle: `${joinedChallenges.length} active challenge${joinedChallenges.length === 1 ? '' : 's'}`,
-                onPress: () => setSegment('challenges'),
-              },
-              {
-                icon: 'chart-line',
-                title: 'Weekly health report',
-                subtitle: 'View progress and share with buddies',
-                onPress: () => navigation.navigate('WeeklyReport'),
-              },
-            ]}
-            onViewRewards={() => setSegment('challenges')}
-          />
-        )}
+          {segment === 'activity' && (
+            <CommunityMyActivity
+              rows={[
+                {
+                  icon: 'star-circle-outline',
+                  title: 'Rewards & XP',
+                  subtitle: `${profile.xp.toLocaleString()} XP · ${profile.coins} coins · ${(profile.badges || []).length} badges`,
+                  onPress: () => setSegment('challenges'),
+                },
+                {
+                  icon: 'account-heart-outline',
+                  title: 'Health buddies',
+                  subtitle: `${buddies.length} people keeping you accountable`,
+                  onPress: () => navigation.navigate('Buddies'),
+                },
+                {
+                  icon: 'post-outline',
+                  title: 'My posts',
+                  subtitle: `${profile.postsCount} post${profile.postsCount === 1 ? '' : 's'} shared`,
+                  onPress: () => setSegment('feed'),
+                },
+                {
+                  icon: 'account-group-outline',
+                  title: 'Joined groups',
+                  subtitle: `${joinedGroups.length} group${joinedGroups.length === 1 ? '' : 's'}`,
+                  onPress: () => setSegment('groups'),
+                },
+                {
+                  icon: 'trophy-outline',
+                  title: 'Joined challenges',
+                  subtitle: `${joinedChallenges.length} active challenge${joinedChallenges.length === 1 ? '' : 's'}`,
+                  onPress: () => setSegment('challenges'),
+                },
+                {
+                  icon: 'chart-line',
+                  title: 'Weekly health report',
+                  subtitle: 'View progress and share with buddies',
+                  onPress: () => navigation.navigate('WeeklyReport'),
+                },
+              ]}
+              onViewRewards={() => setSegment('challenges')}
+            />
+          )}
+        </View>
       </ScrollView>
     </ScreenLayout>
   );
@@ -403,24 +411,35 @@ export function CommunityHomeScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
-    paddingHorizontal: calmLayout.screenPadding,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
+    gap: spacing.lg,
+  },
+  body: {
+    paddingHorizontal: calmLayout.screenPadding,
     gap: spacing.lg,
   },
   contextRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: colors.primary100,
-    borderRadius: radius.xl,
+    backgroundColor: communityBrand.soft,
+    borderRadius: 18,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+  },
+  contextIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: communityBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contextText: {
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    color: colors.primary700,
+    color: communityBrand.ink,
     fontWeight: '500',
   },
   sectionHeader: {
@@ -428,40 +447,27 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: communityBrand.ink,
+    letterSpacing: -0.2,
   },
   sectionHint: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: communityBrand.muted,
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: colors.primary100,
-    borderRadius: radius.lg,
+    backgroundColor: communityBrand.soft,
+    borderRadius: 16,
     padding: spacing.md,
   },
   infoBoxText: {
     flex: 1,
     fontSize: 12,
-    color: colors.primary700,
-    lineHeight: 18,
-  },
-  warningBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.warningBg,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-  },
-  warning: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.warning,
+    color: communityBrand.ink,
     lineHeight: 18,
   },
   filterStrip: { flexGrow: 0 },
@@ -469,20 +475,17 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: communityBrand.card,
   },
   chipActive: {
-    backgroundColor: colors.primary700,
-    borderColor: colors.primary700,
+    backgroundColor: communityBrand.accent,
   },
   chipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: communityBrand.muted,
   },
-  chipTextActive: { color: colors.white },
-  list: { gap: spacing.md },
+  chipTextActive: { color: communityBrand.onAccent },
+  list: { gap: spacing.lg },
 });

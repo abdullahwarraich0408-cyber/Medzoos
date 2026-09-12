@@ -28,6 +28,13 @@ type ScreenLayoutProps = {
   headerMode?: 'main' | 'stack';
   title?: string;
   onBackPress?: () => void;
+  /** Optional screen wash override (e.g. Home brand trial). */
+  backgroundColor?: string;
+  /**
+   * When hideHeader is true, skip the status-bar spacer so a custom
+   * full-bleed header can paint under the status bar itself.
+   */
+  embedSafeAreaInChildren?: boolean;
   showSearch?: boolean;
   showCart?: boolean;
   showBack?: boolean;
@@ -45,6 +52,8 @@ export function ScreenLayout({
   headerMode = 'stack',
   title,
   onBackPress,
+  backgroundColor,
+  embedSafeAreaInChildren = false,
   showSearch = false,
   showCart = false,
   showBack = true,
@@ -63,11 +72,9 @@ export function ScreenLayout({
   const { unreadCount } = useNotifications();
 
   const badgeCount = cartCountOverride ?? medicineCartCount;
-  const stackCanPop = canPopCurrentStack(navigation);
-  const canGoBack = showBack && stackCanPop;
-  // Tab roots (stack index 0) show the menu, not a dead back arrow.
-  const isTabRoot = headerMode === 'stack' && !stackCanPop;
-  const showStackMenu = isTabRoot;
+  // Stack headers always use the circular back control (not hamburger).
+  const canGoBack = showBack;
+  const showStackMenu = false;
 
   const handleCartPress =
     onCartPress ??
@@ -95,7 +102,10 @@ export function ScreenLayout({
       }
       if (isDrawerRoute(navigation)) {
         navigateToMainTabs(navigation, 'Home', 'Dashboard');
+        return;
       }
+      // Bottom-tab roots (Health, Community, You, Copilot) → Home
+      navigateToMainTabs(navigation, 'Home', 'Dashboard');
     });
 
   const handleNotificationsPress = () => {
@@ -103,15 +113,17 @@ export function ScreenLayout({
   };
 
   return (
-    <AppBackground>
+    <AppBackground style={backgroundColor ? { backgroundColor } : undefined}>
       {hideHeader ? (
         <>
           <StatusBar
-            barStyle="dark-content"
+            barStyle={embedSafeAreaInChildren ? 'light-content' : 'dark-content'}
             backgroundColor="transparent"
             translucent
           />
-          <View style={{ height: topInset }} />
+          {!embedSafeAreaInChildren ? (
+            <View style={{ height: topInset }} />
+          ) : null}
         </>
       ) : (
         <TopNavigation
@@ -126,9 +138,7 @@ export function ScreenLayout({
           showSearch={showSearch}
           showCart={showCart}
           showBack={canGoBack}
-          showNotifications={
-            (showNotifications && headerMode === 'main') || isTabRoot
-          }
+          showNotifications={showNotifications}
           showMenu={headerMode === 'main' || showStackMenu}
           headerRight={headerRight}
           headerCenter={headerCenter}
@@ -142,5 +152,7 @@ export function ScreenLayout({
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+    width: '100%',
+    alignSelf: 'stretch',
   },
 });

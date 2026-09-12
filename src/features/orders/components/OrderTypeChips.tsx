@@ -1,7 +1,18 @@
 import React from 'react';
 import { ScrollView, Pressable, StyleSheet, Text } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ORDER_TYPE_FILTERS, type OrderTypeFilter } from '../data/orderModel';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { ordersBrand } from '../ordersBrand';
+import { spacing, radius } from '../../../theme';
+
+const TYPE_ICONS: Record<OrderTypeFilter, string> = {
+  all: 'view-grid-outline',
+  medicines: 'pill',
+  labs: 'flask-outline',
+  doctors: 'stethoscope',
+  hospitals: 'hospital-building',
+  prescriptions: 'file-document-outline',
+};
 
 type OrderTypeChipsProps = {
   active: OrderTypeFilter;
@@ -25,6 +36,11 @@ export function OrderTypeChips({ active, onChange }: OrderTypeChipsProps) {
               pressed && !isActive && styles.chipPressed,
             ]}
             onPress={() => onChange(chip.id)}>
+            <Icon
+              name={TYPE_ICONS[chip.id]}
+              size={14}
+              color={isActive ? ordersBrand.onAccent : ordersBrand.accent}
+            />
             <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
               {chip.label}
             </Text>
@@ -38,25 +54,27 @@ export function OrderTypeChips({ active, onChange }: OrderTypeChipsProps) {
 const styles = StyleSheet.create({
   row: { gap: spacing.sm, paddingBottom: spacing.xs },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: colors.white,
+    backgroundColor: ordersBrand.card,
     borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-    ...shadows.cardSoft,
+    borderColor: ordersBrand.border,
   },
   chipActive: {
-    backgroundColor: colors.brandLight,
-    borderColor: 'rgba(17, 61, 99, 0.2)',
+    backgroundColor: ordersBrand.accent,
+    borderColor: ordersBrand.accent,
   },
-  chipPressed: { backgroundColor: colors.brandMist },
+  chipPressed: { backgroundColor: ordersBrand.soft },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: ordersBrand.ink,
   },
   chipTextActive: {
-    color: colors.brandPrimary,
+    color: ordersBrand.onAccent,
   },
 });

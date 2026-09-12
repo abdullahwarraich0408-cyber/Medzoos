@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { CommonActions } from '@react-navigation/native';
@@ -14,8 +15,23 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { useLocationContext } from '../../lib/location/LocationContext';
 import { navigateToSignIn, dispatchFromDrawer } from '../../lib/auth/navigation';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius } from '../../theme';
 import type { DoctorsStackParamList, MainTabParamList } from '../../navigation/types';
+
+/** Drawer brand — same teal as Home / Doctors (#105568). */
+const drawerBrand = {
+  ink: '#0C4554',
+  accent: '#105568',
+  accentSoft: '#176B7D',
+  soft: '#E4F0F3',
+  mist: '#C5DCE2',
+  page: '#FFFFFF',
+  card: '#FFFFFF',
+  muted: '#5B7A85',
+  border: 'rgba(16, 85, 104, 0.14)',
+  onAccent: '#FFFFFF',
+  danger: '#B42318',
+} as const;
 
 type DrawerItem = {
   label: string;
@@ -26,7 +42,12 @@ type DrawerItem = {
   healthScreen?: 'MedicinesList' | 'FamilyProfiles';
   consultScreen?: keyof Pick<
     DoctorsStackParamList,
-    'DoctorsList' | 'HospitalsList' | 'Specialties' | 'ConsultHome' | 'LabTestsList' | 'HealthPackages'
+    | 'DoctorsList'
+    | 'HospitalsList'
+    | 'Specialties'
+    | 'ConsultHome'
+    | 'LabTestsList'
+    | 'HealthPackages'
   >;
   badge?: string;
   badgeColor?: string;
@@ -35,14 +56,14 @@ type DrawerItem = {
 const PRIMARY_ITEMS: DrawerItem[] = [
   {
     label: 'Dashboard',
-    icon: 'view-dashboard',
+    icon: 'view-dashboard-outline',
     route: 'MainTabs',
     tabRoute: 'Home',
     stackScreen: 'Dashboard',
   },
   {
     label: 'Health Copilot',
-    icon: 'robot',
+    icon: 'robot-outline',
     route: 'MainTabs',
     tabRoute: 'Copilot',
     stackScreen: 'CopilotHome',
@@ -56,7 +77,7 @@ const PRIMARY_ITEMS: DrawerItem[] = [
   },
   {
     label: 'Community',
-    icon: 'account-group',
+    icon: 'account-group-outline',
     route: 'MainTabs',
     tabRoute: 'Community',
     stackScreen: 'CommunityHome',
@@ -70,7 +91,7 @@ const PRIMARY_ITEMS: DrawerItem[] = [
   },
   {
     label: 'Family Health',
-    icon: 'account-heart',
+    icon: 'account-heart-outline',
     route: 'MainTabs',
     tabRoute: 'Health',
     healthScreen: 'FamilyProfiles',
@@ -84,31 +105,45 @@ const PRIMARY_ITEMS: DrawerItem[] = [
   },
   {
     label: 'Lab Tests',
-    icon: 'flask',
+    icon: 'flask-outline',
     route: 'MainTabs',
     tabRoute: 'Home',
     consultScreen: 'LabTestsList',
   },
-  { label: 'Pharmacies', icon: 'store', route: 'Pharmacies', stackScreen: 'PharmaciesList' },
-  { label: 'Hospitals', icon: 'hospital-building', route: 'Hospitals', stackScreen: 'HospitalsList' },
+  {
+    label: 'Pharmacies',
+    icon: 'storefront-outline',
+    route: 'Pharmacies',
+    stackScreen: 'PharmaciesList',
+  },
+  {
+    label: 'Hospitals',
+    icon: 'hospital-building',
+    route: 'Hospitals',
+    stackScreen: 'HospitalsList',
+  },
 ];
 
 const SECONDARY_ITEMS: DrawerItem[] = [
   {
     label: 'Offers',
-    icon: 'tag',
+    icon: 'tag-outline',
     route: 'Offers',
     badge: 'HOT',
-    badgeColor: colors.statusDanger,
+    badgeColor: drawerBrand.danger,
   },
   {
     label: 'My Orders',
-    icon: 'package-variant',
+    icon: 'package-variant-closed',
     route: 'MainTabs',
     tabRoute: 'You',
     stackScreen: 'OrdersList',
   },
-  { label: 'Prescriptions', icon: 'file-document-outline', route: 'Prescriptions' },
+  {
+    label: 'Prescriptions',
+    icon: 'file-document-outline',
+    route: 'Prescriptions',
+  },
   { label: 'Help Center', icon: 'help-circle-outline', route: 'Help' },
   { label: 'Contact Us', icon: 'phone-outline', route: 'Contact' },
 ];
@@ -172,7 +207,10 @@ function buildDrawerAction(item: DrawerItem) {
   });
 }
 
-export function DrawerContent({ navigation, state }: DrawerContentComponentProps) {
+export function DrawerContent({
+  navigation,
+  state,
+}: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, logout } = useAuth();
   const { location, requestLocationDetection } = useLocationContext();
@@ -196,9 +234,15 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
         const activeStack = stackState?.routes[stackState.index ?? 0]?.name;
         if (item.healthScreen) return activeStack === item.healthScreen;
         if (item.consultScreen) {
-          const servicesState = stackState?.routes.find(r => r.name === 'Services')?.state;
-          const activeService = servicesState?.routes[servicesState.index ?? 0]?.name;
-          return activeStack === 'Services' && activeService === item.consultScreen;
+          const servicesState = stackState?.routes.find(
+            r => r.name === 'Services',
+          )?.state;
+          const activeService =
+            servicesState?.routes[servicesState.index ?? 0]?.name;
+          return (
+            activeStack === 'Services' &&
+            activeService === item.consultScreen
+          );
         }
         return activeStack === item.stackScreen;
       }
@@ -223,23 +267,33 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
         key={item.label}
         style={[styles.menuItem, active && styles.menuItemActive]}
         onPress={() => navigateTo(item)}
-        activeOpacity={0.7}>
-        <View style={[styles.menuIconWrap, active && styles.menuIconWrapActive]}>
+        activeOpacity={0.75}>
+        {active ? <View style={styles.activeBar} /> : null}
+        <View
+          style={[styles.menuIconWrap, active && styles.menuIconWrapActive]}>
           <Icon
             name={item.icon}
-            size={20}
-            color={active ? colors.brandPrimary : colors.neutral600}
+            size={18}
+            color={active ? drawerBrand.onAccent : drawerBrand.accent}
           />
         </View>
         <Text style={[styles.menuLabel, active && styles.menuLabelActive]}>
           {item.label}
         </Text>
-        {item.badge && (
-          <View style={[styles.badge, { backgroundColor: item.badgeColor }]}>
+        {item.badge ? (
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: item.badgeColor || drawerBrand.danger },
+            ]}>
             <Text style={styles.badgeText}>{item.badge}</Text>
           </View>
-        )}
-        {active && <View style={styles.activeBar} />}
+        ) : null}
+        <Icon
+          name="chevron-right"
+          size={16}
+          color={active ? drawerBrand.accentSoft : drawerBrand.mist}
+        />
       </TouchableOpacity>
     );
   };
@@ -256,7 +310,8 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
     navigateToSignIn(navigation);
   };
 
-  const displayName = isAuthenticated ? user?.name || 'User' : 'Guest User';
+  const displayName = isAuthenticated ? user?.name || 'User' : 'Guest';
+  const firstName = displayName.split(' ')[0];
   const profileSub = isAuthenticated
     ? user?.email || 'Manage your health journey'
     : 'Sign in for full access';
@@ -264,28 +319,32 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.profileHeader}>
-        <View style={styles.profileGradient}>
+        <View style={styles.headerOrb} />
+        <View style={styles.profileRow}>
           <View style={styles.avatar}>
-            <Icon name="account" size={32} color={colors.brandPrimary} />
+            <Icon name="account" size={28} color={drawerBrand.accent} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>
-              {isAuthenticated ? `Hi, ${displayName.split(' ')[0]}!` : displayName}
+            <Text style={styles.profileKicker}>Welcome</Text>
+            <Text style={styles.profileName} numberOfLines={1}>
+              {isAuthenticated ? `Hi, ${firstName}!` : 'Guest'}
             </Text>
-            <Text style={styles.profileSub}>{profileSub}</Text>
+            <Text style={styles.profileSub} numberOfLines={1}>
+              {profileSub}
+            </Text>
           </View>
         </View>
         <TouchableOpacity
           style={styles.authBtn}
           onPress={handleAuthPress}
-          activeOpacity={0.8}>
+          activeOpacity={0.85}>
           <Icon
             name={isAuthenticated ? 'logout' : 'login'}
-            size={18}
-            color={colors.white}
+            size={16}
+            color={drawerBrand.onAccent}
           />
           <Text style={styles.authBtnText}>
-            {isAuthenticated ? 'Sign Out' : 'Sign In'}
+            {isAuthenticated ? 'Sign out' : 'Sign in'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -295,41 +354,49 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>Browse</Text>
-        {PRIMARY_ITEMS.map(renderItem)}
+        <View style={styles.menuGroup}>{PRIMARY_ITEMS.map(renderItem)}</View>
 
-        <View style={styles.divider} />
-
-        <Text style={styles.sectionTitle}>Quick Links</Text>
-        {SECONDARY_ITEMS.map(renderItem)}
-
-        <View style={styles.divider} />
+        <Text style={[styles.sectionTitle, styles.sectionGap]}>Quick links</Text>
+        <View style={styles.menuGroup}>{SECONDARY_ITEMS.map(renderItem)}</View>
 
         <TouchableOpacity
           style={styles.locationCard}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           onPress={() => {
             navigation.closeDrawer();
             requestLocationDetection();
           }}>
-          <Icon name="map-marker-radius" size={22} color={colors.brandPrimary} />
+          <View style={styles.locationIcon}>
+            <Icon
+              name="map-marker-radius"
+              size={18}
+              color={drawerBrand.onAccent}
+            />
+          </View>
           <View style={styles.locationInfo}>
             <Text style={styles.locationTitle} numberOfLines={2}>
               Delivering to {location}
             </Text>
-            <Text style={styles.locationSub}>Tap to refresh exact location</Text>
+            <Text style={styles.locationSub}>Tap to refresh location</Text>
           </View>
-          <Icon name="chevron-right" size={20} color={colors.neutral500} />
+          <Icon name="chevron-right" size={18} color={drawerBrand.muted} />
         </TouchableOpacity>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, spacing.md) },
+        ]}>
         <View style={styles.footerLogo}>
-          <Icon name="medical-bag" size={16} color={colors.brandPrimary} />
-          <Text style={styles.footerBrand}>
-            Pharma<Text style={styles.footerAccent}>Hub</Text>
-          </Text>
+          <View style={styles.footerMark}>
+            <Icon name="plus" size={14} color={drawerBrand.onAccent} />
+          </View>
+          <Text style={styles.footerBrand}>Medzoos</Text>
         </View>
-        <Text style={styles.footerTagline}>Your trusted healthcare partner</Text>
+        <Text style={styles.footerTagline}>
+          Your trusted healthcare partner
+        </Text>
       </View>
     </View>
   );
@@ -338,180 +405,236 @@ export function DrawerContent({ navigation, state }: DrawerContentComponentProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surfaceBase,
+    backgroundColor: drawerBrand.page,
   },
   profileHeader: {
-    backgroundColor: colors.brandLight,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral200,
+    backgroundColor: drawerBrand.accent,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    overflow: 'hidden',
   },
-  profileGradient: {
+  headerOrb: {
+    position: 'absolute',
+    top: -40,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    padding: spacing.lg,
-    paddingBottom: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.white,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: drawerBrand.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: `${colors.brandPrimary}30`,
+    borderColor: 'rgba(255,255,255,0.55)',
   },
   profileInfo: {
     flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  profileKicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.72)',
   },
   profileName: {
-    ...typography.subtitle,
-    color: colors.inkHeadline,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: drawerBrand.onAccent,
   },
   profileSub: {
-    ...typography.caption,
-    color: colors.neutral600,
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.78)',
   },
   authBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.brandPrimary,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    paddingVertical: 11,
+    borderRadius: radius.pill,
   },
   authBtnText: {
-    ...typography.subtitle,
-    color: colors.white,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
+    color: drawerBrand.onAccent,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: 4,
   },
   sectionTitle: {
-    ...typography.label,
-    color: colors.neutral500,
+    fontSize: 11,
+    fontWeight: '800',
+    color: drawerBrand.muted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.1,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  sectionGap: {
+    marginTop: spacing.md,
+  },
+  menuGroup: {
+    paddingHorizontal: spacing.sm,
+    gap: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     marginHorizontal: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: 14,
     position: 'relative',
     overflow: 'hidden',
+    gap: 10,
   },
   menuItemActive: {
-    backgroundColor: colors.brandLight,
+    backgroundColor: drawerBrand.soft,
   },
   menuIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.neutral100,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: drawerBrand.card,
+    borderWidth: 1,
+    borderColor: drawerBrand.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
   menuIconWrapActive: {
-    backgroundColor: `${colors.brandPrimary}18`,
+    backgroundColor: drawerBrand.accent,
+    borderColor: drawerBrand.accent,
   },
   menuLabel: {
-    ...typography.body,
-    color: colors.neutral800,
-    fontWeight: '500',
     flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: drawerBrand.ink,
   },
   menuLabelActive: {
-    color: colors.brandPrimary,
-    fontWeight: '600',
+    color: drawerBrand.accent,
+    fontWeight: '800',
   },
   badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radius.pill,
-    marginRight: spacing.sm,
   },
   badgeText: {
     fontSize: 9,
-    fontWeight: '700',
-    color: colors.white,
+    fontWeight: '800',
+    color: drawerBrand.onAccent,
+    letterSpacing: 0.3,
   },
   activeBar: {
     position: 'absolute',
     left: 0,
-    top: '20%',
-    bottom: '20%',
+    top: 10,
+    bottom: 10,
     width: 3,
     borderRadius: 2,
-    backgroundColor: colors.brandPrimary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.neutral200,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
+    backgroundColor: drawerBrand.accent,
   },
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 10,
     marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    padding: spacing.lg,
-    backgroundColor: colors.brandMist,
-    borderRadius: radius.lg,
+    marginTop: spacing.lg,
+    padding: 12,
+    backgroundColor: drawerBrand.card,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: `${colors.brandPrimary}20`,
+    borderColor: drawerBrand.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: drawerBrand.ink,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+      },
+      android: { elevation: 1 },
+    }),
+  },
+  locationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: drawerBrand.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   locationInfo: {
     flex: 1,
+    minWidth: 0,
   },
   locationTitle: {
-    ...typography.subtitle,
-    color: colors.inkHeadline,
     fontSize: 13,
+    fontWeight: '700',
+    color: drawerBrand.ink,
   },
   locationSub: {
-    ...typography.caption,
-    color: colors.neutral500,
+    fontSize: 11,
+    fontWeight: '500',
+    color: drawerBrand.muted,
     marginTop: 2,
   },
   footer: {
-    padding: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral200,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: drawerBrand.border,
     alignItems: 'center',
+    backgroundColor: drawerBrand.card,
+    gap: 4,
   },
   footerLogo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 8,
+  },
+  footerMark: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: drawerBrand.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footerBrand: {
-    ...typography.subtitle,
-    color: colors.inkHeadline,
-  },
-  footerAccent: {
-    color: colors.brandPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: drawerBrand.ink,
   },
   footerTagline: {
-    ...typography.caption,
-    color: colors.neutral500,
-    marginTop: spacing.xs,
+    fontSize: 11,
+    fontWeight: '500',
+    color: drawerBrand.muted,
   },
 });

@@ -1,5 +1,5 @@
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
-import { healthOs } from '../../theme/healthOs';
+import { doctorsBrand } from './doctorsBrand';
+import { spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
@@ -19,10 +19,12 @@ import type { Doctor } from '../../lib/mappers/doctor';
 import type { DoctorsStackParamList } from '../../navigation/types';
 import {
   DoctorsHero,
+  DoctorsScreenHeader,
   ConsultTypeTabs,
   DoctorCard,
   DoctorFilterSheet,
 } from './components';
+import { canPopCurrentStack } from '../../lib/auth/navigation';
 import {
   DEFAULT_FILTERS,
   FILTER_OPTIONS,
@@ -35,13 +37,22 @@ import type { ConsultOption } from './utils/consultOptions';
 type DoctorsRoute = RouteProp<DoctorsStackParamList, 'DoctorsList'>;
 
 const QUICK_FILTERS = [
-  { id: 'availableToday' as const, label: 'Available Today' },
-  { id: 'online' as const, label: 'Video Consultation' },
-  { id: 'experienced' as const, label: 'Most Experienced' },
+  { id: 'availableToday' as const, label: 'Available Today', icon: 'calendar-today' },
+  { id: 'online' as const, label: 'Video', icon: 'video-outline' },
+  { id: 'experienced' as const, label: 'Experienced', icon: 'medal-outline' },
 ];
 
 function DoctorSkeleton() {
-  return <View style={styles.skeleton} />;
+  return (
+    <View style={styles.skeleton}>
+      <View style={styles.skeletonPhoto} />
+      <View style={styles.skeletonBody}>
+        <View style={[styles.skeletonLine, { width: '70%' }]} />
+        <View style={[styles.skeletonLine, { width: '45%', marginTop: 8 }]} />
+        <View style={[styles.skeletonLine, { width: '55%', marginTop: 8 }]} />
+      </View>
+    </View>
+  );
 }
 
 export function DoctorsPage() {
@@ -67,6 +78,7 @@ export function DoctorsPage() {
   );
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
 
   const apiParams = useMemo(() => {
     const params: Record<string, string> = {};
@@ -145,6 +157,15 @@ export function DoctorsPage() {
     });
   };
 
+  const toggleFavorite = useCallback((doctor: Doctor) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(doctor.id)) next.delete(doctor.id);
+      else next.add(doctor.id);
+      return next;
+    });
+  }, []);
+
   const handleBook = (doctor: Doctor, option: ConsultOption) => {
     navigation.navigate('DoctorBooking', {
       doctorId: doctor.id,
@@ -161,18 +182,46 @@ export function DoctorsPage() {
     });
   };
 
+  const activeFilterCount =
+    filters.specialties.length +
+    (filters.availableToday ? 1 : 0) +
+    (filters.online ? 1 : 0) +
+    (filters.experienced ? 1 : 0);
+
+  const handleBack = useCallback(() => {
+    if (canPopCurrentStack(navigation)) {
+      navigation.goBack();
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('ConsultHome');
+  }, [navigation]);
+
   return (
-    <ScreenLayout headerMode="stack" title={screenTitle} showSearch={false}>
+    <ScreenLayout
+      hideHeader
+      embedSafeAreaInChildren
+      showSearch={false}
+      backgroundColor={doctorsBrand.page}>
+      <DoctorsScreenHeader
+        title={screenTitle}
+        onBackPress={handleBack}
+        showBack={canPopCurrentStack(navigation)}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing || (isFetching && !isLoading)}
             onRefresh={onRefresh}
-            tintColor={colors.brandPrimary}
-            colors={[colors.brandPrimary]}
+            tintColor={doctorsBrand.accent}
+            colors={[doctorsBrand.accent]}
           />
         }>
         <DoctorsHero
@@ -189,32 +238,27 @@ export function DoctorsPage() {
           />
         ) : null}
 
-        {!initialSpecialty ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.specialtyChips}>
-            {specialtyOptions.slice(0, 5).map(specialty => {
-              const active = filters.specialties.includes(specialty);
-              return (
-                <TouchableOpacity
-                  key={specialty}
-                  style={[styles.chip, active && styles.chipActive]}
-                  onPress={() => toggleSpecialtyChip(specialty)}
-                  activeOpacity={0.8}>
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {specialty}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickFilters}>
+          contentContainerStyle={styles.chipsRow}>
+          {!initialSpecialty
+            ? specialtyOptions.slice(0, 5).map(specialty => {
+                const active = filters.specialties.includes(specialty);
+                return (
+                  <TouchableOpacity
+                    key={specialty}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => toggleSpecialtyChip(specialty)}
+                    activeOpacity={0.85}>
+                    <Text
+                      style={[styles.chipText, active && styles.chipTextActive]}>
+                      {specialty}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+            : null}
           {QUICK_FILTERS.map(chip => {
             const active =
               chip.id === 'availableToday'
@@ -227,8 +271,14 @@ export function DoctorsPage() {
                 key={chip.id}
                 style={[styles.chip, active && styles.chipActive]}
                 onPress={() => toggleQuickFilter(chip.id)}
-                activeOpacity={0.8}>
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                activeOpacity={0.85}>
+                <Icon
+                  name={chip.icon}
+                  size={13}
+                  color={active ? doctorsBrand.onAccent : doctorsBrand.accent}
+                />
+                <Text
+                  style={[styles.chipText, active && styles.chipTextActive]}>
                   {chip.label}
                 </Text>
               </TouchableOpacity>
@@ -239,26 +289,31 @@ export function DoctorsPage() {
         <View style={styles.resultsHeader}>
           <View style={styles.resultsLeft}>
             {isLoading ? (
-              <Text style={styles.resultsText}>Loading doctors...</Text>
+              <Text style={styles.resultsText}>Finding doctors…</Text>
             ) : (
               <Text style={styles.resultsText}>
-                <Text style={styles.resultsCount}>{filtered.length}</Text> doctors
-                found
+                <Text style={styles.resultsCount}>{filtered.length}</Text>{' '}
+                {filtered.length === 1 ? 'doctor' : 'doctors'}
               </Text>
             )}
-            {usingLiveData && (
+            {usingLiveData ? (
               <View style={styles.liveBadge}>
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>Live</Text>
               </View>
-            )}
+            ) : null}
           </View>
           <TouchableOpacity
             style={styles.filterBtn}
             onPress={() => setFilterSheetOpen(true)}
-            activeOpacity={0.8}>
-            <Icon name="filter-variant" size={16} color={colors.inkHeadline} />
+            activeOpacity={0.85}>
+            <Icon name="tune-variant" size={16} color={doctorsBrand.accent} />
             <Text style={styles.filterBtnText}>Filters</Text>
+            {activeFilterCount > 0 ? (
+              <View style={styles.filterCount}>
+                <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
         </View>
 
@@ -275,6 +330,8 @@ export function DoctorsPage() {
                 key={doctor.id}
                 doctor={doctor}
                 consultType={category}
+                favorited={favorites.has(doctor.id)}
+                onToggleFavorite={toggleFavorite}
                 onViewProfile={handleViewProfile}
                 onBook={handleBook}
               />
@@ -282,14 +339,16 @@ export function DoctorsPage() {
           </View>
         ) : (
           <View style={styles.empty}>
-            <Icon name="doctor" size={48} color={colors.neutral300} />
+            <View style={styles.emptyIcon}>
+              <Icon name="doctor" size={32} color={doctorsBrand.accent} />
+            </View>
             <Text style={styles.emptyTitle}>
               {isError ? 'Could not load doctors' : 'No doctors found'}
             </Text>
             <Text style={styles.emptySub}>
               {isError
                 ? 'Pull to refresh or try again in a moment.'
-                : 'Try another consult type or adjust your search or filters.'}
+                : 'Try another consult type, specialty, or clear filters.'}
             </Text>
             <TouchableOpacity
               style={styles.clearFiltersBtn}
@@ -321,42 +380,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   scrollContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: TAB_BAR_CLEARANCE,
+    gap: 0,
   },
-  quickFilters: {
+  chipsRow: {
     gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  specialtyChips: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   chip: {
-    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: colors.white,
+    backgroundColor: doctorsBrand.card,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: doctorsBrand.border,
   },
   chipActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: doctorsBrand.accent,
+    borderColor: doctorsBrand.accent,
   },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: doctorsBrand.ink,
   },
   chipTextActive: {
-    color: colors.white,
+    color: doctorsBrand.onAccent,
   },
   resultsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   resultsLeft: {
     flexDirection: 'row',
@@ -366,77 +426,111 @@ const styles = StyleSheet.create({
   },
   resultsText: {
     fontSize: 13,
-    color: colors.neutral500,
+    color: doctorsBrand.muted,
   },
   resultsCount: {
-    fontWeight: '700',
-    color: colors.inkHeadline,
+    fontWeight: '800',
+    color: doctorsBrand.ink,
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.brandLight,
+    backgroundColor: doctorsBrand.successSoft,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.pill,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.statusSuccess,
+    backgroundColor: doctorsBrand.success,
   },
   liveText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+    fontWeight: '700',
+    color: doctorsBrand.success,
   },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.white,
-    borderRadius: 10,
+    backgroundColor: doctorsBrand.card,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: doctorsBrand.border,
   },
   filterBtnText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.inkHeadline,
+    fontWeight: '700',
+    color: doctorsBrand.ink,
+  },
+  filterCount: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: doctorsBrand.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterCountText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: doctorsBrand.onAccent,
   },
   list: {
-    gap: 0,
+    gap: spacing.md,
   },
   skeleton: {
-    height: 200,
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    flexDirection: 'row',
+    gap: spacing.md,
+    backgroundColor: doctorsBrand.card,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    marginBottom: spacing.lg,
-    opacity: 0.6,
+    borderColor: doctorsBrand.border,
+    padding: spacing.md,
+  },
+  skeletonPhoto: {
+    width: 88,
+    height: 88,
+    borderRadius: 16,
+    backgroundColor: doctorsBrand.soft,
+  },
+  skeletonBody: { flex: 1, justifyContent: 'center' },
+  skeletonLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: doctorsBrand.soft,
   },
   empty: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    backgroundColor: doctorsBrand.card,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: doctorsBrand.border,
     padding: spacing.xxxl,
     alignItems: 'center',
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: doctorsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: doctorsBrand.ink,
     marginTop: spacing.lg,
   },
   emptySub: {
     fontSize: 14,
-    color: colors.neutral500,
+    color: doctorsBrand.muted,
     textAlign: 'center',
     marginTop: spacing.sm,
     lineHeight: 20,
@@ -445,13 +539,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+    backgroundColor: doctorsBrand.accent,
   },
   clearFiltersText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+    fontWeight: '700',
+    color: doctorsBrand.onAccent,
   },
 });

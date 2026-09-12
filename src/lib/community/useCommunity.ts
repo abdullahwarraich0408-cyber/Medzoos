@@ -13,6 +13,7 @@ import {
   withoutBuddy,
   withoutSuggestion,
 } from './membership';
+import { MOCK_POSTS } from './mockData';
 import type {
   BuddySuggestion,
   CommunityPost,
@@ -65,6 +66,7 @@ export function useCommunity() {
     null,
   );
   const [profileState, setProfileState] = useState<CommunityProfile | null>(null);
+  const [postsState, setPostsState] = useState<CommunityPost[] | null>(null);
 
   const postsQuery = useQuery({
     queryKey: ['community', 'posts', feedFilter],
@@ -72,8 +74,14 @@ export function useCommunity() {
       const params: Record<string, string> = {};
       if (feedFilter === 'verified') params.filter = 'verified';
       if (feedFilter === 'videos') params.filter = 'videos';
-      const data = await communityApi.getPosts(params);
-      return data.posts || [];
+      try {
+        const data = await communityApi.getPosts(params);
+        const apiPosts = data.posts || [];
+        // Demo feed: show dummy community posts when API has none yet
+        return apiPosts.length > 0 ? apiPosts : MOCK_POSTS;
+      } catch {
+        return MOCK_POSTS;
+      }
     },
     staleTime: 30_000,
   });
@@ -139,7 +147,11 @@ export function useCommunity() {
   const apiGroupsLive = (groupsQuery.data?.length ?? 0) > 0 && !groupsQuery.isError;
   const apiChallengesLive =
     (challengesQuery.data?.length ?? 0) > 0 && !challengesQuery.isError;
-  const usingMockCommunity = false;
+  const usingMockCommunity = useMemo(() => {
+    const data = postsQuery.data ?? [];
+    if (data.length === 0) return true;
+    return data.every(p => String(p.id).startsWith('p'));
+  }, [postsQuery.data]);
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['community'] });
@@ -162,9 +174,12 @@ export function useCommunity() {
     return suggestionsQuery.data ?? [];
   }, [isAuthenticated, suggestionsQuery.data]);
 
-  const posts = useMemo(() => {
-    return postsQuery.data ?? [];
+  const seedPosts = useMemo(() => {
+    const api = postsQuery.data ?? [];
+    return api.length > 0 ? api : MOCK_POSTS;
   }, [postsQuery.data]);
+
+  const posts = postsState ?? seedPosts;
 
   const groups = groupsState ?? seedGroups;
   const challenges = challengesState ?? seedChallenges;
@@ -228,16 +243,35 @@ export function useCommunity() {
 
   const likePost = useCallback(
     async (postId: string) => {
-      if (!isAuthenticated) return false;
+      const applyLocalLike = () => {
+        const current = postsState ?? seedPosts;
+        setPostsState(
+          current.map(p =>
+            p.id === postId
+              ? {
+                  ...p,
+                  likedByMe: !p.likedByMe,
+                  likes: p.likedByMe ? Math.max(0, p.likes - 1) : p.likes + 1,
+                }
+              : p,
+          ),
+        );
+      };
+
+      if (!isAuthenticated) {
+        applyLocalLike();
+        return true;
+      }
       try {
         await communityApi.toggleLike(postId);
         await queryClient.invalidateQueries({ queryKey: ['community', 'posts'] });
         return true;
       } catch {
-        return false;
+        applyLocalLike();
+        return true;
       }
     },
-    [isAuthenticated, queryClient],
+    [isAuthenticated, queryClient, postsState, seedPosts],
   );
 
   const addComment = useCallback(

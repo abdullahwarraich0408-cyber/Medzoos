@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,10 @@ import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import { navigateToServices } from '../../../lib/auth/navigation';
 import type { HealthStackParamList } from '../../../navigation/types';
-import { HealthEmptyState } from '../components/shared/HealthEmptyState';
 import { useHealthDashboard } from '../hooks/useHealthDashboard';
 import type { LabBooking } from '../../../lib/mappers/labTest';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
-import { calmLayout } from '../../../theme/calmLayout';
+import { labReportsBrand } from '../../account/accountScreenBrands';
+import { spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
 
 function formatDate(value?: string) {
   if (!value) return '—';
@@ -56,9 +55,9 @@ function ReportRow({ report }: { report: LabBooking }) {
     <View style={styles.row}>
       <View style={[styles.iconWrap, ready && styles.iconReady]}>
         <Icon
-          name={ready ? 'file-check-outline' : 'file-clock-outline'}
+          name={ready ? 'file-check-outline' : 'flask-outline'}
           size={18}
-          color={ready ? colors.successText : colors.primary700}
+          color={ready ? labReportsBrand.success : labReportsBrand.accent}
         />
       </View>
       <View style={styles.body}>
@@ -70,31 +69,40 @@ function ReportRow({ report }: { report: LabBooking }) {
             .filter(Boolean)
             .join(' · ')}
         </Text>
-      </View>
-      <View style={[styles.badge, ready ? styles.badgeReady : styles.badgePending]}>
-        <Text
-          style={[
-            styles.badgeText,
-            ready ? styles.badgeTextReady : styles.badgeTextPending,
-          ]}>
-          {ready ? 'Ready' : 'Pending'}
-        </Text>
+        <View
+          style={[styles.badge, ready ? styles.badgeReady : styles.badgePending]}>
+          <Text
+            style={[
+              styles.badgeText,
+              ready ? styles.badgeTextReady : styles.badgeTextPending,
+            ]}>
+            {ready ? 'Ready to view' : 'Processing'}
+          </Text>
+        </View>
       </View>
       {ready ? (
-        <Pressable
-          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
-          onPress={open}
-          hitSlop={6}>
-          <Icon name="eye-outline" size={18} color={colors.primary700} />
-        </Pressable>
-      ) : null}
-      {ready ? (
-        <Pressable
-          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
-          onPress={share}
-          hitSlop={6}>
-          <Icon name="share-variant-outline" size={17} color={colors.primary700} />
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+            onPress={open}
+            hitSlop={6}>
+            <Icon name="eye-outline" size={18} color={labReportsBrand.onAccent} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.action,
+              styles.actionSoft,
+              pressed && styles.actionPressed,
+            ]}
+            onPress={share}
+            hitSlop={6}>
+            <Icon
+              name="share-variant-outline"
+              size={17}
+              color={labReportsBrand.accent}
+            />
+          </Pressable>
+        </View>
       ) : null}
     </View>
   );
@@ -106,6 +114,11 @@ function ReportsContent() {
     useNavigation<NativeStackNavigationProp<HealthStackParamList>>();
   const { allReports, isLoading } = useHealthDashboard();
 
+  const readyCount = useMemo(
+    () => allReports.filter(r => Boolean(r.reportUrl)).length,
+    [allReports],
+  );
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -113,32 +126,53 @@ function ReportsContent() {
         styles.scrollContent,
         {
           paddingBottom:
-            Math.max(insets.bottom, TAB_BAR_CLEARANCE) + calmLayout.contentBottom,
+            Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg,
         },
       ]}
       showsVerticalScrollIndicator={false}>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Icon name="file-chart-outline" size={22} color={labReportsBrand.accent} />
+        </View>
+        <View style={styles.heroText}>
+          <Text style={styles.pageTitle}>Lab reports</Text>
+          <Text style={styles.subtitle}>
+            Results and PDFs from your lab bookings.
+          </Text>
+        </View>
+        {allReports.length > 0 ? (
+          <View style={styles.countPill}>
+            <Text style={styles.countPillText}>
+              {readyCount}/{allReports.length} ready
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
       {isLoading ? (
         <ActivityIndicator
           size="large"
-          color={colors.primary700}
+          color={labReportsBrand.accent}
           style={styles.loader}
         />
       ) : allReports.length === 0 ? (
-        <HealthEmptyState
-          icon="file-chart-outline"
-          title="No reports yet"
-          subtitle="Lab results appear here when ready."
-          action={
-            <Pressable
-              style={({ pressed }) => [
-                styles.browseBtn,
-                pressed && styles.browsePressed,
-              ]}
-              onPress={() => navigateToServices(navigation, 'LabTestsList')}>
-              <Text style={styles.browseBtnText}>Book a lab test</Text>
-            </Pressable>
-          }
-        />
+        <View style={styles.empty}>
+          <View style={styles.emptyIcon}>
+            <Icon name="flask-empty-outline" size={30} color={labReportsBrand.accent} />
+          </View>
+          <Text style={styles.emptyTitle}>No reports yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Book a lab test and your results will land here when ready.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.browseBtn,
+              pressed && styles.browsePressed,
+            ]}
+            onPress={() => navigateToServices(navigation, 'LabTestsList')}>
+            <Text style={styles.browseBtnText}>Book a lab test</Text>
+          </Pressable>
+        </View>
       ) : (
         <View style={styles.list}>
           {allReports.map(report => (
@@ -156,7 +190,11 @@ export function ReportsScreen() {
       title="Sign in to view reports"
       subtitle="Access lab reports and download PDFs."
       icon="file-chart-outline">
-      <ScreenLayout headerMode="stack" title="Reports" showSearch={false}>
+      <ScreenLayout
+        headerMode="stack"
+        title="Lab reports"
+        showSearch={false}
+        backgroundColor={labReportsBrand.page}>
         <ReportsContent />
       </ScreenLayout>
     </RequireAuthGate>
@@ -166,8 +204,49 @@ export function ReportsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
-    padding: calmLayout.screenPadding,
-    gap: 20,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: labReportsBrand.card,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: labReportsBrand.border,
+    padding: spacing.md,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: labReportsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroText: { flex: 1, minWidth: 0, gap: 2 },
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: labReportsBrand.ink,
+  },
+  subtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: labReportsBrand.muted,
+  },
+  countPill: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: labReportsBrand.successSoft,
+  },
+  countPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: labReportsBrand.success,
   },
   loader: { marginVertical: spacing.xxxl },
   list: { gap: spacing.sm },
@@ -175,63 +254,98 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.white,
+    backgroundColor: labReportsBrand.card,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    borderColor: labReportsBrand.border,
+    padding: spacing.md,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary100,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: labReportsBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconReady: {
-    backgroundColor: colors.successBg,
+    backgroundColor: labReportsBrand.successSoft,
   },
-  body: { flex: 1, gap: 2, minWidth: 0 },
+  body: { flex: 1, gap: 4, minWidth: 0 },
   title: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontWeight: '700',
+    color: labReportsBrand.ink,
   },
   meta: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: labReportsBrand.muted,
   },
   badge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: radius.pill,
   },
-  badgeReady: { backgroundColor: colors.successBg },
-  badgePending: { backgroundColor: colors.primary100 },
+  badgeReady: { backgroundColor: labReportsBrand.successSoft },
+  badgePending: { backgroundColor: labReportsBrand.soft },
   badgeText: { fontSize: 10, fontWeight: '700' },
-  badgeTextReady: { color: colors.successText },
-  badgeTextPending: { color: colors.primary800 },
+  badgeTextReady: { color: labReportsBrand.success },
+  badgeTextPending: { color: labReportsBrand.accent },
+  actions: { gap: spacing.xs },
   action: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: labReportsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionPressed: { backgroundColor: colors.primary100 },
+  actionSoft: {
+    backgroundColor: labReportsBrand.soft,
+  },
+  actionPressed: { opacity: 0.88 },
+  empty: {
+    backgroundColor: labReportsBrand.card,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: labReportsBrand.border,
+    paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: labReportsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    fontWeight: '700',
+    color: labReportsBrand.ink,
+  },
+  emptySubtitle: {
+    marginTop: spacing.sm,
+    fontSize: 13,
+    lineHeight: 19,
+    color: labReportsBrand.muted,
+    textAlign: 'center',
+  },
   browseBtn: {
     marginTop: spacing.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm + 2,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primary700,
+    borderRadius: radius.pill,
+    backgroundColor: labReportsBrand.accent,
   },
   browsePressed: { opacity: 0.9 },
   browseBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.white,
+    color: labReportsBrand.onAccent,
   },
 });

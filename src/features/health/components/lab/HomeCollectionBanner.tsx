@@ -1,18 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, radius, shadows } from '../../../../theme';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { labTestsBrand } from '../../../lab-tests/labTestsBrand';
+import { spacing } from '../../../../theme';
 
 export function HomeCollectionBanner() {
   return (
     <View style={styles.banner}>
-      <View style={styles.emojiWrap}>
-        <Text style={styles.emoji}>🏠</Text>
+      <View style={styles.orb} />
+      <View style={styles.iconWrap}>
+        <Icon name="home-plus-outline" size={22} color={labTestsBrand.accent} />
       </View>
       <View style={styles.text}>
-        <Text style={styles.title}>Free Home Sample Collection</Text>
+        <Text style={styles.title}>Free home sample collection</Text>
         <Text style={styles.sub}>
-          Certified phlebotomist visits your home. Select your lab and track
-          collection in real time.
+          A certified phlebotomist visits your home. Track collection in real
+          time.
         </Text>
       </View>
     </View>
@@ -24,31 +27,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.lg,
-    backgroundColor: colors.brandBanner,
-    borderRadius: radius.xxl,
-    marginBottom: spacing.lg,
-    ...shadows.cardElevated,
+    padding: spacing.md + 2,
+    backgroundColor: labTestsBrand.accent,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  emojiWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+  orb: {
+    position: 'absolute',
+    right: -24,
+    top: -28,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: labTestsBrand.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 24 },
-  text: { flex: 1 },
+  text: { flex: 1, minWidth: 0 },
   title: {
     fontSize: 14,
-    fontWeight: '700',
-    color: colors.white,
+    fontWeight: '800',
+    color: labTestsBrand.onAccent,
+    marginBottom: 3,
   },
   sub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.84)',
   },
 });

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Pressable, StyleSheet, Text } from 'react-native';
 import { ORDER_LIFECYCLE_TABS, type OrderLifecycleTab } from '../data/orderModel';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { ordersBrand } from '../ordersBrand';
+import { spacing, radius } from '../../../theme';
 
 type OrderHubTabsProps = {
   active: OrderLifecycleTab;
@@ -10,7 +11,7 @@ type OrderHubTabsProps = {
 
 export function OrderHubTabs({ active, onChange }: OrderHubTabsProps) {
   return (
-    <View style={styles.wrap}>
+    <View style={styles.track}>
       {ORDER_LIFECYCLE_TABS.map(tab => {
         const isActive = active === tab.id;
         return (
@@ -33,29 +34,29 @@ export function OrderHubTabs({ active, onChange }: OrderHubTabsProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  track: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 4,
+    padding: 4,
+    borderRadius: radius.xl,
+    backgroundColor: ordersBrand.soft,
+    borderWidth: 1,
+    borderColor: ordersBrand.border,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: spacing.sm + 2,
     borderRadius: radius.lg,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.12)',
-    ...shadows.cardSoft,
   },
   tabActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: ordersBrand.accent,
   },
-  tabPressed: { backgroundColor: colors.brandMist },
+  tabPressed: { backgroundColor: ordersBrand.glaze },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.neutral600,
+    color: ordersBrand.muted,
   },
-  tabTextActive: { color: colors.white },
+  tabTextActive: { color: ordersBrand.onAccent },
 });

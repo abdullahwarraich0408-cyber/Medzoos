@@ -3,16 +3,12 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  Pressable,
-  Text,
-  TextInput,
   RefreshControl,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
 import { HomeGreeting } from './components/HomeGreeting';
 import { HomePromoCarousel } from './components/HomePromoCarousel';
-import { HomeCategoriesRow } from './components/HomeCategoriesRow';
 import {
   HomeRecentVisits,
   type HomeRecentVisit,
@@ -21,13 +17,15 @@ import { HomeCheckupSchedule } from './components/HomeCheckupSchedule';
 import { HomeCareActions } from './components/HomeCareActions';
 import { HomeCampaignBanners } from './components/HomeCampaignBanners';
 import { useNotifications } from '../../lib/notifications';
+import { useLocationContext } from '../../lib/location/LocationContext';
 import { useHomeNavigation } from './hooks/useHomeNavigation';
 import { useHomeDashboardData } from './hooks/useHomeDashboardData';
 import { useHomePromoSlides } from './hooks/useHomePromoSlides';
-import { openAppDrawer } from '../../lib/auth/navigation';
 import type { HomePromoSlide } from '../home/data/homeData';
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
+import { spacing, getTabBarOccupiedHeight } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
+import { homeBrand } from './homeBrand';
+import { openAppDrawer } from '../../lib/auth/navigation';
 
 function formatVisitDate(value?: string) {
   if (!value) return 'Recent visit';
@@ -41,12 +39,16 @@ function formatVisitDate(value?: string) {
 }
 
 export function HealthDashboardPage() {
+  const insets = useSafeAreaInsets();
   const { user, firstName, health, refetchAll } = useHomeDashboardData();
   const { slides, refetch: refetchSlides } = useHomePromoSlides();
   const nav = useHomeNavigation();
   const { unreadCount } = useNotifications();
+  const { location, requestLocationDetection } = useLocationContext();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const scrollBottomPad =
+    getTabBarOccupiedHeight(insets.bottom) + calmLayout.contentBottom;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -115,7 +117,9 @@ export function HealthDashboardPage() {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      nav.goToServicesScreen('DoctorsList', { screenTitle: `Search: ${searchQuery.trim()}` });
+      nav.goToServicesScreen('DoctorsList', {
+        screenTitle: `Search: ${searchQuery.trim()}`,
+      });
     } else {
       nav.goToServicesScreen('DoctorsList');
     }
@@ -177,117 +181,78 @@ export function HealthDashboardPage() {
   };
 
   return (
-    <ScreenLayout hideHeader>
-      <View style={styles.topBar}>
-        <HomeGreeting
-          firstName={firstName}
-          fullName={user?.name}
-          avatarUrl={user?.avatar}
-          unreadCount={unreadCount}
-          onProfilePress={() =>
-            nav.navigation.getParent()?.navigate('You', { screen: 'Profile' })
-          }
-          onMenuPress={() => openAppDrawer(nav.navigation)}
-          onNotificationsPress={() => nav.goToNotifications()}
-        />
-      </View>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
-        <View style={styles.heroBlock}>
-          <View style={styles.searchBlock}>
-            <Text style={styles.searchLabel}>Looking for Doctors?</Text>
-            <Pressable style={styles.searchBar} onPress={handleSearch}>
-              <Icon name="magnify" size={18} color={colors.textSecondary} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search by name or department"
-                placeholderTextColor={colors.textDisabled}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-              />
-            </Pressable>
-          </View>
+    <ScreenLayout
+      hideHeader
+      backgroundColor={homeBrand.header}
+      embedSafeAreaInChildren>
+      <HomeGreeting
+        firstName={firstName}
+        fullName={user?.name}
+        locationLabel={location}
+        searchQuery={searchQuery}
+        onChangeSearch={setSearchQuery}
+        onSubmitSearch={handleSearch}
+        onMenuPress={() => openAppDrawer(nav.navigation)}
+        onLocationPress={() => {
+          void requestLocationDetection();
+        }}
+        onNotificationsPress={() => nav.goToNotifications()}
+        unreadCount={unreadCount}
+      />
 
+      <View style={styles.contentSheet}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: scrollBottomPad },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={homeBrand.main}
+            />
+          }>
           <HomePromoCarousel slides={slides} onPressSlide={handleHeroSlide} />
-        </View>
-
-        <HomeCareActions onAction={handleContentAction} />
-        <HomeCampaignBanners onAction={handleContentAction} />
-
-        <HomeCategoriesRow
-          onPressCategory={category =>
-            nav.goToServicesScreen('DoctorsList', {
-              specialty: category.specialty,
-            })
-          }
-        />
-
-        <HomeRecentVisits
-          visits={recentVisits}
-          onSeeAll={nav.goToAppointments}
-          onVisitPress={() => nav.goToAppointments()}
-          onEmptyCta={() => nav.goToServicesScreen('DoctorsList')}
-        />
-
-        <HomeCheckupSchedule
-          doctorOrders={upcomingDoctorOrders}
-          labBookings={health.upcomingBookings}
-          onSeeAll={nav.goToAppointments}
-          onItemPress={() => nav.goToAppointments()}
-        />
-      </ScrollView>
+          <HomeCareActions onAction={handleContentAction} />
+          <HomeCampaignBanners onAction={handleContentAction} />
+          <HomeRecentVisits
+            visits={recentVisits}
+            onSeeAll={nav.goToAppointments}
+            onVisitPress={() => nav.goToAppointments()}
+            onEmptyCta={() => nav.goToServicesScreen('DoctorsList')}
+          />
+          <HomeCheckupSchedule
+            doctorOrders={upcomingDoctorOrders}
+            labBookings={health.upcomingBookings}
+            onSeeAll={nav.goToAppointments}
+            onItemPress={() => nav.goToAppointments()}
+          />
+        </ScrollView>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: {
-    paddingHorizontal: calmLayout.screenPadding,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+  contentSheet: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: homeBrand.page,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
   },
-  scroll: { flex: 1, backgroundColor: 'transparent' },
+  scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   scrollContent: {
     paddingHorizontal: calmLayout.screenPadding,
-    paddingTop: spacing.sm,
-    paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
+    paddingTop: spacing.lg,
     gap: calmLayout.sectionGap,
-  },
-  heroBlock: {
-    gap: 0,
-  },
-  searchBlock: {
-    gap: 6,
-  },
-  searchLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    height: 44,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textPrimary,
-    padding: 0,
-    margin: 0,
   },
 });

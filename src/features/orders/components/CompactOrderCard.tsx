@@ -6,8 +6,8 @@ import {
   formatHubOrderRef,
   getStatusBadgeColor,
 } from '../data/orderModel';
-import { colors, spacing, radius, cardStyles, appIcons, appIconTile } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { ordersBrand } from '../ordersBrand';
+import { spacing, radius } from '../../../theme';
 
 type CompactOrderCardProps = {
   order: HubOrderView;
@@ -30,48 +30,56 @@ export function CompactOrderCard({ order, onPress, compact = false }: CompactOrd
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}>
-      <View style={styles.topRow}>
-        <View style={styles.iconWrap}>
-          <Icon name={order.icon} size={appIcons.size.md} color={appIcons.color} />
+      <View style={styles.rail} />
+      <View style={styles.body}>
+        <View style={styles.topRow}>
+          <View style={styles.iconWrap}>
+            <Icon name={order.icon} size={18} color={ordersBrand.accent} />
+          </View>
+          <View style={styles.titleBlock}>
+            <Text style={styles.title} numberOfLines={2}>
+              {order.lifecycle === 'active' ? getDisplayTitle(order) : order.title}
+            </Text>
+            <Text style={styles.provider} numberOfLines={1}>
+              {order.providerName}
+            </Text>
+          </View>
+          <View style={[styles.badge, { backgroundColor: `${statusColor}18` }]}>
+            <Text style={[styles.badgeText, { color: statusColor }]}>
+              {order.statusLabel}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.title} numberOfLines={2}>
-          {order.lifecycle === 'active' ? getDisplayTitle(order) : order.title}
-        </Text>
-        <View style={[styles.badge, { backgroundColor: `${statusColor}18` }]}>
-          <Text style={[styles.badgeText, { color: statusColor }]}>
-            {order.statusLabel}
-          </Text>
+
+        <Text style={styles.dateLine}>{dateLine}</Text>
+
+        {!compact && order.lifecycle === 'active' ? (
+          <View style={styles.nextStepRow}>
+            <Icon name="progress-clock" size={14} color={ordersBrand.accentSoft} />
+            <Text style={styles.nextStep}>{order.nextStep}</Text>
+          </View>
+        ) : null}
+
+        {order.lifecycle === 'cancelled' && order.refundStatus ? (
+          <Text style={styles.nextStep}>{order.refundStatus}</Text>
+        ) : null}
+        {order.lifecycle === 'cancelled' && order.cancelReason ? (
+          <Text style={styles.dateLine}>{order.cancelReason}</Text>
+        ) : null}
+
+        <View style={styles.footer}>
+          {showAmount ? (
+            <Text style={styles.amount}>PKR {order.amount!.toLocaleString()}</Text>
+          ) : (
+            <View style={styles.amountSpacer} />
+          )}
+          <Pressable
+            style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+            onPress={onPress}>
+            <Text style={styles.actionText}>{order.actionLabel}</Text>
+            <Icon name="chevron-right" size={16} color={ordersBrand.onAccent} />
+          </Pressable>
         </View>
-      </View>
-
-      <Text style={styles.provider} numberOfLines={2}>
-        {order.providerName}
-      </Text>
-
-      <Text style={styles.dateLine}>{dateLine}</Text>
-
-      {!compact && order.lifecycle === 'active' ? (
-        <Text style={styles.nextStep}>{order.nextStep}</Text>
-      ) : null}
-
-      {order.lifecycle === 'cancelled' && order.refundStatus ? (
-        <Text style={styles.nextStep}>{order.refundStatus}</Text>
-      ) : null}
-      {order.lifecycle === 'cancelled' && order.cancelReason ? (
-        <Text style={styles.dateLine}>{order.cancelReason}</Text>
-      ) : null}
-
-      <View style={styles.footer}>
-        {showAmount ? (
-          <Text style={styles.amount}>PKR {order.amount!.toLocaleString()}</Text>
-        ) : (
-          <View style={styles.amountSpacer} />
-        )}
-        <Pressable
-          style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
-          onPress={onPress}>
-          <Text style={styles.actionText}>{order.actionLabel}</Text>
-        </Pressable>
       </View>
     </Pressable>
   );
@@ -87,21 +95,45 @@ function getDisplayTitle(order: HubOrderView): string {
 
 const styles = StyleSheet.create({
   card: {
-    ...cardStyles.premiumSoft,
+    flexDirection: 'row',
+    backgroundColor: ordersBrand.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: ordersBrand.border,
+    overflow: 'hidden',
+  },
+  pressed: { backgroundColor: ordersBrand.soft },
+  rail: {
+    width: 4,
+    backgroundColor: ordersBrand.rail,
+  },
+  body: {
+    flex: 1,
     padding: spacing.md,
     gap: spacing.xs,
   },
-  pressed: { backgroundColor: colors.brandMist },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  iconWrap: appIconTile('sm'),
-  title: {
-    ...healthOsTypography.messageTitle,
-    fontSize: 14,
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: ordersBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: {
     flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ordersBrand.ink,
   },
   badge: {
     paddingHorizontal: spacing.sm,
@@ -114,20 +146,25 @@ const styles = StyleSheet.create({
   },
   provider: {
     fontSize: 13,
-    color: colors.neutral600,
-    marginLeft: 44,
+    color: ordersBrand.muted,
   },
   dateLine: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: ordersBrand.muted,
     marginLeft: 44,
   },
-  nextStep: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+  nextStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginLeft: 44,
     marginTop: 2,
+  },
+  nextStep: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: ordersBrand.accent,
   },
   footer: {
     flexDirection: 'row',
@@ -140,19 +177,22 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.ink900,
+    color: ordersBrand.ink,
   },
   amountSpacer: { flex: 1 },
   actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: ordersBrand.accent,
   },
   actionBtnPressed: { opacity: 0.9 },
   actionText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.white,
+    color: ordersBrand.onAccent,
   },
 });

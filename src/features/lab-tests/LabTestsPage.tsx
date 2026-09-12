@@ -1,5 +1,3 @@
-import { colors, spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
-import { healthOs } from '../../theme/healthOs';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
@@ -21,9 +19,22 @@ import {
 import { getLabCart } from '../../lib/labCart';
 import type { LabTest } from '../../lib/mappers/labTest';
 import type { LabTestsStackParamList } from '../../navigation/types';
+import { canPopCurrentStack } from '../../lib/auth/navigation';
 import { LabTestsHero } from './components/LabTestsHero';
 import { LabTestCard } from './components/LabTestCard';
+import { LabTestsScreenHeader } from './components/LabTestsScreenHeader';
+import { labTestsBrand } from './labTestsBrand';
 import { CATEGORIES } from './data/mockLabTests';
+import { HomeCollectionBanner } from '../health/components/lab/HomeCollectionBanner';
+import { spacing, radius, TAB_BAR_CLEARANCE } from '../../theme';
+
+const CATEGORY_ICONS: Record<string, string> = {
+  blood: 'water',
+  diabetes: 'needle',
+  heart: 'heart-pulse',
+  vitamin: 'pill',
+  'full-body': 'human',
+};
 
 function LabTestSkeleton() {
   return <View style={styles.skeleton} />;
@@ -91,22 +102,39 @@ export function LabTestsPage() {
     navigation.navigate('LabTestBooking', { testId: test.id });
   };
 
+  const handleBack = useCallback(() => {
+    if (canPopCurrentStack(navigation)) {
+      navigation.goBack();
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  }, [navigation]);
+
   return (
-    <ScreenLayout title="Lab tests" showSearch={false} showCart={false}>
+    <ScreenLayout
+      hideHeader
+      embedSafeAreaInChildren
+      showSearch={false}
+      showCart={false}
+      backgroundColor={labTestsBrand.page}>
+      <LabTestsScreenHeader
+        title="Lab Tests"
+        onBackPress={handleBack}
+        showBack={canPopCurrentStack(navigation) || navigation.canGoBack()}
+      />
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: TAB_BAR_CLEARANCE },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing || (isFetching && !isLoading)}
             onRefresh={onRefresh}
-            tintColor={colors.brandPrimary}
-            colors={[colors.brandPrimary]}
+            tintColor={labTestsBrand.accent}
+            colors={[labTestsBrand.accent]}
           />
         }>
         <LabTestsHero search={search} onSearchChange={setSearch} />
@@ -116,7 +144,7 @@ export function LabTestsPage() {
             style={styles.quickLinkOutline}
             onPress={() => navigation.navigate('LabCart')}
             activeOpacity={0.85}>
-            <Icon name="cart-outline" size={16} color={colors.brandPrimary} />
+            <Icon name="cart-outline" size={15} color={labTestsBrand.accent} />
             <Text style={styles.quickLinkOutlineText}>
               Lab Cart{cartCount > 0 ? ` (${cartCount})` : ''}
             </Text>
@@ -125,94 +153,130 @@ export function LabTestsPage() {
             style={styles.quickLinkPrimary}
             onPress={() => navigation.navigate('LabReports')}
             activeOpacity={0.85}>
-            <Icon name="file-document-outline" size={16} color={colors.white} />
+            <Icon
+              name="file-document-outline"
+              size={15}
+              color={labTestsBrand.onAccent}
+            />
             <Text style={styles.quickLinkPrimaryText}>My Reports</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.banner}>
-          <View style={styles.bannerIcon}>
-            <Text style={styles.bannerEmoji}>🏠</Text>
-          </View>
-          <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>Free Home Sample Collection</Text>
-            <Text style={styles.bannerSub}>
-              Certified phlebotomist visits your home. No lab visit required.
-            </Text>
-          </View>
-        </View>
+        <HomeCollectionBanner />
 
-        {!search && !activeCategory && popular.length > 0 && (
+        {!search && !activeCategory && popular.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Popular Packages</Text>
-            {popular.map(test => (
-              <LabTestCard
-                key={test.id}
-                test={test}
-                compact
-                onBook={handleBook}
-                onCartUpdate={loadCartCount}
-              />
-            ))}
+            <Text style={styles.sectionTitle}>Popular packages</Text>
+            <View style={styles.list}>
+              {popular.map(test => (
+                <LabTestCard
+                  key={test.id}
+                  test={test}
+                  compact
+                  onBook={handleBook}
+                  onCartUpdate={loadCartCount}
+                />
+              ))}
+            </View>
           </View>
-        )}
+        ) : null}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesRow}>
-            <TouchableOpacity
-              style={[
-                styles.categoryChip,
-                !activeCategory && styles.categoryChipActive,
-              ]}
-              onPress={() => setActiveCategory(null)}
-              activeOpacity={0.85}>
-              <Text
-                style={[
-                  styles.categoryText,
-                  !activeCategory && styles.categoryTextActive,
-                ]}>
-                All Tests
-              </Text>
-            </TouchableOpacity>
-            {categories.map(cat => (
+          <Text style={styles.sectionTitle}>Browse by category</Text>
+          <View style={styles.categoryRail}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesRow}>
               <TouchableOpacity
-                key={cat.id}
                 style={[
                   styles.categoryChip,
-                  activeCategory === cat.id && styles.categoryChipActive,
+                  !activeCategory && styles.categoryChipActive,
                 ]}
-                onPress={() => setActiveCategory(cat.id)}
+                onPress={() => setActiveCategory(null)}
                 activeOpacity={0.85}>
+                <View
+                  style={[
+                    styles.categoryIcon,
+                    !activeCategory && styles.categoryIconActive,
+                  ]}>
+                  <Icon
+                    name="flask-outline"
+                    size={13}
+                    color={
+                      !activeCategory
+                        ? labTestsBrand.accent
+                        : labTestsBrand.onAccent
+                    }
+                  />
+                </View>
                 <Text
                   style={[
                     styles.categoryText,
-                    activeCategory === cat.id && styles.categoryTextActive,
+                    !activeCategory && styles.categoryTextActive,
                   ]}>
-                  {cat.icon} {cat.label}
+                  All
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+              {categories.map(cat => {
+                const active = activeCategory === cat.id;
+                const iconName = CATEGORY_ICONS[cat.id] || 'flask-outline';
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.categoryChip,
+                      active && styles.categoryChipActive,
+                    ]}
+                    onPress={() => setActiveCategory(cat.id)}
+                    activeOpacity={0.85}>
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        active && styles.categoryIconActive,
+                      ]}>
+                      <Icon
+                        name={iconName}
+                        size={13}
+                        color={
+                          active
+                            ? labTestsBrand.accent
+                            : labTestsBrand.onAccent
+                        }
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        active && styles.categoryTextActive,
+                      ]}>
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         </View>
 
         <View style={styles.section}>
+          <View style={styles.summaryRow}>
+            <Text style={styles.sectionTitle}>All lab tests</Text>
+            {!isLoading && filtered.length > 0 ? (
+              <Text style={styles.countText}>
+                {filtered.length} available
+              </Text>
+            ) : null}
+          </View>
+
           {isLoading ? (
             <>
-              <Text style={styles.countText}>Loading tests...</Text>
               {Array.from({ length: 4 }).map((_, i) => (
                 <LabTestSkeleton key={i} />
               ))}
             </>
           ) : filtered.length > 0 ? (
-            <>
-              <Text style={styles.countText}>
-                <Text style={styles.countBold}>{filtered.length}</Text> tests
-                available
-              </Text>
+            <View style={styles.list}>
               {filtered.map(test => (
                 <LabTestCard
                   key={test.id}
@@ -221,10 +285,14 @@ export function LabTestsPage() {
                   onCartUpdate={loadCartCount}
                 />
               ))}
-            </>
+            </View>
           ) : (
             <View style={styles.empty}>
-              <Icon name="flask-empty-outline" size={48} color={colors.neutral300} />
+              <Icon
+                name="flask-empty-outline"
+                size={40}
+                color={labTestsBrand.mist}
+              />
               <Text style={styles.emptyTitle}>
                 {isError ? 'Could not load tests' : 'No tests found'}
               </Text>
@@ -244,142 +312,146 @@ export function LabTestsPage() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: TAB_BAR_CLEARANCE + spacing.xl,
+    gap: spacing.xl,
   },
   quickLinks: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    gap: 10,
   },
   quickLinkOutline: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    backgroundColor: colors.white,
+    borderColor: labTestsBrand.border,
+    backgroundColor: labTestsBrand.card,
   },
   quickLinkOutlineText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.brandPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.accent,
   },
   quickLinkPrimary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: labTestsBrand.accent,
   },
   quickLinkPrimaryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.onAccent,
   },
-  banner: {
+  section: {
+    gap: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: labTestsBrand.ink,
+    marginBottom: 2,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: labTestsBrand.muted,
+  },
+  categoriesRow: {
+    gap: 8,
+    alignItems: 'center',
+    paddingRight: spacing.sm,
+  },
+  categoryRail: {
+    backgroundColor: labTestsBrand.soft,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    backgroundColor: colors.brandBanner,
-    borderRadius: radius.xxl,
-    marginBottom: spacing.lg,
+    gap: 7,
+    paddingLeft: 6,
+    paddingRight: 14,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    backgroundColor: labTestsBrand.card,
   },
-  bannerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+  categoryChipActive: {
+    backgroundColor: labTestsBrand.accent,
+    borderColor: labTestsBrand.accent,
+  },
+  categoryIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: labTestsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bannerEmoji: { fontSize: 24 },
-  bannerText: { flex: 1 },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  bannerSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  section: { marginBottom: spacing.lg },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: spacing.md,
-  },
-  categoriesRow: {
-    gap: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  categoryChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    backgroundColor: colors.white,
-  },
-  categoryChipActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+  categoryIconActive: {
+    backgroundColor: labTestsBrand.card,
   },
   categoryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.neutral600,
-  },
-  categoryTextActive: { color: colors.white },
-  countText: {
-    fontSize: 13,
-    color: colors.neutral500,
-    marginBottom: spacing.md,
-  },
-  countBold: {
+    fontSize: 12,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: labTestsBrand.ink,
+  },
+  categoryTextActive: { color: labTestsBrand.onAccent },
+  list: {
+    gap: spacing.md + 4,
   },
   skeleton: {
-    height: 200,
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    height: 140,
+    backgroundColor: labTestsBrand.card,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    marginBottom: spacing.md,
-    opacity: 0.6,
+    borderColor: labTestsBrand.border,
+    opacity: 0.7,
   },
   empty: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+    backgroundColor: labTestsBrand.card,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    borderColor: labTestsBrand.border,
     padding: spacing.xxxl,
     alignItems: 'center',
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
     marginTop: spacing.md,
   },
   emptySub: {
-    fontSize: 14,
-    color: colors.neutral500,
+    fontSize: 13,
+    color: labTestsBrand.muted,
     marginTop: spacing.sm,
     textAlign: 'center',
+    lineHeight: 18,
   },
 });

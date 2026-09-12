@@ -1,11 +1,21 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { navigateToDrawerScreen } from '../../../lib/auth/navigation';
 import { SupportContactCard } from '../components/SupportContactCard';
-import { colors, spacing, TAB_BAR_CLEARANCE } from '../../../theme';
+import { supportBrand } from '../accountScreenBrands';
+import { spacing, radius, TAB_BAR_CLEARANCE } from '../../../theme';
+
+const TOPICS = [
+  { icon: 'package-variant', label: 'Track medicine order delivery' },
+  { icon: 'calendar-clock', label: 'Reschedule doctor appointment' },
+  { icon: 'file-chart-outline', label: 'Download lab test report' },
+  { icon: 'map-marker-outline', label: 'Update delivery address' },
+  { icon: 'cash-refund', label: 'Payment & refund questions' },
+] as const;
 
 function SupportContent() {
   const insets = useSafeAreaInsets();
@@ -16,37 +26,51 @@ function SupportContent() {
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) },
+        { paddingBottom: Math.max(insets.bottom, TAB_BAR_CLEARANCE) + spacing.lg },
       ]}
       showsVerticalScrollIndicator={false}>
-      <Text style={styles.subtitle}>
-        Get help with orders, bookings, prescriptions, or account issues. Our
-        team is available around the clock.
-      </Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Icon name="lifebuoy" size={24} color={supportBrand.onAccent} />
+        </View>
+        <View style={styles.heroText}>
+          <Text style={styles.pageTitle}>Help desk</Text>
+          <Text style={styles.subtitle}>
+            Orders, bookings, prescriptions, and account help — 24/7.
+          </Text>
+        </View>
+      </View>
 
       <SupportContactCard
         onHelpCenter={() => navigateToDrawerScreen(navigation, 'Help')}
       />
 
-      <Text style={styles.faqTitle}>Common topics</Text>
-      {[
-        'Track medicine order delivery',
-        'Reschedule doctor appointment',
-        'Download lab test report',
-        'Update delivery address',
-        'Payment & refund questions',
-      ].map(topic => (
-        <Text key={topic} style={styles.faqItem}>
-          · {topic}
-        </Text>
-      ))}
+      <Text style={styles.sectionTitle}>Common topics</Text>
+      <View style={styles.topics}>
+        {TOPICS.map(topic => (
+          <Pressable
+            key={topic.label}
+            style={({ pressed }) => [styles.topic, pressed && styles.topicPressed]}
+            onPress={() => navigateToDrawerScreen(navigation, 'Help')}>
+            <View style={styles.topicIcon}>
+              <Icon name={topic.icon} size={18} color={supportBrand.accent} />
+            </View>
+            <Text style={styles.topicLabel}>{topic.label}</Text>
+            <Icon name="chevron-right" size={18} color={supportBrand.mist} />
+          </Pressable>
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 export function SupportScreen() {
   return (
-    <ScreenLayout headerMode="stack" title="Support" showSearch={false}>
+    <ScreenLayout
+      headerMode="stack"
+      title="Support"
+      showSearch={false}
+      backgroundColor={supportBrand.page}>
       <SupportContent />
     </ScreenLayout>
   );
@@ -54,24 +78,67 @@ export function SupportScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg },
-  subtitle: {
-    fontSize: 14,
-    color: colors.neutral500,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.md,
   },
-  faqTitle: {
-    fontSize: 16,
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: supportBrand.accent,
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+  },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroText: { flex: 1, minWidth: 0, gap: 4 },
+  pageTitle: {
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    color: supportBrand.onAccent,
   },
-  faqItem: {
+  subtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: supportBrand.ink,
+  },
+  topics: { gap: spacing.sm },
+  topic: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: supportBrand.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: supportBrand.border,
+    padding: spacing.md,
+  },
+  topicPressed: { backgroundColor: supportBrand.soft },
+  topicIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: supportBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topicLabel: {
+    flex: 1,
     fontSize: 14,
-    color: colors.neutral600,
-    lineHeight: 22,
-    marginBottom: spacing.xs,
+    fontWeight: '600',
+    color: supportBrand.ink,
   },
 });

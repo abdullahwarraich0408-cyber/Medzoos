@@ -26,6 +26,9 @@ type AuthResponse = {
   tokens?: AuthTokens;
   accessToken?: string;
   refreshToken?: string;
+  requireOtp?: boolean;
+  message?: string;
+  email?: string;
 };
 type HospitalsResponse = { hospitals?: import('../mappers/hospital').RawHospital[] };
 
@@ -65,6 +68,15 @@ export const authApi = {
     deviceId?: string;
     platform?: AuthPlatform;
   }) => api.post<AuthResponse>('/auth/register', data),
+  verifyRegisterOtp: (data: {
+    email: string;
+    otp: string;
+    deviceId?: string;
+    platform?: AuthPlatform;
+  }) => api.post<AuthResponse>('/auth/register/verify-otp', data),
+  resendRegisterOtp: (data: {
+    email: string;
+  }) => api.post<{ message: string }>('/auth/register/resend-otp', data),
   login: (data: {
     email: string;
     password: string;

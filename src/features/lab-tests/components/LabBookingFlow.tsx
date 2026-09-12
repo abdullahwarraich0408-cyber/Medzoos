@@ -1,5 +1,3 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -21,7 +19,6 @@ import {
 } from '../../../lib/hooks/useApi';
 import type { LabTest } from '../../../lib/mappers/labTest';
 import type { LabTestsStackParamList } from '../../../navigation/types';
-
 import { useLocationContext } from '../../../lib/location/LocationContext';
 import type { DetectedLocation } from '../../../lib/location/types';
 import { UseLocationButton } from '../../../components/location/UseLocationButton';
@@ -30,11 +27,13 @@ import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
 import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { TIME_SLOTS } from '../data/mockLabTests';
 import { ReadPrescriptionSection } from './ReadPrescriptionSection';
+import { labTestsBrand } from '../labTestsBrand';
+import { spacing, radius } from '../../../theme';
 
 const STEPS = [
-  { id: 1, label: 'Test', icon: 'flask' },
-  { id: 2, label: 'Details', icon: 'map-marker' },
-  { id: 3, label: 'Slot', icon: 'clock-outline' },
+  { id: 1, label: 'Review', icon: 'flask-outline' },
+  { id: 2, label: 'Details', icon: 'account-outline' },
+  { id: 3, label: 'Slot', icon: 'calendar-clock' },
   { id: 4, label: 'Done', icon: 'check' },
 ];
 
@@ -108,7 +107,9 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
           (booking as { booking?: { id?: string }; id?: string }).booking?.id ||
           (booking as { id?: string }).id;
         if (!bookingId) {
-          throw new Error('Lab booking created but missing id for Stripe payment.');
+          throw new Error(
+            'Lab booking created but missing id for Stripe payment.',
+          );
         }
         const payment = await startStripeCheckout({
           purpose: 'lab',
@@ -156,12 +157,14 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                     active && styles.stepCircleActive,
                   ]}>
                   {done ? (
-                    <Icon name="check" size={14} color={colors.white} />
+                    <Icon name="check" size={14} color={labTestsBrand.onAccent} />
                   ) : (
                     <Icon
                       name={s.icon}
                       size={14}
-                      color={active ? colors.brandPrimary : colors.neutral500}
+                      color={
+                        active ? labTestsBrand.onAccent : labTestsBrand.muted
+                      }
                     />
                   )}
                 </View>
@@ -173,11 +176,11 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                   {s.label}
                 </Text>
               </View>
-              {i < STEPS.length - 1 && (
+              {i < STEPS.length - 1 ? (
                 <View
                   style={[styles.stepLine, done && styles.stepLineDone]}
                 />
-              )}
+              ) : null}
             </React.Fragment>
           );
         })}
@@ -188,44 +191,79 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
 
   return (
     <View style={styles.container}>
-      {step < 4 && stepIndicator}
+      {step < 4 ? stepIndicator : null}
 
-      {step === 1 && (
-        <View>
-          <View style={styles.testSummary}>
-            <Text style={styles.testName}>{test.name}</Text>
-            <Text style={styles.testMeta}>
-              {test.lab} · {test.testsIncluded} tests
+      {step === 1 ? (
+        <View style={styles.stepBody}>
+          <Text style={styles.stepHeading}>Confirm this package</Text>
+          <Text style={styles.stepHint}>
+            Review preparation notes, then continue to patient details.
+          </Text>
+
+          <View style={styles.reviewCard}>
+            <View style={styles.reviewRow}>
+              <Icon name="flask-outline" size={16} color={labTestsBrand.accent} />
+              <Text style={styles.reviewTitle} numberOfLines={2}>
+                {test.name}
+              </Text>
+            </View>
+            <Text style={styles.reviewMeta}>
+              {test.lab} · {test.testsIncluded} tests · PKR{' '}
+              {test.price.toLocaleString()}
             </Text>
-            {test.fastingRequired && (
-              <Text style={styles.warning}>Fasting required before this test</Text>
-            )}
-            {test.preparation && (
-              <Text style={styles.prep}>{test.preparation}</Text>
-            )}
-            {test.description && (
-              <Text style={styles.desc}>{test.description}</Text>
-            )}
-            <Text style={styles.price}>PKR {test.price.toLocaleString()}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => setStep(2)}
-            activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
-      {step === 2 && (
-        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
+            {test.fastingRequired ? (
+              <View style={styles.noteWarn}>
+                <Icon name="alert-circle-outline" size={16} color="#B45309" />
+                <Text style={styles.noteWarnText}>
+                  Fasting required before this test
+                </Text>
+              </View>
+            ) : null}
+            {test.preparation ? (
+              <View style={styles.noteSoft}>
+                <Icon
+                  name="information-outline"
+                  size={16}
+                  color={labTestsBrand.accent}
+                />
+                <Text style={styles.noteSoftText}>{test.preparation}</Text>
+              </View>
+            ) : null}
+            {test.homeCollection ? (
+              <View style={styles.noteSoft}>
+                <Icon
+                  name="home-outline"
+                  size={16}
+                  color={labTestsBrand.accent}
+                />
+                <Text style={styles.noteSoftText}>
+                  Free home sample collection is available for this package.
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <PrimaryButton label="Continue to details" onPress={() => setStep(2)} />
+        </View>
+      ) : null}
+
+      {step === 2 ? (
+        <KeyboardAwareScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.stepBody}>
+          <Text style={styles.stepHeading}>Patient & collection</Text>
+          <Text style={styles.stepHint}>
+            Who is this test for, and how should we collect the sample?
+          </Text>
+
           <Field label="Patient name">
             <TextInput
               style={styles.input}
               value={patient.name}
               onChangeText={v => setPatient(p => ({ ...p, name: v }))}
               placeholder="Full name"
-              placeholderTextColor={colors.neutral500}
+              placeholderTextColor={labTestsBrand.muted}
             />
           </Field>
           <View style={styles.row}>
@@ -236,7 +274,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                   value={patient.gender}
                   onChangeText={v => setPatient(p => ({ ...p, gender: v }))}
                   placeholder="Male / Female"
-                  placeholderTextColor={colors.neutral500}
+                  placeholderTextColor={labTestsBrand.muted}
                 />
               </Field>
             </View>
@@ -248,7 +286,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                   onChangeText={v => setPatient(p => ({ ...p, age: v }))}
                   placeholder="Age"
                   keyboardType="number-pad"
-                  placeholderTextColor={colors.neutral500}
+                  placeholderTextColor={labTestsBrand.muted}
                 />
               </Field>
             </View>
@@ -260,12 +298,13 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
               onChangeText={v => setPatient(p => ({ ...p, phone: v }))}
               placeholder="03XX XXXXXXX"
               keyboardType="phone-pad"
-              placeholderTextColor={colors.neutral500}
+              placeholderTextColor={labTestsBrand.muted}
             />
           </Field>
 
+          <Text style={styles.sectionTitle}>Collection method</Text>
           <View style={styles.collectionRow}>
-            {test.homeCollection && (
+            {test.homeCollection ? (
               <TouchableOpacity
                 style={[
                   styles.collectionBtn,
@@ -273,10 +312,31 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                 ]}
                 onPress={() => setCollectionType('HOME')}
                 activeOpacity={0.85}>
-                <Icon name="home" size={16} color={colors.brandPrimary} />
-                <Text style={styles.collectionText}>Home Collection</Text>
+                <View
+                  style={[
+                    styles.collectionIcon,
+                    collectionType === 'HOME' && styles.collectionIconActive,
+                  ]}>
+                  <Icon
+                    name="home-outline"
+                    size={18}
+                    color={
+                      collectionType === 'HOME'
+                        ? labTestsBrand.onAccent
+                        : labTestsBrand.accent
+                    }
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.collectionText,
+                    collectionType === 'HOME' && styles.collectionTextActive,
+                  ]}>
+                  Home
+                </Text>
+                <Text style={styles.collectionSub}>Phlebotomist visit</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
             <TouchableOpacity
               style={[
                 styles.collectionBtn,
@@ -284,12 +344,33 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
               ]}
               onPress={() => setCollectionType('VISIT_LAB')}
               activeOpacity={0.85}>
-              <Icon name="hospital-building" size={16} color={colors.brandPrimary} />
-              <Text style={styles.collectionText}>Visit Lab</Text>
+              <View
+                style={[
+                  styles.collectionIcon,
+                  collectionType === 'VISIT_LAB' && styles.collectionIconActive,
+                ]}>
+                <Icon
+                  name="hospital-building"
+                  size={18}
+                  color={
+                    collectionType === 'VISIT_LAB'
+                      ? labTestsBrand.onAccent
+                      : labTestsBrand.accent
+                  }
+                />
+              </View>
+              <Text
+                style={[
+                  styles.collectionText,
+                  collectionType === 'VISIT_LAB' && styles.collectionTextActive,
+                ]}>
+                Visit lab
+              </Text>
+              <Text style={styles.collectionSub}>At partner center</Text>
             </TouchableOpacity>
           </View>
 
-          {collectionType === 'HOME' && (
+          {collectionType === 'HOME' ? (
             <>
               <Field label="Street address">
                 <TextInput
@@ -298,7 +379,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                   onChangeText={v => setAddress(a => ({ ...a, line: v }))}
                   placeholder="House / street address"
                   multiline
-                  placeholderTextColor={colors.neutral500}
+                  placeholderTextColor={labTestsBrand.muted}
                 />
               </Field>
               <Field label="City">
@@ -307,7 +388,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                   value={address.city}
                   onChangeText={v => setAddress(a => ({ ...a, city: v }))}
                   placeholder="City"
-                  placeholderTextColor={colors.neutral500}
+                  placeholderTextColor={labTestsBrand.muted}
                 />
               </Field>
               <UseLocationButton
@@ -321,7 +402,7 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
                 style={styles.locationBtn}
               />
             </>
-          )}
+          ) : null}
 
           <ReadPrescriptionSection
             prescriptionUrl={prescriptionUrl}
@@ -329,57 +410,86 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
             onSignInRequired={() => navigateToSignIn(navigation)}
           />
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, !detailsValid && styles.btnDisabled]}
-            onPress={() => setStep(3)}
-            disabled={!detailsValid}
-            activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Continue to Slot</Text>
-          </TouchableOpacity>
+          <View style={styles.navRow}>
+            <TouchableOpacity
+              style={styles.backStepBtn}
+              onPress={() => setStep(1)}
+              activeOpacity={0.85}>
+              <Icon name="arrow-left" size={16} color={labTestsBrand.accent} />
+              <Text style={styles.backStepText}>Back</Text>
+            </TouchableOpacity>
+            <View style={styles.navPrimary}>
+              <PrimaryButton
+                label="Continue to slot"
+                onPress={() => setStep(3)}
+                disabled={!detailsValid}
+              />
+            </View>
+          </View>
         </KeyboardAwareScrollView>
-      )}
+      ) : null}
 
-      {step === 3 && (
-        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
+      {step === 3 ? (
+        <KeyboardAwareScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.stepBody}>
+          <Text style={styles.stepHeading}>Pick date & time</Text>
+          <Text style={styles.stepHint}>
+            Choose when the sample should be collected, then confirm payment.
+          </Text>
+
           <Field label="Collection date">
             <TextInput
               style={styles.input}
               value={collectionDate}
               onChangeText={setCollectionDate}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.neutral500}
+              placeholderTextColor={labTestsBrand.muted}
             />
           </Field>
 
-          <Text style={styles.sectionTitle}>Select time slot</Text>
+          <Text style={styles.sectionTitle}>Available slots</Text>
           <View style={styles.slotsGrid}>
-            {timeSlots.map(slot => (
-              <TouchableOpacity
-                key={slot}
-                style={[
-                  styles.slotBtn,
-                  selectedSlot === slot && styles.slotBtnActive,
-                ]}
-                onPress={() => setSelectedSlot(slot)}
-                activeOpacity={0.85}>
-                <Text
-                  style={[
-                    styles.slotText,
-                    selectedSlot === slot && styles.slotTextActive,
-                  ]}>
-                  {slot}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {timeSlots.map(slot => {
+              const active = selectedSlot === slot;
+              return (
+                <TouchableOpacity
+                  key={slot}
+                  style={[styles.slotBtn, active && styles.slotBtnActive]}
+                  onPress={() => setSelectedSlot(slot)}
+                  activeOpacity={0.85}>
+                  <Icon
+                    name="clock-outline"
+                    size={14}
+                    color={
+                      active ? labTestsBrand.onAccent : labTestsBrand.accent
+                    }
+                  />
+                  <Text
+                    style={[styles.slotText, active && styles.slotTextActive]}
+                    numberOfLines={2}>
+                    {slot}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.summary}>
-            <SummaryRow label={test.name} value={`PKR ${test.price.toLocaleString()}`} bold />
+            <Text style={styles.summaryHeading}>Booking summary</Text>
+            <SummaryRow
+              label={test.name}
+              value={`PKR ${test.price.toLocaleString()}`}
+              bold
+            />
             <SummaryRow
               label="Collection"
-              value={collectionType === 'HOME' ? 'Home' : 'Lab visit'}
+              value={collectionType === 'HOME' ? 'Home visit' : 'Lab visit'}
             />
-            <SummaryRow label="Patient" value={patient.name} />
+            <SummaryRow label="Patient" value={patient.name || '—'} />
+            {selectedSlot ? (
+              <SummaryRow label="Slot" value={selectedSlot} />
+            ) : null}
           </View>
 
           {collectionType === 'VISIT_LAB' ? (
@@ -387,80 +497,126 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
               <Text style={styles.sectionTitle}>Payment method</Text>
               {(
                 [
-                  { id: 'stripe' as const, label: 'Pay online (Stripe)' },
-                  { id: 'cod' as const, label: 'Pay cash at lab' },
+                  {
+                    id: 'stripe' as const,
+                    label: 'Pay online',
+                    sub: 'Secure Stripe checkout',
+                    icon: 'credit-card-outline',
+                  },
+                  {
+                    id: 'cod' as const,
+                    label: 'Pay at lab',
+                    sub: 'Cash on visit',
+                    icon: 'cash',
+                  },
                 ] as const
-              ).map(method => (
-                <TouchableOpacity
-                  key={method.id}
-                  style={[
-                    styles.paymentRow,
-                    paymentMethod === method.id && styles.paymentRowActive,
-                  ]}
-                  onPress={() => setPaymentMethod(method.id)}
-                  activeOpacity={0.85}>
-                  <Text style={styles.paymentLabel}>{method.label}</Text>
-                  <Icon
-                    name={
-                      paymentMethod === method.id
-                        ? 'radiobox-marked'
-                        : 'radiobox-blank'
-                    }
-                    size={20}
-                    color={colors.brandPrimary}
-                  />
-                </TouchableOpacity>
-              ))}
+              ).map(method => {
+                const active = paymentMethod === method.id;
+                return (
+                  <TouchableOpacity
+                    key={method.id}
+                    style={[
+                      styles.paymentRow,
+                      active && styles.paymentRowActive,
+                    ]}
+                    onPress={() => setPaymentMethod(method.id)}
+                    activeOpacity={0.85}>
+                    <View style={styles.paymentLeft}>
+                      <View
+                        style={[
+                          styles.paymentIcon,
+                          active && styles.paymentIconActive,
+                        ]}>
+                        <Icon
+                          name={method.icon}
+                          size={16}
+                          color={
+                            active
+                              ? labTestsBrand.onAccent
+                              : labTestsBrand.accent
+                          }
+                        />
+                      </View>
+                      <View>
+                        <Text style={styles.paymentLabel}>{method.label}</Text>
+                        <Text style={styles.paymentSub}>{method.sub}</Text>
+                      </View>
+                    </View>
+                    <Icon
+                      name={active ? 'radiobox-marked' : 'radiobox-blank'}
+                      size={22}
+                      color={labTestsBrand.accent}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ) : (
             <View style={styles.secureRow}>
-              <Icon name="credit-card-outline" size={14} color={colors.neutral500} />
+              <Icon
+                name="shield-check-outline"
+                size={16}
+                color={labTestsBrand.accent}
+              />
               <Text style={styles.secureText}>
-                Home collection requires online Stripe payment.
+                Home collection uses secure online Stripe payment.
               </Text>
             </View>
           )}
 
-          <TouchableOpacity
-            style={[
-              styles.primaryBtn,
-              (!selectedSlot || bookLabTest.isPending || paying) &&
-                styles.btnDisabled,
-            ]}
-            onPress={handleConfirmBooking}
-            disabled={!selectedSlot || bookLabTest.isPending || paying}
-            activeOpacity={0.85}>
-            {bookLabTest.isPending || paying ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.primaryBtnText}>
-                {collectionType === 'HOME' || paymentMethod === 'stripe'
-                  ? 'Confirm & pay with Stripe'
-                  : 'Confirm Booking'}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.navRow}>
+            <TouchableOpacity
+              style={styles.backStepBtn}
+              onPress={() => setStep(2)}
+              activeOpacity={0.85}>
+              <Icon name="arrow-left" size={16} color={labTestsBrand.accent} />
+              <Text style={styles.backStepText}>Back</Text>
+            </TouchableOpacity>
+            <View style={styles.navPrimary}>
+              <PrimaryButton
+                label={
+                  collectionType === 'HOME' || paymentMethod === 'stripe'
+                    ? 'Confirm & pay'
+                    : 'Confirm booking'
+                }
+                onPress={handleConfirmBooking}
+                disabled={!selectedSlot || bookLabTest.isPending || paying}
+                loading={bookLabTest.isPending || paying}
+              />
+            </View>
+          </View>
         </KeyboardAwareScrollView>
-      )}
+      ) : null}
 
-      {step === 4 && (
+      {step === 4 ? (
         <View style={styles.successWrap}>
           <View style={styles.successIcon}>
-            <Icon name="check" size={32} color={colors.statusSuccess} />
+            <Icon name="check-bold" size={28} color={labTestsBrand.success} />
           </View>
-          <Text style={styles.successTitle}>Booking Confirmed</Text>
+          <Text style={styles.successTitle}>Booking confirmed</Text>
           <Text style={styles.successSub}>
-            Track your order in Orders. Reports will appear when ready.
+            Track collection in Orders. Your report will appear here when the
+            lab uploads it.
           </Text>
-          <TouchableOpacity
-            style={styles.primaryBtn}
+
+          <View style={styles.successMeta}>
+            <SummaryRow label="Test" value={test.name} bold />
+            <SummaryRow
+              label="Collection"
+              value={collectionType === 'HOME' ? 'Home visit' : 'Lab visit'}
+            />
+            {selectedSlot ? (
+              <SummaryRow label="Slot" value={selectedSlot} />
+            ) : null}
+          </View>
+
+          <PrimaryButton
+            label="View orders"
             onPress={() => {
               onDone?.();
               navigateToOrders(navigation);
             }}
-            activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>View Orders</Text>
-          </TouchableOpacity>
+          />
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={() => {
@@ -468,10 +624,10 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
               navigation.navigate('LabReports');
             }}
             activeOpacity={0.85}>
-            <Text style={styles.secondaryBtnText}>My Reports</Text>
+            <Text style={styles.secondaryBtnText}>My reports</Text>
           </TouchableOpacity>
         </View>
-      )}
+      ) : null}
 
       <StripeCheckoutModal
         visible={Boolean(stripeUrl)}
@@ -493,6 +649,35 @@ export function LabBookingFlow({ test, onDone }: LabBookingFlowProps) {
         }}
       />
     </View>
+  );
+}
+
+function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.primaryBtn, disabled && styles.btnDisabled]}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={0.85}>
+      {loading ? (
+        <ActivityIndicator color={labTestsBrand.onAccent} />
+      ) : (
+        <>
+          <Text style={styles.primaryBtnText}>{label}</Text>
+          <Icon name="arrow-right" size={16} color={labTestsBrand.onAccent} />
+        </>
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -522,8 +707,12 @@ function SummaryRow({
 }) {
   return (
     <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryValue, bold && styles.summaryValueBold]}>
+      <Text style={styles.summaryLabel} numberOfLines={2}>
+        {label}
+      </Text>
+      <Text
+        style={[styles.summaryValue, bold && styles.summaryValueBold]}
+        numberOfLines={2}>
         {value}
       </Text>
     </View>
@@ -531,225 +720,437 @@ function SummaryRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flexGrow: 1 },
   stepsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: 2,
   },
-  stepItem: { alignItems: 'center', width: 56 },
+  stepItem: { alignItems: 'center', width: 58 },
   stepCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: healthOs.cardBorder,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: labTestsBrand.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: labTestsBrand.page,
   },
   stepCircleDone: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: labTestsBrand.accent,
+    borderColor: labTestsBrand.accent,
   },
   stepCircleActive: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandLight,
+    borderColor: labTestsBrand.accent,
+    backgroundColor: labTestsBrand.accent,
   },
   stepLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    color: colors.neutral500,
-    marginTop: 4,
+    fontWeight: '700',
+    color: labTestsBrand.muted,
+    marginTop: 5,
   },
-  stepLabelActive: { color: colors.brandPrimary },
+  stepLabelActive: { color: labTestsBrand.accent },
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: colors.neutral200,
-    marginTop: 18,
-    minWidth: 12,
+    backgroundColor: labTestsBrand.mist,
+    marginTop: 16,
+    minWidth: 10,
   },
-  stepLineDone: { backgroundColor: colors.brandPrimary },
-  testSummary: {
-    padding: spacing.lg,
-    backgroundColor: colors.brandLight,
-    borderRadius: radius.lg,
+  stepLineDone: { backgroundColor: labTestsBrand.accent },
+
+  stepBody: {
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  stepHeading: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: labTestsBrand.ink,
+  },
+  stepHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
+    marginBottom: 4,
+  },
+
+  reviewCard: {
+    backgroundColor: labTestsBrand.page,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.brandLight,
-    marginBottom: spacing.lg,
+    borderColor: labTestsBrand.border,
+    padding: spacing.md,
+    gap: 8,
+    marginBottom: spacing.sm,
   },
-  testName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
+  reviewRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
   },
-  testMeta: {
-    fontSize: 13,
-    color: colors.neutral500,
-    marginTop: 4,
+  reviewTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
+    lineHeight: 20,
   },
-  warning: {
+  reviewMeta: {
     fontSize: 12,
-    color: colors.statusWarning,
-    marginTop: spacing.sm,
-  },
-  prep: { fontSize: 12, color: colors.neutral600, marginTop: spacing.sm },
-  desc: { fontSize: 13, color: colors.neutral600, marginTop: spacing.sm, lineHeight: 18 },
-  price: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.brandPrimary,
-    marginTop: spacing.md,
-  },
-  field: { marginBottom: spacing.md },
-  locationBtn: { marginBottom: spacing.md },
-  fieldLabel: {
-    fontSize: 13,
     fontWeight: '600',
-    color: colors.inkHeadline,
-    marginBottom: spacing.xs,
+    color: labTestsBrand.muted,
+  },
+  noteWarn: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    padding: 10,
+  },
+  noteWarnText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9A3412',
+    lineHeight: 17,
+  },
+  noteSoft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: labTestsBrand.soft,
+    borderRadius: 12,
+    padding: 10,
+  },
+  noteSoftText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+    color: labTestsBrand.ink,
+    lineHeight: 17,
+  },
+
+  field: { marginBottom: spacing.sm },
+  locationBtn: { marginBottom: spacing.sm },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.ink,
+    marginBottom: 6,
   },
   input: {
-    height: 48,
+    minHeight: 48,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    borderRadius: radius.md,
+    borderColor: labTestsBrand.border,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
     fontSize: 14,
-    color: colors.inkHeadline,
-    backgroundColor: colors.white,
+    fontWeight: '500',
+    color: labTestsBrand.ink,
+    backgroundColor: labTestsBrand.page,
   },
-  textArea: { height: 88, paddingTop: spacing.md, textAlignVertical: 'top' },
+  textArea: {
+    minHeight: 88,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
   row: { flexDirection: 'row', gap: spacing.sm },
   half: { flex: 1 },
-  collectionRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  collectionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    backgroundColor: colors.white,
-  },
-  collectionBtnActive: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandLight,
-  },
-  collectionText: { fontSize: 13, fontWeight: '600', color: colors.inkHeadline },
+
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: spacing.md,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
+    marginTop: 4,
+    marginBottom: 8,
   },
-  slotsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+  collectionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  collectionBtn: {
+    flex: 1,
+    alignItems: 'flex-start',
+    gap: 6,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    backgroundColor: labTestsBrand.page,
+    minWidth: 0,
+  },
+  collectionBtnActive: {
+    borderColor: labTestsBrand.accent,
+    backgroundColor: labTestsBrand.soft,
+  },
+  collectionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: labTestsBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+  },
+  collectionIconActive: {
+    backgroundColor: labTestsBrand.accent,
+    borderColor: labTestsBrand.accent,
+  },
+  collectionText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
+  },
+  collectionTextActive: {
+    color: labTestsBrand.accent,
+  },
+  collectionSub: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
+  },
+
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
   slotBtn: {
     width: '48%',
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    flexGrow: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    backgroundColor: labTestsBrand.page,
   },
   slotBtnActive: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandLight,
+    borderColor: labTestsBrand.accent,
+    backgroundColor: labTestsBrand.accent,
   },
-  slotText: { fontSize: 13, fontWeight: '600', color: colors.neutral800 },
-  slotTextActive: { color: colors.brandPrimary },
+  slotText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.ink,
+  },
+  slotTextActive: { color: labTestsBrand.onAccent },
+
   summary: {
     padding: spacing.md,
-    backgroundColor: colors.surfaceSubtle,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
+    backgroundColor: labTestsBrand.page,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    marginBottom: spacing.sm,
+    gap: 6,
+  },
+  summaryHeading: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: labTestsBrand.accent,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  summaryLabel: { fontSize: 13, color: colors.neutral600, flex: 1 },
-  summaryValue: { fontSize: 13, color: colors.neutral600 },
-  summaryValueBold: { fontWeight: '700', color: colors.inkHeadline },
-  secureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    paddingVertical: 2,
   },
+  summaryLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
+  },
+  summaryValue: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: labTestsBrand.ink,
+    textAlign: 'right',
+  },
+  summaryValueBold: {
+    fontWeight: '800',
+    color: labTestsBrand.accent,
+  },
+
   paymentBlock: {
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    gap: 8,
   },
   paymentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    backgroundColor: colors.white,
+    borderColor: labTestsBrand.border,
+    borderRadius: 16,
+    padding: 12,
+    backgroundColor: labTestsBrand.page,
   },
   paymentRowActive: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandLight,
+    borderColor: labTestsBrand.accent,
+    backgroundColor: labTestsBrand.soft,
+  },
+  paymentLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  paymentIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: labTestsBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+  },
+  paymentIconActive: {
+    backgroundColor: labTestsBrand.accent,
+    borderColor: labTestsBrand.accent,
   },
   paymentLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.inkHeadline,
+    fontWeight: '700',
+    color: labTestsBrand.ink,
   },
-  secureText: { fontSize: 12, color: colors.neutral500 },
+  paymentSub: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
+    marginTop: 1,
+  },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: labTestsBrand.soft,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: spacing.sm,
+  },
+  secureText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: labTestsBrand.ink,
+    lineHeight: 17,
+  },
+
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  backStepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    backgroundColor: labTestsBrand.page,
+  },
+  backStepText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: labTestsBrand.accent,
+  },
+  navPrimary: { flex: 1 },
+
   primaryBtn: {
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandPrimary,
+    minHeight: 48,
+    borderRadius: radius.pill,
+    backgroundColor: labTestsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: spacing.lg,
   },
-  btnDisabled: { opacity: 0.5 },
-  primaryBtnText: { fontSize: 15, fontWeight: '700', color: colors.white },
+  btnDisabled: { opacity: 0.45 },
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: labTestsBrand.onAccent,
+  },
   secondaryBtn: {
-    height: 48,
-    borderRadius: radius.md,
+    minHeight: 48,
+    borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.brandPrimary,
+    borderColor: labTestsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    backgroundColor: labTestsBrand.card,
   },
-  secondaryBtnText: { fontSize: 15, fontWeight: '600', color: colors.brandPrimary },
-  successWrap: { alignItems: 'center', paddingVertical: spacing.xxxl },
+  secondaryBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: labTestsBrand.accent,
+  },
+
+  successWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
   successIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.statusSuccessBg,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: labTestsBrand.successSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 4,
   },
   successTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: spacing.sm,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
   },
   successSub: {
-    fontSize: 14,
-    color: colors.neutral500,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
     textAlign: 'center',
-    marginBottom: spacing.xl,
-    lineHeight: 20,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  successMeta: {
+    alignSelf: 'stretch',
+    padding: spacing.md,
+    backgroundColor: labTestsBrand.page,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    marginBottom: spacing.sm,
+    gap: 6,
   },
 });

@@ -7,6 +7,7 @@ import { AddressesScreen } from '../features/account/screens/AddressesScreen';
 import { PaymentsScreen } from '../features/account/screens/PaymentsScreen';
 import { NotificationsScreen } from '../features/account/screens/NotificationsScreen';
 import { SettingsScreen } from '../features/account/screens/SettingsScreen';
+import { PrivacySecurityScreen } from '../features/account/screens/PrivacySecurityScreen';
 import { SupportScreen } from '../features/account/screens/SupportScreen';
 import { SignInScreen } from '../features/auth/screens/SignInScreen';
 import { PhoneSignInScreen } from '../features/auth/screens/PhoneSignInScreen';
@@ -39,6 +40,7 @@ export function YouStack() {
       <Stack.Screen name="Payments" component={PaymentsScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
       <Stack.Screen name="PhoneSignIn" component={PhoneSignInScreen} />
       <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />

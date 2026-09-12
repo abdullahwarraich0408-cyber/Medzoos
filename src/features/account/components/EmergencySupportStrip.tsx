@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, radius, shadows } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
+import { spacing } from '../../../theme';
+import { youBrand } from '../youBrand';
 
 type EmergencySupportStripProps = {
   onPress: () => void;
@@ -10,20 +10,23 @@ type EmergencySupportStripProps = {
 
 export function EmergencySupportStrip({ onPress }: EmergencySupportStripProps) {
   return (
-    <View style={styles.strip}>
+    <Pressable
+      style={({ pressed }) => [styles.strip, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Emergency support">
       <View style={styles.iconCircle}>
-        <Icon name="lifebuoy" size={18} color={healthOs.emergencyRed} />
+        <Icon name="lifebuoy" size={20} color={youBrand.danger} />
       </View>
       <View style={styles.copy}>
         <Text style={styles.text}>Need urgent help?</Text>
-        <Text style={styles.subtext}>Emergency support</Text>
+        <Text style={styles.subtext}>Talk to Medzoos Copilot now</Text>
       </View>
-      <Pressable
-        style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-        onPress={onPress}>
-        <Text style={styles.btnText}>Emergency support</Text>
-      </Pressable>
-    </View>
+      <View style={styles.btn}>
+        <Text style={styles.btnText}>Get help</Text>
+        <Icon name="arrow-right" size={14} color={youBrand.danger} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -32,50 +35,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: healthOs.emergencyBg,
-    borderRadius: radius.xl,
+    backgroundColor: youBrand.dangerSoft,
+    borderRadius: 20,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.18)',
-    ...shadows.cardSoft,
+    ...Platform.select({
+      ios: {
+        shadowColor: youBrand.danger,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+      },
+      android: { elevation: 1 },
+    }),
   },
+  pressed: { opacity: 0.92 },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: youBrand.card,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.15)',
   },
   copy: {
     flex: 1,
     gap: 2,
+    minWidth: 0,
   },
   text: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.statusDanger,
+    color: youBrand.danger,
   },
   subtext: {
-    fontSize: 11,
-    color: colors.neutral600,
+    fontSize: 12,
+    fontWeight: '500',
+    color: youBrand.muted,
   },
   btn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.15)',
-    ...shadows.cardSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: youBrand.card,
   },
-  btnPressed: { opacity: 0.9 },
   btnText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
-    color: healthOs.emergencyRed,
+    color: youBrand.danger,
   },
 });

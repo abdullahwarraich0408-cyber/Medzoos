@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, cardStyles } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
+import { spacing } from '../../../theme';
+import { youBrand } from '../youBrand';
 
 type YouLinkItem = {
   id: string;
   title: string;
+  subtitle?: string;
+  icon?: string;
 };
 
 type YouLinkSectionProps = {
@@ -15,23 +17,45 @@ type YouLinkSectionProps = {
   onPressItem: (item: YouLinkItem) => void;
 };
 
-export function YouLinkSection({ title, items, onPressItem }: YouLinkSectionProps) {
+export function YouLinkSection({
+  title,
+  items,
+  onPressItem,
+}: YouLinkSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       <View style={styles.card}>
         {items.map((item, index) => (
-          <React.Fragment key={item.id}>
-            {index > 0 ? <View style={cardStyles.rowDivider} /> : null}
-            <Pressable
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-              onPress={() => onPressItem(item)}>
+          <Pressable
+            key={item.id}
+            style={({ pressed }) => [
+              styles.row,
+              index < items.length - 1 && styles.rowBorder,
+              pressed && styles.rowPressed,
+            ]}
+            onPress={() => onPressItem(item)}>
+            <View style={styles.iconWrap}>
+              <Icon
+                name={item.icon || 'circle-outline'}
+                size={18}
+                color={youBrand.accent}
+              />
+            </View>
+            <View style={styles.copy}>
               <Text style={styles.rowTitle}>{item.title}</Text>
-              <View style={cardStyles.chevronWrap}>
-                <Icon name="chevron-right" size={18} color={colors.neutral500} />
-              </View>
-            </Pressable>
-          </React.Fragment>
+              {item.subtitle ? (
+                <Text style={styles.rowSub} numberOfLines={1}>
+                  {item.subtitle}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.chevron}>
+              <Icon name="chevron-right" size={18} color={youBrand.accent} />
+            </View>
+          </Pressable>
         ))}
       </View>
     </View>
@@ -40,24 +64,64 @@ export function YouLinkSection({ title, items, onPressItem }: YouLinkSectionProp
 
 const styles = StyleSheet.create({
   section: { gap: spacing.sm },
+  header: { gap: 2 },
   sectionTitle: {
-    ...healthOsTypography.sectionTitle,
+    fontSize: 18,
+    fontWeight: '700',
+    color: youBrand.ink,
+    letterSpacing: -0.2,
   },
   card: {
-    ...cardStyles.grouped,
+    backgroundColor: youBrand.card,
+    borderRadius: 22,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: youBrand.ink,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.06,
+        shadowRadius: 14,
+      },
+      android: { elevation: 2 },
+    }),
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
   },
-  rowPressed: { backgroundColor: colors.brandMist },
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: youBrand.border,
+  },
+  rowPressed: { backgroundColor: youBrand.soft },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: youBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copy: { flex: 1, gap: 2, minWidth: 0 },
   rowTitle: {
-    ...healthOsTypography.messageTitle,
     fontSize: 15,
-    flex: 1,
+    fontWeight: '700',
+    color: youBrand.ink,
+  },
+  rowSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: youBrand.muted,
+  },
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: youBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

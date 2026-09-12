@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -14,11 +13,11 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
-import { HealthSearchBar } from '../../health/components/shared/HealthSearchBar';
-import { HealthEmptyState } from '../../health/components/shared/HealthEmptyState';
 import { CompactOrderCard } from '../components/CompactOrderCard';
 import { OrderHubTabs } from '../components/OrderHubTabs';
 import { OrderTypeChips } from '../components/OrderTypeChips';
+import { OrdersEmptyState } from '../components/OrdersEmptyState';
+import { OrdersSearchBar } from '../components/OrdersSearchBar';
 import { useAllOrders } from '../../../lib/hooks/useApi';
 import { useCustomerOrderTracking } from '../../../lib/hooks/useOrderTracking';
 import { navigateToTabScreen } from '../../../lib/auth/navigation';
@@ -30,17 +29,19 @@ import {
   type OrderLifecycleTab,
   type OrderTypeFilter,
 } from '../data/orderModel';
+import { ordersBrand } from '../ordersBrand';
 import type { OrdersStackParamList } from '../../../navigation/types';
-import { colors, spacing, TAB_BAR_CLEARANCE, radius } from '../../../theme';
-import { healthOsTypography } from '../../../theme/healthOs';
-import { calmLayout } from '../../../theme/calmLayout';
+import { spacing, TAB_BAR_CLEARANCE, radius } from '../../../theme';
 
 function OrderSkeleton() {
   return (
     <View style={styles.skeleton}>
-      <View style={styles.skeletonLine} />
-      <View style={[styles.skeletonLine, { width: '70%', marginTop: 8 }]} />
-      <View style={[styles.skeletonLine, { width: '50%', marginTop: 8 }]} />
+      <View style={styles.skeletonRail} />
+      <View style={styles.skeletonBody}>
+        <View style={styles.skeletonLine} />
+        <View style={[styles.skeletonLine, { width: '70%', marginTop: 8 }]} />
+        <View style={[styles.skeletonLine, { width: '50%', marginTop: 8 }]} />
+      </View>
     </View>
   );
 }
@@ -81,16 +82,21 @@ function OrdersContent() {
     return list;
   }, [hubOrders, lifecycleTab, typeFilter, search]);
 
+  const activeCount = useMemo(
+    () => filterByLifecycle(hubOrders, 'active').length,
+    [hubOrders],
+  );
+
   const sectionTitle =
     lifecycleTab === 'active'
-      ? 'Active orders'
+      ? 'In progress'
       : lifecycleTab === 'completed'
-        ? 'Completed orders'
-        : 'Cancelled orders';
+        ? 'Completed'
+        : 'Cancelled';
 
-  const handleBookService = () => {
+  const handleBookService = useCallback(() => {
     navigateToTabScreen(navigation, 'Home', 'ServicesHub');
-  };
+  }, [navigation]);
 
   return (
     <ScrollView
@@ -101,16 +107,27 @@ function OrdersContent() {
       ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled">
-      <Text style={styles.pageTitle}>My Orders</Text>
-      <Text style={styles.subtitle}>
-        Track medicines, lab tests, appointments, and bookings.
-      </Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Icon name="package-variant-closed" size={22} color={ordersBrand.accent} />
+        </View>
+        <View style={styles.heroText}>
+          <Text style={styles.pageTitle}>My Orders</Text>
+          <Text style={styles.subtitle}>
+            Track medicines, labs, and bookings in one place.
+          </Text>
+        </View>
+        {activeCount > 0 ? (
+          <View style={styles.countPill}>
+            <Text style={styles.countPillText}>{activeCount} active</Text>
+          </View>
+        ) : null}
+      </View>
 
-      <HealthSearchBar
+      <OrdersSearchBar
         value={search}
         onChangeText={setSearch}
-        placeholder="Search orders, doctors, labs, or medicines..."
-        large
+        placeholder="Search orders, doctors, labs..."
       />
 
       <OrderHubTabs active={lifecycleTab} onChange={setLifecycleTab} />
@@ -124,10 +141,10 @@ function OrdersContent() {
           ))}
         </View>
       ) : isError ? (
-        <HealthEmptyState
+        <OrdersEmptyState
           icon="alert-circle-outline"
           title="Could not load orders"
-          subtitle="Please try again."
+          subtitle="Check your connection and try again."
           action={
             <TouchableOpacity style={styles.primaryBtn} onPress={() => refetch()}>
               <Text style={styles.primaryBtnText}>Retry</Text>
@@ -136,7 +153,10 @@ function OrdersContent() {
         />
       ) : filtered.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+            <Text style={styles.sectionCount}>{filtered.length}</Text>
+          </View>
           <View style={styles.list}>
             {filtered.map(order => (
               <CompactOrderCard
@@ -151,13 +171,13 @@ function OrdersContent() {
           </View>
         </View>
       ) : search.trim() ? (
-        <HealthEmptyState
+        <OrdersEmptyState
           icon="magnify"
           title="No orders found"
           subtitle="Try another doctor, lab, medicine, or order ID."
         />
       ) : (
-        <HealthEmptyState
+        <OrdersEmptyState
           icon="package-variant"
           title={
             lifecycleTab === 'active'
@@ -168,7 +188,7 @@ function OrdersContent() {
           }
           subtitle={
             lifecycleTab === 'active'
-              ? 'Your upcoming orders and bookings will appear here.'
+              ? 'Book a service and your orders will show up here for tracking.'
               : 'Orders in this category will appear here.'
           }
           action={
@@ -190,7 +210,11 @@ export function OrdersListScreen() {
       title="Sign in to view orders"
       subtitle="Track medicines, lab tests, doctor visits, and prescription requests in one place."
       icon="package-variant">
-      <ScreenLayout title="Orders" showSearch={false} showCart={false}>
+      <ScreenLayout
+        title="Orders"
+        showSearch={false}
+        showCart={false}
+        backgroundColor={ordersBrand.page}>
         <OrdersContent />
       </ScreenLayout>
     </RequireAuthGate>
@@ -200,42 +224,97 @@ export function OrdersListScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
-    padding: calmLayout.screenPadding,
-    gap: calmLayout.sectionGap,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    gap: spacing.md,
   },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: ordersBrand.card,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: ordersBrand.border,
+    padding: spacing.md,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: ordersBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroText: { flex: 1, minWidth: 0, gap: 2 },
   pageTitle: {
-    ...healthOsTypography.greeting,
-    fontSize: 24,
-    color: colors.ink900,
+    fontSize: 20,
+    fontWeight: '700',
+    color: ordersBrand.ink,
   },
   subtitle: {
-    ...healthOsTypography.sectionHint,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: -spacing.sm,
+    fontSize: 13,
+    lineHeight: 18,
+    color: ordersBrand.muted,
+  },
+  countPill: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: ordersBrand.soft,
+  },
+  countPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ordersBrand.accent,
   },
   section: { gap: spacing.sm },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sectionTitle: {
-    ...healthOsTypography.sectionTitle,
     fontSize: 15,
+    fontWeight: '700',
+    color: ordersBrand.ink,
+  },
+  sectionCount: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ordersBrand.muted,
+    backgroundColor: ordersBrand.soft,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
   },
   list: { gap: spacing.sm },
   skeleton: {
-    backgroundColor: colors.white,
+    flexDirection: 'row',
+    backgroundColor: ordersBrand.card,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(17, 61, 99, 0.08)',
+    borderColor: ordersBrand.border,
+    overflow: 'hidden',
+  },
+  skeletonRail: {
+    width: 4,
+    backgroundColor: ordersBrand.mist,
+  },
+  skeletonBody: {
+    flex: 1,
     padding: spacing.lg,
   },
   skeletonLine: {
     height: 12,
     borderRadius: 4,
-    backgroundColor: colors.neutral100,
+    backgroundColor: ordersBrand.soft,
     width: '90%',
   },
   primaryBtn: {
     marginTop: spacing.lg,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: ordersBrand.accent,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm + 2,
     borderRadius: radius.pill,
@@ -243,6 +322,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.white,
+    color: ordersBrand.onAccent,
   },
 });

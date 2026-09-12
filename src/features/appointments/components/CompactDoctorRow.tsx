@@ -3,7 +3,8 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { AppointmentCardModel } from './AppointmentCard';
 import { specialtyVisual } from '../../home/data/homeData';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { appointmentsBrand } from '../appointmentsBrand';
+import { spacing, radius } from '../../../theme';
 
 type CompactDoctorRowProps = {
   item: AppointmentCardModel;
@@ -19,9 +20,7 @@ export function CompactDoctorRow({
   onChatPress,
 }: CompactDoctorRowProps) {
   const visual = specialtyVisual(item.specialty);
-  const whenLabel = item.slot
-    ? `$150 Today, ${item.slot}`
-    : '$150 Today, 2:00 PM';
+  const whenLabel = item.slot ? `Next · ${item.slot}` : 'Book again';
 
   return (
     <Pressable
@@ -33,7 +32,7 @@ export function CompactDoctorRow({
           {item.doctorName}
         </Text>
         <View style={styles.specRow}>
-          <Icon name={visual.icon} size={12} color={colors.iconPrimary} />
+          <Icon name={visual.icon} size={12} color={appointmentsBrand.accent} />
           <Text style={styles.spec} numberOfLines={1}>
             {item.specialty}
           </Text>
@@ -44,10 +43,13 @@ export function CompactDoctorRow({
       </View>
       <View style={styles.actions}>
         <Pressable style={styles.actionBtn} onPress={onCalendarPress} hitSlop={6}>
-          <Icon name="calendar-month" size={16} color={colors.iconWhite} />
+          <Icon name="calendar-month" size={16} color={appointmentsBrand.onAccent} />
         </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onChatPress} hitSlop={6}>
-          <Icon name="message-outline" size={16} color={colors.iconWhite} />
+        <Pressable
+          style={[styles.actionBtn, styles.actionBtnSoft]}
+          onPress={onChatPress}
+          hitSlop={6}>
+          <Icon name="message-outline" size={16} color={appointmentsBrand.accent} />
         </Pressable>
       </View>
     </Pressable>
@@ -59,19 +61,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xxl,
+    backgroundColor: appointmentsBrand.card,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: appointmentsBrand.border,
     padding: spacing.md,
-    ...shadows.cardSoft,
   },
-  pressed: { opacity: 0.96 },
+  pressed: { backgroundColor: appointmentsBrand.soft },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primary100,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: appointmentsBrand.soft,
   },
   info: {
     flex: 1,
@@ -79,9 +80,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: appointmentsBrand.ink,
   },
   specRow: {
     flexDirection: 'row',
@@ -91,11 +92,11 @@ const styles = StyleSheet.create({
   spec: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.primary600,
+    color: appointmentsBrand.accentSoft,
   },
   meta: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: appointmentsBrand.muted,
     marginTop: 2,
   },
   actions: {
@@ -105,9 +106,12 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: 34,
     height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primary700,
+    borderRadius: 11,
+    backgroundColor: appointmentsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionBtnSoft: {
+    backgroundColor: appointmentsBrand.soft,
   },
 });

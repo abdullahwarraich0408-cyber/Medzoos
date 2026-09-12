@@ -27,6 +27,8 @@ import { AppBackground } from '../components/layout/AppBackground';
 import { APP_DRAWER_ID } from '../lib/auth/navigation';
 import { useAuth } from '../lib/auth/AuthContext';
 import { needsProfileCompletion } from '../lib/auth/needsProfileCompletion';
+import { queryClient } from '../providers/QueryProvider';
+import { prefetchAppCriticalData } from '../lib/bootstrap/prefetchAppCriticalData';
 import {
   hasCompletedOnboarding,
   type OnboardingAuthTarget,
@@ -48,6 +50,7 @@ function MainTabs() {
         headerShown: false,
         lazy: true,
         tabBarHideOnKeyboard: true,
+        sceneStyle: { backgroundColor: 'transparent' },
       }}>
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Copilot" component={CopilotStack} />
@@ -69,9 +72,9 @@ function DrawerNavigator() {
         drawerStyle: {
           width: '82%',
           maxWidth: 320,
-          backgroundColor: colors.surfaceBase,
+          backgroundColor: '#FFFFFF',
         },
-        overlayColor: 'rgba(15, 23, 42, 0.28)',
+        overlayColor: 'rgba(12, 69, 84, 0.32)',
         swipeEdgeWidth: 60,
         drawerStatusBarAnimation: 'fade',
       }}>
@@ -97,6 +100,7 @@ export function AppNavigator() {
   const [onboardingReady, setOnboardingReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [authEntry, setAuthEntry] = useState<'SignIn' | 'Register'>('SignIn');
+  const [appDataReady, setAppDataReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +113,33 @@ export function AppNavigator() {
       cancelled = true;
     };
   }, []);
+
+  // Warm / refresh critical Home data before unlocking the main app shell
+  // (covers post-login). If splash already prefetched, open immediately.
+  useEffect(() => {
+    if (!showApp) {
+      setAppDataReady(false);
+      return;
+    }
+    let cancelled = false;
+    const cachedSlides = queryClient
+      .getQueriesData({ queryKey: ['home-slides'] })
+      .some(([, data]) => Array.isArray(data) && data.length > 0);
+
+    if (cachedSlides) {
+      setAppDataReady(true);
+      void prefetchAppCriticalData(queryClient, { timeoutMs: 1500 });
+      return;
+    }
+
+    setAppDataReady(false);
+    prefetchAppCriticalData(queryClient, { timeoutMs: 1500 }).finally(() => {
+      if (!cancelled) setAppDataReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showApp]);
 
   const finishOnboarding = useCallback((target: OnboardingAuthTarget) => {
     setAuthEntry(target === 'register' ? 'Register' : 'SignIn');
@@ -149,7 +180,11 @@ export function AppNavigator() {
             },
           }}>
           {showApp ? (
-            <DrawerNavigator />
+            appDataReady ? (
+              <DrawerNavigator />
+            ) : (
+              <View style={styles.boot} />
+            )
           ) : (
             <AuthStack
               initialRouteName={authStart}

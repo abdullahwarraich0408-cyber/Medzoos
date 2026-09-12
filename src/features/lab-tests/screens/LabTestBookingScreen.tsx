@@ -1,5 +1,3 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
 import {
   View,
@@ -17,8 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
 import { useLabTest } from '../../../lib/hooks/useApi';
 import type { LabTestsStackParamList } from '../../../navigation/types';
-
 import { LabBookingFlow } from '../components/LabBookingFlow';
+import { labTestsBrand } from '../labTestsBrand';
+import { spacing, radius } from '../../../theme';
 
 type BookingRoute = RouteProp<LabTestsStackParamList, 'LabTestBooking'>;
 
@@ -33,19 +32,33 @@ export function LabTestBookingScreen() {
   const test = apiTest;
 
   return (
-    <ScreenLayout headerMode="stack" title="Book Lab Test" showSearch={false}>
+    <ScreenLayout
+      headerMode="stack"
+      title="Book Lab Test"
+      showSearch={false}
+      backgroundColor={labTestsBrand.page}>
       {isLoading && !test ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.brandPrimary} />
-          <Text style={styles.loadingText}>Loading lab test...</Text>
+          <ActivityIndicator size="large" color={labTestsBrand.accent} />
+          <Text style={styles.loadingText}>Loading lab test…</Text>
         </View>
       ) : !test ? (
         <View style={styles.center}>
-          <Icon name="flask-empty-outline" size={48} color={colors.neutral300} />
+          <View style={styles.emptyIcon}>
+            <Icon
+              name="flask-empty-outline"
+              size={28}
+              color={labTestsBrand.accent}
+            />
+          </View>
           <Text style={styles.errorTitle}>Lab test not found</Text>
+          <Text style={styles.errorSub}>
+            This package may no longer be available.
+          </Text>
           <TouchableOpacity
             style={styles.retryBtn}
-            onPress={() => navigation.goBack()}>
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.85}>
             <Text style={styles.retryText}>Browse tests</Text>
           </TouchableOpacity>
         </View>
@@ -54,69 +67,94 @@ export function LabTestBookingScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+            { paddingBottom: Math.max(insets.bottom, spacing.xl) + 8 },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
-          <View style={styles.infoCard}>
-            <View style={styles.infoHeader}>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryTop}>
               <View style={styles.iconWrap}>
-                <Icon name="flask" size={28} color={colors.brandPrimary} />
+                <Icon
+                  name="flask-outline"
+                  size={22}
+                  color={labTestsBrand.accent}
+                />
               </View>
-              <View style={styles.infoHeaderText}>
-                {test.discount && (
-                  <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>{test.discount}</Text>
-                  </View>
-                )}
-                <Text style={styles.testName}>{test.name}</Text>
-                <Text style={styles.labName}>{test.lab}</Text>
+              <View style={styles.summaryCopy}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.testName} numberOfLines={2}>
+                    {test.name}
+                  </Text>
+                  {test.discount ? (
+                    <View style={styles.discountBadge}>
+                      <Text style={styles.discountText}>{test.discount}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.labName} numberOfLines={1}>
+                  {test.lab}
+                </Text>
               </View>
             </View>
 
             {test.description ? (
-              <Text style={styles.description}>{test.description}</Text>
+              <Text style={styles.description} numberOfLines={2}>
+                {test.description}
+              </Text>
             ) : null}
 
             <View style={styles.metaRow}>
-              <View style={styles.metaBox}>
-                <Icon name="clock-outline" size={14} color={colors.neutral500} />
-                <Text style={styles.metaLabel}>Collection</Text>
-                <Text style={styles.metaValue}>
-                  {test.collectionTime || 'Same day'}
-                </Text>
-              </View>
-              <View style={styles.metaBox}>
-                <Icon name="file-document-outline" size={14} color={colors.neutral500} />
-                <Text style={styles.metaLabel}>Report</Text>
-                <Text style={styles.metaValue}>
-                  {test.reportTime || '24 hours'}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={styles.price}>PKR {test.price.toLocaleString()}</Text>
-            <Text style={styles.testsIncluded}>
-              {test.testsIncluded} parameters included
-            </Text>
-
-            {test.homeCollection && (
-              <View style={styles.homeBanner}>
-                <Icon name="home" size={20} color={colors.brandPrimary} />
-                <View style={styles.homeBannerText}>
-                  <Text style={styles.homeTitle}>
-                    Home sample collection included
-                  </Text>
-                  <Text style={styles.homeSub}>
-                    Free phlebotomist visit at your address
+              <View style={styles.metaChip}>
+                <Icon
+                  name="clock-outline"
+                  size={13}
+                  color={labTestsBrand.accent}
+                />
+                <View style={styles.metaCopy}>
+                  <Text style={styles.metaLabel}>Collection</Text>
+                  <Text style={styles.metaValue} numberOfLines={1}>
+                    {test.collectionTime || 'Same day'}
                   </Text>
                 </View>
               </View>
-            )}
+              <View style={styles.metaChip}>
+                <Icon
+                  name="file-document-outline"
+                  size={13}
+                  color={labTestsBrand.accent}
+                />
+                <View style={styles.metaCopy}>
+                  <Text style={styles.metaLabel}>Report</Text>
+                  <Text style={styles.metaValue} numberOfLines={1}>
+                    {test.reportTime || '24 hours'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.priceRow}>
+              <View>
+                <Text style={styles.price}>
+                  PKR {test.price.toLocaleString()}
+                </Text>
+                <Text style={styles.testsIncluded}>
+                  {test.testsIncluded} parameters included
+                </Text>
+              </View>
+              {test.homeCollection ? (
+                <View style={styles.homePill}>
+                  <Icon
+                    name="home-outline"
+                    size={13}
+                    color={labTestsBrand.onAccent}
+                  />
+                  <Text style={styles.homePillText}>Home pickup</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
 
           <View style={styles.flowCard}>
-            <Text style={styles.flowTitle}>Book This Test</Text>
             <LabBookingFlow test={test} />
           </View>
         </ScrollView>
@@ -126,177 +164,192 @@ export function LabTestBookingScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral200,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-  },
-  headerSpacer: { width: 40 },
   scroll: { flex: 1, backgroundColor: 'transparent' },
-  scrollContent: { padding: spacing.lg, gap: spacing.lg },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xxxl,
-    backgroundColor: colors.surfaceSubtle,
+    gap: spacing.sm,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: labTestsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   loadingText: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     fontSize: 14,
-    color: colors.neutral500,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
   },
   errorTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    marginTop: spacing.lg,
+    fontSize: 17,
+    fontWeight: '800',
+    color: labTestsBrand.ink,
+  },
+  errorSub: {
+    fontSize: 13,
+    color: labTestsBrand.muted,
+    textAlign: 'center',
   },
   retryBtn: {
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandPrimary,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    backgroundColor: labTestsBrand.accent,
   },
   retryText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.white,
+    fontWeight: '700',
+    color: labTestsBrand.onAccent,
   },
-  infoCard: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
+
+  summaryCard: {
+    backgroundColor: labTestsBrand.card,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
+    borderColor: labTestsBrand.border,
+    padding: spacing.md,
+    gap: spacing.sm + 2,
   },
-  infoHeader: {
+  summaryTop: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    alignItems: 'flex-start',
+    gap: spacing.sm + 2,
   },
   iconWrap: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    backgroundColor: colors.brandLight,
+    backgroundColor: labTestsBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  infoHeaderText: { flex: 1 },
+  summaryCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  testName: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.25,
+    lineHeight: 22,
+    color: labTestsBrand.ink,
+  },
   discountBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    backgroundColor: labTestsBrand.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radius.pill,
-    marginBottom: spacing.xs,
   },
   discountText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  testName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.inkHeadline,
-    lineHeight: 26,
+    fontWeight: '800',
+    color: labTestsBrand.onAccent,
   },
   labName: {
-    fontSize: 14,
-    color: colors.neutral500,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '600',
+    color: labTestsBrand.muted,
   },
   description: {
-    fontSize: 14,
-    color: colors.neutral600,
-    lineHeight: 21,
-    marginBottom: spacing.md,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: labTestsBrand.muted,
   },
   metaRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: 8,
   },
-  metaBox: {
+  metaChip: {
     flex: 1,
-    backgroundColor: colors.surfaceSubtle,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: labTestsBrand.page,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    minWidth: 0,
+  },
+  metaCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
   },
   metaLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    color: colors.neutral500,
+    fontWeight: '700',
+    color: labTestsBrand.muted,
     textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   metaValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: labTestsBrand.ink,
   },
-  price: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.brandPrimary,
-    marginBottom: 4,
-  },
-  testsIncluded: {
-    fontSize: 13,
-    color: colors.neutral500,
-    marginBottom: spacing.md,
-  },
-  homeBanner: {
+  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.brandBanner,
-    borderRadius: radius.xl,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingTop: 4,
   },
-  homeBannerText: { flex: 1 },
-  homeTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.white,
+  price: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    color: labTestsBrand.accent,
   },
-  homeSub: {
+  testsIncluded: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+    color: labTestsBrand.muted,
     marginTop: 2,
   },
-  flowCard: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
+  homePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: labTestsBrand.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
   },
-  flowTitle: {
-    fontSize: 18,
+  homePillText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.inkHeadline,
-    marginBottom: spacing.lg,
+    color: labTestsBrand.onAccent,
+  },
+
+  flowCard: {
+    backgroundColor: labTestsBrand.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: labTestsBrand.border,
+    padding: spacing.md,
   },
 });

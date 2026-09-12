@@ -1,5 +1,3 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React, { useState } from 'react';
 import {
   View,
@@ -19,6 +17,8 @@ import {
 import type { PickedPrescription } from '../../../lib/familyVault/uploadPrescription';
 import { useReadPrescription } from '../../../lib/hooks/useApi';
 import { ExtractedMedicinesBlock } from '../../health/components/family/MedicineListCard';
+import { labTestsBrand } from '../labTestsBrand';
+import { spacing, radius } from '../../../theme';
 
 
 type ReadPrescriptionSectionProps = {
@@ -108,10 +108,14 @@ export function ReadPrescriptionSection({
           disabled={busy}
           activeOpacity={0.85}>
           {busy ? (
-            <ActivityIndicator color={colors.white} />
+            <ActivityIndicator color={labTestsBrand.onAccent} />
           ) : (
             <>
-              <Icon name="file-document-outline" size={20} color={colors.white} />
+              <Icon
+                name="file-document-outline"
+                size={18}
+                color={labTestsBrand.onAccent}
+              />
               <Text style={styles.uploadBtnText}>{submitLabel}</Text>
             </>
           )}
@@ -120,10 +124,16 @@ export function ReadPrescriptionSection({
         <View style={styles.resultCard}>
           <View style={styles.resultHeader}>
             <View style={styles.resultTitleRow}>
-              <Icon name="check-circle" size={18} color={colors.statusSuccess} />
+              <Icon
+                name="check-circle"
+                size={18}
+                color={labTestsBrand.success}
+              />
               <Text style={styles.resultTitle}>Prescription attached</Text>
             </View>
-            <TouchableOpacity onPress={handleClear} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={handleClear}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.clearText}>Remove</Text>
             </TouchableOpacity>
           </View>
@@ -141,7 +151,11 @@ export function ReadPrescriptionSection({
               <Text style={styles.labTestsLabel}>Lab tests on prescription</Text>
               {(ocrData?.lab_tests || []).map(test => (
                 <View key={test} style={styles.labTestRow}>
-                  <Icon name="flask-outline" size={14} color={colors.brandPrimary} />
+                  <Icon
+                    name="flask-outline"
+                    size={14}
+                    color={labTestsBrand.accent}
+                  />
                   <Text style={styles.labTestText}>{test}</Text>
                 </View>
               ))}
@@ -159,34 +173,39 @@ export function ReadPrescriptionSection({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: spacing.md },
+  wrap: { marginBottom: spacing.sm },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.inkHeadline,
-    marginBottom: spacing.xs,
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.ink,
+    marginBottom: 6,
   },
   hint: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: labTestsBrand.muted,
     lineHeight: 17,
     marginBottom: spacing.sm,
   },
   uploadBtn: {
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandPrimary,
+    minHeight: 48,
+    borderRadius: radius.pill,
+    backgroundColor: labTestsBrand.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
-  uploadBtnText: { fontSize: 14, fontWeight: '700', color: colors.white },
+  uploadBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: labTestsBrand.onAccent,
+  },
   resultCard: {
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceSubtle,
+    borderColor: labTestsBrand.border,
+    borderRadius: 16,
+    backgroundColor: labTestsBrand.page,
     padding: spacing.md,
     gap: spacing.xs,
   },
@@ -196,26 +215,58 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.xs,
   },
-  resultTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  resultTitle: { fontSize: 14, fontWeight: '700', color: colors.inkHeadline },
-  clearText: { fontSize: 13, fontWeight: '600', color: colors.statusDanger },
-  meta: { fontSize: 12, fontWeight: '600', color: colors.inkHeadline },
-  diagnosis: { fontSize: 12, fontWeight: '600', color: colors.brandDark },
-  note: { fontSize: 12, color: colors.neutral600, lineHeight: 16 },
+  resultTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  resultTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: labTestsBrand.ink,
+  },
+  clearText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: labTestsBrand.danger,
+  },
+  meta: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: labTestsBrand.ink,
+  },
+  diagnosis: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: labTestsBrand.accentDeep,
+  },
+  note: {
+    fontSize: 12,
+    color: labTestsBrand.muted,
+    lineHeight: 16,
+  },
   labTestsWrap: {
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.neutral200,
+    borderTopColor: labTestsBrand.border,
     gap: spacing.xs,
   },
   labTestsLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.brandPrimary,
+    color: labTestsBrand.accent,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  labTestRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  labTestText: { fontSize: 13, color: colors.inkHeadline, fontWeight: '600' },
+  labTestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  labTestText: {
+    fontSize: 13,
+    color: labTestsBrand.ink,
+    fontWeight: '600',
+  },
 });

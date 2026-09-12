@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing } from '../../../theme';
+import { appointmentsBrand } from '../appointmentsBrand';
+import { spacing, radius } from '../../../theme';
 import { localDayKey } from '../data/localDay';
 
 export type DayItem = {
@@ -15,6 +16,7 @@ type DayCalendarStripProps = {
   selectedKey: string;
   onSelect: (day: DayItem) => void;
   days?: number;
+  markedKeys?: Set<string>;
 };
 
 function buildDays(count: number): DayItem[] {
@@ -44,11 +46,16 @@ export function DayCalendarStrip({
   selectedKey,
   onSelect,
   days = 14,
+  markedKeys,
 }: DayCalendarStripProps) {
   const items = useMemo(() => buildDays(days), [days]);
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Your week</Text>
+        <Text style={styles.headerHint}>Pick a day to see visits</Text>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -56,13 +63,18 @@ export function DayCalendarStrip({
         contentContainerStyle={styles.row}>
         {items.map(day => {
           const selected = day.key === selectedKey;
+          const marked = markedKeys?.has(day.key);
           return (
             <Pressable
               key={day.key}
-              style={styles.item}
+              style={[styles.item, selected && styles.itemSelected]}
               onPress={() => onSelect(day)}>
               <Text
-                style={[styles.dayLabel, selected && styles.dayLabelSelected]}>
+                style={[
+                  styles.dayLabel,
+                  selected && styles.dayLabelSelected,
+                  day.isToday && !selected && styles.dayLabelToday,
+                ]}>
                 {day.dayLabel}
               </Text>
               <View
@@ -72,6 +84,11 @@ export function DayCalendarStrip({
                   {day.dayNum}
                 </Text>
               </View>
+              {marked ? (
+                <View style={[styles.dot, selected && styles.dotSelected]} />
+              ) : (
+                <View style={styles.dotSpacer} />
+              )}
             </Pressable>
           );
         })}
@@ -91,46 +108,90 @@ const styles = StyleSheet.create({
   wrap: {
     flexGrow: 0,
     flexShrink: 0,
+    marginHorizontal: spacing.lg,
+    backgroundColor: appointmentsBrand.card,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: appointmentsBrand.border,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: appointmentsBrand.ink,
+  },
+  headerHint: {
+    fontSize: 12,
+    color: appointmentsBrand.muted,
   },
   strip: {
     flexGrow: 0,
   },
   row: {
-    gap: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     alignItems: 'center',
   },
   item: {
     alignItems: 'center',
-    gap: spacing.sm,
-    minWidth: 44,
+    gap: 6,
+    minWidth: 48,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 6,
+    borderRadius: radius.lg,
+  },
+  itemSelected: {
+    backgroundColor: appointmentsBrand.soft,
   },
   dayLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textMuted,
-    letterSpacing: 0.3,
+    fontSize: 10,
+    fontWeight: '700',
+    color: appointmentsBrand.muted,
+    letterSpacing: 0.4,
   },
   dayLabelSelected: {
-    color: colors.primary700,
+    color: appointmentsBrand.accent,
+  },
+  dayLabelToday: {
+    color: appointmentsBrand.accentSoft,
   },
   numWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   numWrapSelected: {
-    backgroundColor: colors.primary100,
+    backgroundColor: appointmentsBrand.accent,
   },
   dayNum: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: appointmentsBrand.ink,
   },
   dayNumSelected: {
-    color: colors.primary700,
+    color: appointmentsBrand.onAccent,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: appointmentsBrand.accent,
+  },
+  dotSelected: {
+    backgroundColor: appointmentsBrand.accentSoft,
+  },
+  dotSpacer: {
+    width: 5,
+    height: 5,
   },
 });

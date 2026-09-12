@@ -80,13 +80,20 @@ export function RegisterScreen() {
 
     setLoading(true);
     try {
-      const sessionUser = await registerWithEmail({
+      const result = await registerWithEmail({
         name: name.trim(),
         email: email.trim(),
         password,
         phone: phone.trim() ? normalizePhoneNumber(phone) : undefined,
       });
-      handleSuccess(sessionUser);
+      if (result?.requireOtp) {
+        navigation.navigate('OtpVerify', {
+          email: email.trim(),
+          mode: 'email',
+        });
+      } else {
+        handleSuccess(result?.user);
+      }
     } catch (err) {
       Alert.alert(
         'Registration failed',

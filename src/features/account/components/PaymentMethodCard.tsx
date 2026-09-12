@@ -1,25 +1,25 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { PaymentMethod } from '../../../lib/profile/profileData';
-
+import { paymentsBrand } from '../accountScreenBrands';
+import { spacing, radius } from '../../../theme';
 
 type PaymentMethodCardProps = {
   method: PaymentMethod;
 };
 
 export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
-  const isCard = method.type === 'card' || !method.type;
+  const isCod = method.type === 'cod';
+  const isCard = method.type === 'card' || (!method.type && !isCod);
 
   return (
     <View style={styles.card}>
-      <View style={styles.iconWrap}>
+      <View style={[styles.iconWrap, isCod && styles.iconCod]}>
         <Icon
-          name={isCard ? 'credit-card' : 'wallet'}
+          name={isCod ? 'cash' : isCard ? 'credit-card-outline' : 'wallet-outline'}
           size={22}
-          color={colors.brandPrimary}
+          color={isCod ? paymentsBrand.success : paymentsBrand.accent}
         />
       </View>
       <View style={styles.body}>
@@ -32,11 +32,16 @@ export function PaymentMethodCard({ method }: PaymentMethodCardProps) {
           ) : null}
         </View>
         {method.expiry ? (
-          <Text style={styles.expiry}>Expires {method.expiry}</Text>
+          <Text style={styles.meta}>Expires {method.expiry}</Text>
         ) : (
-          <Text style={styles.expiry}>Cash on delivery supported</Text>
+          <Text style={styles.meta}>
+            {isCod
+              ? 'Pay when your order arrives'
+              : 'Saved for checkout'}
+          </Text>
         )}
       </View>
+      <Icon name="check-circle" size={18} color={paymentsBrand.mist} />
     </View>
   );
 }
@@ -46,22 +51,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    backgroundColor: paymentsBrand.card,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: healthOs.cardBorder,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
+    borderColor: paymentsBrand.border,
+    padding: spacing.md,
   },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.brandLight,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: paymentsBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: { flex: 1 },
+  iconCod: {
+    backgroundColor: paymentsBrand.successSoft,
+  },
+  body: { flex: 1, minWidth: 0 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -71,23 +78,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.inkHeadline,
+    color: paymentsBrand.ink,
   },
   defaultBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.pill,
-    backgroundColor: colors.brandLight,
+    backgroundColor: paymentsBrand.accent,
   },
   defaultText: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.brandPrimary,
+    color: paymentsBrand.onAccent,
     textTransform: 'uppercase',
   },
-  expiry: {
+  meta: {
     fontSize: 12,
-    color: colors.neutral500,
+    color: paymentsBrand.muted,
     marginTop: 4,
   },
 });

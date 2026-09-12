@@ -1,9 +1,14 @@
-import { colors, spacing, radius } from '../../../theme';
-import { healthOs } from '../../../theme/healthOs';
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { labTestsBrand } from '../labTestsBrand';
+import { spacing } from '../../../theme';
 
 type LabTestsHeroProps = {
   search: string;
@@ -12,82 +17,166 @@ type LabTestsHeroProps = {
 
 export function LabTestsHero({ search, onSearchChange }: LabTestsHeroProps) {
   return (
-    <View style={styles.hero}>
-      <View style={styles.iconWrap}>
-        <Icon name="flask" size={28} color={colors.brandPrimary} />
+    <View style={styles.wrap}>
+      <View style={styles.orbLarge} />
+      <View style={styles.orbSmall} />
+
+      <View style={styles.topRow}>
+        <View style={styles.badge}>
+          <Icon name="flask-outline" size={14} color={labTestsBrand.onAccent} />
+          <Text style={styles.badgeText}>Diagnostics</Text>
+        </View>
+        <View style={styles.featureRow}>
+          <View style={styles.featureChip}>
+            <Icon name="home-outline" size={12} color={labTestsBrand.onAccent} />
+            <Text style={styles.featureText}>Home pickup</Text>
+          </View>
+          <View style={styles.featureChip}>
+            <Icon name="clock-fast" size={12} color={labTestsBrand.onAccent} />
+            <Text style={styles.featureText}>Fast reports</Text>
+          </View>
+        </View>
       </View>
-      <Text style={styles.title}>Lab Tests & Health Packages</Text>
-      <Text style={styles.subtitle}>
-        Accurate, fast, and reliable — sample pickup at your home.
+
+      <Text style={styles.title}>Book lab tests & packages</Text>
+      <Text style={styles.description}>
+        Accurate diagnostics with free home sample collection from verified lab
+        partners.
       </Text>
+
       <View style={styles.searchBox}>
-        <Icon name="magnify" size={20} color={colors.brandPrimary} />
+        <View style={styles.searchIcon}>
+          <Icon name="magnify" size={18} color={labTestsBrand.accent} />
+        </View>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search tests, labs, categories..."
-          placeholderTextColor={colors.neutral500}
           value={search}
           onChangeText={onSearchChange}
+          placeholder="Search CBC, HbA1c, Vitamin D..."
+          placeholderTextColor={labTestsBrand.muted}
           returnKeyType="search"
         />
-        {search.length > 0 && (
-          <Icon
-            name="close-circle"
-            size={18}
-            color={colors.neutral500}
+        {search.length > 0 ? (
+          <TouchableOpacity
             onPress={() => onSearchChange('')}
-          />
-        )}
+            hitSlop={8}
+            style={styles.clearBtn}>
+            <Icon name="close-circle" size={18} color={labTestsBrand.muted} />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+  wrap: {
+    backgroundColor: labTestsBrand.accent,
+    borderRadius: 24,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    overflow: 'hidden',
   },
-  iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: colors.brandLight,
+  orbLarge: {
+    position: 'absolute',
+    top: -48,
+    right: -36,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  orbSmall: {
+    position: 'absolute',
+    bottom: -28,
+    left: -20,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  topRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
     marginBottom: spacing.md,
+    flexWrap: 'wrap',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: labTestsBrand.onAccent,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  featureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  featureText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: labTestsBrand.onAccent,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.inkHeadline,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.35,
+    lineHeight: 28,
+    color: labTestsBrand.onAccent,
+    marginBottom: 6,
   },
-  subtitle: {
+  description: {
     fontSize: 13,
-    color: colors.neutral500,
-    marginTop: spacing.xs,
-    lineHeight: 19,
-    marginBottom: spacing.lg,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.82)',
+    marginBottom: spacing.md,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.neutral100,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: healthOs.cardBorder,
+    gap: 8,
+    backgroundColor: labTestsBrand.card,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  searchIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: labTestsBrand.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: colors.inkHeadline,
+    fontWeight: '500',
+    color: labTestsBrand.ink,
     padding: 0,
+    minWidth: 0,
+  },
+  clearBtn: {
+    padding: 2,
   },
 });

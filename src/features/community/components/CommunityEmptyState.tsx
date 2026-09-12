@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CommunityActionButton } from './CommunityActionButton';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { spacing } from '../../../theme';
+import { communityBrand } from '../communityBrand';
 
 type CommunityEmptyStateProps = {
   icon: string;
@@ -21,13 +22,17 @@ export function CommunityEmptyState({
 }: CommunityEmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <View style={styles.iconWrap}>
-        <Icon name={icon} size={28} color={colors.iconPrimary} />
+      <View style={styles.orb}>
+        <View style={styles.iconWrap}>
+          <Icon name={icon} size={26} color={communityBrand.accentDeep} />
+        </View>
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       {actionLabel && onAction ? (
-        <CommunityActionButton label={actionLabel} onPress={onAction} />
+        <View style={styles.cta}>
+          <CommunityActionButton label={actionLabel} onPress={onAction} />
+        </View>
       ) : null}
     </View>
   );
@@ -35,35 +40,54 @@ export function CommunityEmptyState({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: communityBrand.card,
+    borderRadius: 28,
     alignItems: 'center',
     padding: spacing.xl,
     gap: spacing.sm,
-    ...shadows.cardSoft,
+    ...Platform.select({
+      ios: {
+        shadowColor: communityBrand.ink,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.07,
+        shadowRadius: 16,
+      },
+      android: { elevation: 2 },
+    }),
   },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary100,
+  orb: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: communityBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
+  iconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: communityBrand.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: communityBrand.ink,
     textAlign: 'center',
+    letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: communityBrand.muted,
     textAlign: 'center',
     lineHeight: 19,
     marginBottom: spacing.xs,
+  },
+  cta: {
+    alignSelf: 'stretch',
+    marginTop: spacing.sm,
   },
 });

@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { UnifiedOrder } from '../../../lib/mappers/order';
 import type { LabBooking } from '../../../lib/mappers/labTest';
 import { colors, spacing, radius, shadows } from '../../../theme';
+import { homeBrand } from '../homeBrand';
 
 type ScheduleItem = {
   id: string;
@@ -97,7 +98,7 @@ export function HomeCheckupSchedule({
               <Image source={{ uri: item.image }} style={styles.avatar} />
             ) : (
               <View style={styles.iconWrap}>
-                <Icon name={item.icon} size={22} color={colors.iconPrimary} />
+                <Icon name={item.icon} size={22} color={homeBrand.main} />
               </View>
             )}
             <View style={styles.body}>
@@ -110,7 +111,7 @@ export function HomeCheckupSchedule({
               <Text style={styles.when}>{item.when}</Text>
             </View>
             <View style={styles.chevron}>
-              <Icon name="chevron-right" size={20} color={colors.iconMuted} />
+              <Icon name="chevron-right" size={20} color={homeBrand.muted} />
             </View>
           </Pressable>
         ))}
@@ -131,12 +132,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: homeBrand.main,
   },
   seeAll: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary700,
+    color: homeBrand.main,
   },
   list: {
     gap: spacing.sm,
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.xxl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: homeBrand.border,
     padding: spacing.md,
     ...shadows.cardSoft,
   },
@@ -159,13 +160,13 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: colors.primary100,
+    backgroundColor: homeBrand.soft,
   },
   iconWrap: {
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: colors.primary100,
+    backgroundColor: homeBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,23 +177,23 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: homeBrand.main,
   },
   itemSub: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: homeBrand.muted,
   },
   when: {
     marginTop: 2,
     fontSize: 12,
     fontWeight: '500',
-    color: colors.textMuted,
+    color: homeBrand.muted,
   },
   chevron: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.primary100,
+    backgroundColor: homeBrand.soft,
     alignItems: 'center',
     justifyContent: 'center',
   },

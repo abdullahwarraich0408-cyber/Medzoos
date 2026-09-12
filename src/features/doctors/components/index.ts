@@ -6,3 +6,4 @@ export { DoctorCard } from './DoctorCard';
 export { DoctorFilterSheet } from './DoctorFilterSheet';
 export { DoctorSlotPicker } from './DoctorSlotPicker';
 export { DoctorsHero } from './DoctorsHero';
+export { DoctorsScreenHeader } from './DoctorsScreenHeader';

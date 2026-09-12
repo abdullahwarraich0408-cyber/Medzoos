@@ -7,7 +7,7 @@ type AppBackgroundProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Soft healthcare screen wash — #F0F6FB */
+/** Soft healthcare screen wash — matches Home (#FFFFFF) */
 export function AppBackground({ children, style }: AppBackgroundProps) {
   return <View style={[styles.root, style]}>{children}</View>;
 }

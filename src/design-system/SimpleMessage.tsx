@@ -13,7 +13,7 @@ type SimpleMessageProps = {
 
 const toneStyles = {
   default: { bg: healthOs.messageBg, border: healthOs.messageBorder },
-  info: { bg: healthOs.copilotSurface, border: '#C7D2FE' },
+  info: { bg: healthOs.copilotSurface, border: 'rgba(16, 85, 104, 0.18)' },
   warning: { bg: healthOs.emergencyBg, border: '#FECACA' },
   success: { bg: colors.statusSuccessBg, border: '#BBF7D0' },
 };

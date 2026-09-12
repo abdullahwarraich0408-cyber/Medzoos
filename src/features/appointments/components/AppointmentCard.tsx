@@ -3,7 +3,8 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { UnifiedOrder } from '../../../lib/mappers/order';
 import { specialtyVisual } from '../../home/data/homeData';
-import { colors, spacing, radius, shadows } from '../../../theme';
+import { appointmentsBrand } from '../appointmentsBrand';
+import { spacing, radius } from '../../../theme';
 
 export type AppointmentCardModel = {
   id: string;
@@ -60,6 +61,7 @@ export function AppointmentCard({
   const progress = item.tasksTotal
     ? item.tasksDone / item.tasksTotal
     : 0;
+  const isVideo = item.callType.toLowerCase().includes('video');
 
   return (
     <Pressable
@@ -72,35 +74,56 @@ export function AppointmentCard({
             {item.doctorName}
           </Text>
           <View style={styles.ratingRow}>
-            <Icon name="star" size={14} color={colors.rating} />
+            <Icon name="star" size={13} color={appointmentsBrand.gold} />
             <Text style={styles.ratingText}>
-              {item.rating.toFixed(1)} ({item.reviews})
+              {item.rating.toFixed(1)} · {item.reviews} reviews
             </Text>
           </View>
-          <Text style={styles.callType}>{item.callType}</Text>
+          {item.slot ? (
+            <View style={styles.slotRow}>
+              <Icon name="clock-outline" size={13} color={appointmentsBrand.accent} />
+              <Text style={styles.slotText}>{item.slot}</Text>
+            </View>
+          ) : (
+            <Text style={styles.callType}>{item.callType}</Text>
+          )}
         </View>
         <View style={styles.actions}>
           <Pressable style={styles.actionBtn} onPress={onCalendarPress} hitSlop={6}>
-            <Icon name="calendar-month" size={18} color={colors.iconWhite} />
+            <Icon name="calendar-month" size={17} color={appointmentsBrand.onAccent} />
           </Pressable>
-          <Pressable style={styles.actionBtn} onPress={onChatPress} hitSlop={6}>
-            <Icon name="message-outline" size={18} color={colors.iconWhite} />
+          <Pressable
+            style={[styles.actionBtn, styles.actionBtnSoft]}
+            onPress={onChatPress}
+            hitSlop={6}>
+            <Icon name="message-outline" size={17} color={appointmentsBrand.accent} />
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.specRow}>
-        <View style={styles.specIcon}>
-          <Icon name={visual.icon} size={14} color={colors.iconPrimary} />
+      <View style={styles.metaRow}>
+        <View style={styles.visitPill}>
+          <Icon
+            name={isVideo ? 'video-outline' : 'hospital-building'}
+            size={13}
+            color={appointmentsBrand.accent}
+          />
+          <Text style={styles.visitPillText}>
+            {isVideo ? 'Video visit' : 'In-clinic'}
+          </Text>
         </View>
-        <Text style={styles.specName}>{item.specialty}</Text>
-        <Text style={styles.specMeta}>Specialist • 5+ years</Text>
+        <View style={styles.specChip}>
+          <Icon name={visual.icon} size={12} color={appointmentsBrand.accentSoft} />
+          <Text style={styles.specName} numberOfLines={1}>
+            {item.specialty}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.progressHeader}>
         <Text style={styles.progressLabel}>Pre-visit tasks</Text>
         <Text style={styles.progressCount}>
-          {item.tasksDone}/{item.tasksTotal} Done
+          {item.tasksDone}/{item.tasksTotal}
         </Text>
       </View>
       <View style={styles.progressTrack}>
@@ -112,25 +135,24 @@ export function AppointmentCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: appointmentsBrand.card,
     borderRadius: radius.xxl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: appointmentsBrand.border,
     padding: spacing.lg,
     gap: spacing.md,
-    ...shadows.cardElevated,
   },
-  pressed: { opacity: 0.96 },
+  pressed: { backgroundColor: appointmentsBrand.soft },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primary100,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: appointmentsBrand.soft,
   },
   info: {
     flex: 1,
@@ -138,9 +160,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: appointmentsBrand.ink,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -148,13 +170,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.primary500,
+    color: appointmentsBrand.muted,
+  },
+  slotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  slotText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: appointmentsBrand.accent,
   },
   callType: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: appointmentsBrand.muted,
   },
   actions: {
     gap: spacing.sm,
@@ -162,37 +194,48 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary700,
+    borderRadius: 12,
+    backgroundColor: appointmentsBrand.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  specRow: {
+  actionBtnSoft: {
+    backgroundColor: appointmentsBrand.soft,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primary100,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
   },
-  specIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary200,
+  visitPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: appointmentsBrand.soft,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm + 2,
+  },
+  visitPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: appointmentsBrand.accent,
+  },
+  specChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: appointmentsBrand.chip,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm + 2,
   },
   specName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primary600,
-  },
-  specMeta: {
-    fontSize: 12,
-    color: colors.textMuted,
     flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: appointmentsBrand.ink,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -202,22 +245,22 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: appointmentsBrand.ink,
   },
   progressCount: {
     fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary700,
+    fontWeight: '700',
+    color: appointmentsBrand.accent,
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.primary100,
+    backgroundColor: appointmentsBrand.soft,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: colors.primary700,
+    backgroundColor: appointmentsBrand.accent,
   },
 });

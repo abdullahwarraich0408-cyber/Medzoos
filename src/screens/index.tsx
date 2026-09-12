@@ -14,7 +14,7 @@ export function HospitalsScreen() {
       title="Hospitals"
       subtitle="Find nearby hospitals and book appointments."
       icon="hospital-building"
-      accent="#1565C0"
+      accent={colors.brandPrimary}
     />
   );
 }
@@ -25,7 +25,7 @@ export function PharmaciesScreen() {
       title="Pharmacies"
       subtitle="Verified stores near you with fast delivery."
       icon="store"
-      accent="#0F9D58"
+      accent={colors.brandPrimary}
     />
   );
 }
@@ -36,7 +36,7 @@ export function OffersScreen() {
       title="Offers & Deals"
       subtitle="Exclusive discounts on medicines and health products."
       icon="tag"
-      accent={colors.statusDanger}
+      accent={colors.brandPrimary}
     />
   );
 }

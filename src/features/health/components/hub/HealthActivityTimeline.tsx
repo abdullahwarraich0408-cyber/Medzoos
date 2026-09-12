@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { HealthActivityItem } from '../../data/healthHubData';
-import { colors, spacing, radius } from '../../../../theme';
-import { healthOsTypography } from '../../../../theme/healthOs';
+import { spacing, radius } from '../../../../theme';
+import { calmLayout } from '../../../../theme/calmLayout';
+import { healthBrand } from '../../healthBrand';
 
 type HealthActivityTimelineProps = {
   items: HealthActivityItem[];
@@ -14,42 +15,54 @@ export function HealthActivityTimeline({
   items,
   onViewHistory,
 }: HealthActivityTimelineProps) {
+  const hasItems = items.length > 0;
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Recent activity</Text>
-      <View style={styles.card}>
-        {items.map((item, index) => (
-          <View key={item.id} style={styles.item}>
-            <View style={styles.rail}>
-              <View style={styles.dot} />
-              {index < items.length - 1 ? <View style={styles.line} /> : null}
-            </View>
-            <View style={styles.row}>
-              <View style={styles.iconWrap}>
-                <Icon name={item.icon} size={16} color={colors.primary700} />
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>Recent activity</Text>
+      </View>
+
+      <View style={styles.panel}>
+        {hasItems ? (
+          items.map((item, index) => (
+            <View key={item.id} style={styles.item}>
+              <View style={styles.rail}>
+                <View style={styles.dot} />
+                {index < items.length - 1 ? <View style={styles.spine} /> : null}
               </View>
-              <View style={styles.body}>
-                <Text style={styles.title}>{item.title}</Text>
-                {item.time ? (
-                  <Text style={styles.time}>{item.time}</Text>
-                ) : null}
+              <View style={styles.bubble}>
+                <View style={styles.bubbleIcon}>
+                  <Icon name={item.icon} size={15} color={healthBrand.accent} />
+                </View>
+                <View style={styles.bubbleCopy}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  {item.time ? (
+                    <Text style={styles.time}>{item.time}</Text>
+                  ) : null}
+                </View>
               </View>
             </View>
+          ))
+        ) : (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>Quiet for now</Text>
+            <Text style={styles.emptyHint}>
+              Lab results, uploads, and visits will appear on this spine.
+            </Text>
           </View>
-        ))}
+        )}
+
         {onViewHistory ? (
-          <>
-            <View style={styles.footerDivider} />
-            <Pressable
-              style={({ pressed }) => [
-                styles.historyRow,
-                pressed && styles.historyPressed,
-              ]}
-              onPress={onViewHistory}>
-              <Text style={styles.historyText}>View full history</Text>
-              <Icon name="chevron-right" size={18} color={colors.primary700} />
-            </Pressable>
-          </>
+          <Pressable
+            style={({ pressed }) => [
+              styles.historyBtn,
+              pressed && styles.pressed,
+            ]}
+            onPress={onViewHistory}>
+            <Text style={styles.historyText}>View full history</Text>
+            <Icon name="arrow-right" size={16} color={healthBrand.onAccent} />
+          </Pressable>
         ) : null}
       </View>
     </View>
@@ -57,84 +70,112 @@ export function HealthActivityTimeline({
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.sm },
-  sectionTitle: {
-    ...healthOsTypography.sectionTitle,
+  section: {
+    paddingHorizontal: calmLayout.screenPadding,
+    gap: spacing.md,
   },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingTop: spacing.md,
-    overflow: 'hidden',
+  header: { gap: 4 },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: healthBrand.ink,
+    letterSpacing: -0.3,
+  },
+  panel: {
+    backgroundColor: healthBrand.card,
+    borderRadius: 24,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...Platform.select({
+      ios: {
+        shadowColor: healthBrand.ink,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.06,
+        shadowRadius: 14,
+      },
+      android: { elevation: 2 },
+    }),
   },
   item: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    minHeight: 56,
+    gap: 12,
+    minHeight: 52,
   },
   rail: {
-    width: 14,
+    width: 16,
     alignItems: 'center',
-    marginRight: spacing.sm,
     paddingTop: 14,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary400,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: healthBrand.accent,
+    borderWidth: 2,
+    borderColor: healthBrand.glaze,
   },
-  line: {
+  spine: {
     flex: 1,
     width: 2,
-    backgroundColor: colors.primary100,
     marginTop: 4,
-    marginBottom: -4,
+    backgroundColor: healthBrand.glaze,
+    borderRadius: 1,
   },
-  row: {
+  bubble: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    paddingBottom: spacing.md,
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: healthBrand.soft,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary100,
+  bubbleIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: healthBrand.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
-  body: { flex: 1, gap: 2, paddingTop: 6 },
+  bubbleCopy: { flex: 1, gap: 2, minWidth: 0 },
   title: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
-    lineHeight: 20,
+    color: healthBrand.ink,
+    lineHeight: 18,
   },
   time: {
-    fontSize: 12,
-    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+    color: healthBrand.muted,
   },
-  footerDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+  empty: { gap: 6, paddingVertical: 4 },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: healthBrand.ink,
   },
-  historyRow: {
+  emptyHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: healthBrand.muted,
+  },
+  historyBtn: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: healthBrand.accent,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
   },
-  historyPressed: { backgroundColor: colors.primary100 },
   historyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary700,
+    fontSize: 13,
+    fontWeight: '700',
+    color: healthBrand.onAccent,
   },
+  pressed: { opacity: 0.9 },
 });

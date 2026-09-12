@@ -1,9 +1,15 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { Pharmacy } from '../../../lib/mappers/vendor';
-import { colors, spacing, radius, shadows, cardStyles } from '../../../theme';
-import { healthOs, healthOsTypography } from '../../../theme/healthOs';
+import { pharmaciesBrand } from '../pharmaciesBrand';
+import { spacing, radius } from '../../../theme';
 
 type PharmacyListCardProps = {
   pharmacy: Pharmacy;
@@ -13,6 +19,7 @@ type PharmacyListCardProps = {
 function getInitials(name: string) {
   return name
     .split(' ')
+    .filter(Boolean)
     .slice(0, 2)
     .map(w => w[0])
     .join('')
@@ -20,153 +27,254 @@ function getInitials(name: string) {
 }
 
 export function PharmacyListCard({ pharmacy, onPress }: PharmacyListCardProps) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      onPress={onPress}>
-      <View style={styles.imageWrap}>
-        <Image source={{ uri: pharmacy.bgImage }} style={styles.image} />
-        <View style={styles.imageOverlay} />
-        <View style={styles.badgesTop}>
-          {pharmacy.verified ? (
-            <View style={styles.verifiedBadge}>
-              <Icon name="shield-check" size={12} color={colors.white} />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
-          ) : null}
-          <View style={[styles.openBadge, !pharmacy.open && styles.closedBadge]}>
-            <View style={[styles.openDot, !pharmacy.open && styles.closedDot]} />
-            <Text style={styles.openText}>{pharmacy.open ? 'Open' : 'Closed'}</Text>
-          </View>
-        </View>
-        <View style={styles.distancePill}>
-          <Icon name="map-marker" size={12} color={colors.brandHighlight} />
-          <Text style={styles.distanceText}>{pharmacy.distance}</Text>
-        </View>
-      </View>
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(pharmacy.bgImage) && !imageFailed;
+  const location =
+    pharmacy.city || pharmacy.address?.split(',')[0]?.trim() || 'Nearby';
 
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(pharmacy.name)}</Text>
+  return (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.main}
+        activeOpacity={0.88}
+        onPress={onPress}>
+        {showImage ? (
+          <Image
+            source={{ uri: pharmacy.bgImage }}
+            style={styles.photo}
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <View style={[styles.photo, styles.photoFallback]}>
+            <Text style={styles.initials}>{getInitials(pharmacy.name)}</Text>
           </View>
-          <View style={styles.titleBlock}>
+        )}
+
+        <View style={styles.info}>
+          <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>
               {pharmacy.name}
             </Text>
-            <Text style={styles.meta} numberOfLines={1}>
-              {pharmacy.city || pharmacy.address || 'Pakistan'} · {pharmacy.deliveryTime}
+            {pharmacy.verified ? (
+              <View style={styles.verified}>
+                <Icon name="check" size={10} color={pharmaciesBrand.onAccent} />
+              </View>
+            ) : null}
+          </View>
+
+          <Text style={styles.location} numberOfLines={1}>
+            {location}
+            <Text style={styles.dot}> · </Text>
+            {pharmacy.distance}
+          </Text>
+
+          <View style={styles.deliveryPill}>
+            <Icon
+              name="truck-delivery-outline"
+              size={12}
+              color={pharmaciesBrand.success}
+            />
+            <Text style={styles.deliveryText}>{pharmacy.deliveryTime}</Text>
+          </View>
+
+          <View style={styles.ratingRow}>
+            <Icon name="star" size={14} color={pharmaciesBrand.star} />
+            <Text style={styles.rating}>{pharmacy.rating.toFixed(1)}</Text>
+            <Text style={styles.reviews}>
+              ({pharmacy.reviews} Reviews)
             </Text>
           </View>
         </View>
+      </TouchableOpacity>
 
-        <View style={styles.footer}>
-          <View style={styles.ratingRow}>
-            <Icon name="star" size={14} color={colors.rating} />
-            <Text style={styles.rating}>{pharmacy.rating.toFixed(1)}</Text>
-            <Text style={styles.reviews}>({pharmacy.reviews})</Text>
-          </View>
-          <View style={styles.productsPill}>
-            <Icon name="pill" size={12} color={colors.brandPrimary} />
-            <Text style={styles.productsText}>{pharmacy.productCount}+ items</Text>
-          </View>
-          <Icon name="chevron-right" size={22} color={colors.brandPrimary} />
+      <View style={styles.side}>
+        <View
+          style={[
+            styles.statusChip,
+            !pharmacy.open && styles.statusChipClosed,
+          ]}>
+          <View
+            style={[styles.statusDot, !pharmacy.open && styles.statusDotClosed]}
+          />
+          <Text
+            style={[
+              styles.statusText,
+              !pharmacy.open && styles.statusTextClosed,
+            ]}>
+            {pharmacy.open ? 'Open' : 'Closed'}
+          </Text>
+        </View>
+
+        <View style={styles.sideBottom}>
+          {pharmacy.productCount > 0 ? (
+            <Text style={styles.itemsHint}>{pharmacy.productCount}+ items</Text>
+          ) : (
+            <Text style={styles.itemsHint}>Medicines</Text>
+          )}
+
+          <TouchableOpacity
+            style={styles.orderBtn}
+            onPress={onPress}
+            activeOpacity={0.85}>
+            <Text style={styles.orderBtnText}>Order</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    ...cardStyles.listCard,
-    overflow: 'hidden',
-  },
-  pressed: { opacity: 0.95 },
-  imageWrap: { height: 148, backgroundColor: colors.neutral100 },
-  image: { width: '100%', height: '100%' },
-  imageOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  badgesTop: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    right: spacing.md,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+    backgroundColor: pharmaciesBrand.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: pharmaciesBrand.border,
+    padding: spacing.md,
+  },
+  main: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: spacing.md,
+    minWidth: 0,
   },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
+  photo: {
+    width: 88,
+    height: 88,
+    borderRadius: 16,
+    backgroundColor: pharmaciesBrand.soft,
   },
-  verifiedText: { fontSize: 10, fontWeight: '700', color: colors.white },
-  openBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  closedBadge: { backgroundColor: colors.neutral100 },
-  openDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: healthOs.liveGreen },
-  closedDot: { backgroundColor: colors.neutral500 },
-  openText: { fontSize: 10, fontWeight: '700', color: colors.neutral800 },
-  distancePill: {
-    position: 'absolute',
-    bottom: spacing.md,
-    left: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.md,
-  },
-  distanceText: { fontSize: 11, fontWeight: '600', color: colors.white },
-  body: { padding: spacing.lg, gap: spacing.md },
-  titleRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.brandMist,
+  photoFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -28,
-    borderWidth: 2,
-    borderColor: colors.white,
+    backgroundColor: pharmaciesBrand.glaze,
   },
-  avatarText: { fontSize: 13, fontWeight: '800', color: colors.brandPrimary },
-  titleBlock: { flex: 1, paddingTop: 2 },
-  name: { ...healthOsTypography.messageTitle, fontSize: 17 },
-  meta: { fontSize: 12, color: colors.neutral500, marginTop: 2 },
-  footer: {
+  initials: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: pharmaciesBrand.accent,
+  },
+  info: {
+    flex: 1,
+    minWidth: 0,
+    gap: 5,
+    paddingTop: 2,
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
   },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, flex: 1 },
-  rating: { fontSize: 13, fontWeight: '700', color: colors.neutral800 },
-  reviews: { fontSize: 11, color: colors.neutral500 },
-  productsPill: {
+  name: {
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: pharmaciesBrand.ink,
+    letterSpacing: -0.2,
+  },
+  verified: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: pharmaciesBrand.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  location: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: pharmaciesBrand.muted,
+  },
+  dot: {
+    color: pharmaciesBrand.mist,
+  },
+  deliveryPill: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.brandMist,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
+    backgroundColor: pharmaciesBrand.successSoft,
   },
-  productsText: { fontSize: 10, fontWeight: '600', color: colors.brandPrimary },
+  deliveryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: pharmaciesBrand.success,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  rating: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: pharmaciesBrand.ink,
+  },
+  reviews: {
+    fontSize: 12,
+    color: pharmaciesBrand.muted,
+  },
+  side: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    minWidth: 88,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: pharmaciesBrand.successSoft,
+  },
+  statusChipClosed: {
+    backgroundColor: pharmaciesBrand.closedSoft,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: pharmaciesBrand.success,
+  },
+  statusDotClosed: {
+    backgroundColor: pharmaciesBrand.closed,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: pharmaciesBrand.success,
+  },
+  statusTextClosed: {
+    color: pharmaciesBrand.closed,
+  },
+  sideBottom: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  itemsHint: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: pharmaciesBrand.muted,
+  },
+  orderBtn: {
+    backgroundColor: pharmaciesBrand.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
+  orderBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: pharmaciesBrand.onAccent,
+  },
 });

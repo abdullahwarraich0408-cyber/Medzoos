@@ -52,7 +52,9 @@ type AuthContextValue = {
     email: string;
     password: string;
     phone?: string;
-  }) => Promise<StoredUser | null>;
+  }) => Promise<{ requireOtp?: boolean; email?: string; user?: StoredUser | null }>;
+  verifyEmailOtp: (email: string, otp: string) => Promise<StoredUser | null>;
+  resendEmailOtp: (email: string) => Promise<void>;
   startPhoneLogin: (phone: string) => Promise<PhoneLoginConfirmation>;
   completePhoneLogin: (
     confirmation: PhoneLoginConfirmation,
@@ -222,6 +224,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deviceId,
         platform: getAuthPlatform(),
       });
+      if (data.requireOtp) {
+        return { requireOtp: true, email: payload.email, user: null };
+      }
       const tokens = data.tokens ?? {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -230,10 +235,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Invalid registration response');
       }
       await applySession(mapUser(data.user), tokens);
+      return { requireOtp: false, user: mapUser(data.user) };
+    },
+    [applySession],
+  );
+
+  const verifyEmailOtp = useCallback(
+    async (email: string, otp: string) => {
+      const deviceId = await getDeviceId();
+      const data = await authApi.verifyRegisterOtp({
+        email,
+        otp,
+        deviceId,
+        platform: getAuthPlatform(),
+      });
+      const tokens = data.tokens ?? {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      };
+      if (!tokens?.accessToken) {
+        throw new Error('Invalid verification code or response');
+      }
+      await applySession(mapUser(data.user), tokens);
       return mapUser(data.user);
     },
     [applySession],
   );
+
+  const resendEmailOtp = useCallback(async (email: string) => {
+    await authApi.resendRegisterOtp({ email });
+  }, []);
 
   const completeFirebaseLogin = useCallback(
     async (idToken: string) => {
@@ -408,6 +439,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pendingAction,
       loginWithEmail,
       registerWithEmail,
+      verifyEmailOtp,
+      resendEmailOtp,
       startPhoneLogin,
       completePhoneLogin,
       loginWithGoogle,
@@ -427,6 +460,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pendingAction,
       loginWithEmail,
       registerWithEmail,
+      verifyEmailOtp,
+      resendEmailOtp,
       startPhoneLogin,
       completePhoneLogin,
       loginWithGoogle,

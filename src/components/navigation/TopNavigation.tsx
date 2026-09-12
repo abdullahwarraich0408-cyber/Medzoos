@@ -11,7 +11,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, radius, typography } from '../../theme';
+import {
+  getStackHeaderTopInset,
+  STACK_HEADER_ROW_PAD_V,
+} from '../../theme/layout';
+import { appBrand, stackScreenTitleStyle } from '../../theme/appBrand';
 import { smoky } from './SmokyGlass';
+import { StackBackButton } from './StackBackButton';
 
 type TopNavigationProps = {
   mode?: 'main' | 'stack';
@@ -54,10 +60,7 @@ export function TopNavigation({
   headerCenter,
 }: TopNavigationProps) {
   const insets = useSafeAreaInsets();
-  const topInset = Math.max(
-    insets.top,
-    Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
-  );
+  const topInset = getStackHeaderTopInset(insets.top);
   const [searchQuery, setSearchQuery] = useState('');
 
   if (mode === 'stack') {
@@ -73,25 +76,18 @@ export function TopNavigation({
             {showMenu ? (
               <Pressable
                 style={({ pressed }) => [
-                  styles.iconBtn,
-                  pressed && styles.pressed,
+                  styles.menuBtn,
+                  pressed && styles.menuPressed,
                 ]}
                 onPress={onMenuPress}
                 accessibilityLabel="Open menu"
                 hitSlop={8}>
-                <Icon name="menu" size={22} color={colors.primary900} />
+                <View style={styles.menuInner}>
+                  <Icon name="menu" size={22} color={appBrand.main} />
+                </View>
               </Pressable>
             ) : showBack ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.iconBtn,
-                  pressed && styles.pressed,
-                ]}
-                onPress={onBackPress}
-                accessibilityLabel="Go back"
-                hitSlop={8}>
-                <Icon name="arrow-left" size={22} color={colors.primary900} />
-              </Pressable>
+              <StackBackButton onPress={onBackPress ?? (() => {})} />
             ) : (
               <View style={styles.sideSlot} />
             )}
@@ -100,7 +96,7 @@ export function TopNavigation({
               <View style={styles.stackCenter}>{headerCenter}</View>
             ) : (
               <Text style={styles.stackTitle} numberOfLines={1}>
-                {title ?? 'MedCare'}
+                {title ?? 'Medzoos'}
               </Text>
             )}
 
@@ -119,7 +115,7 @@ export function TopNavigation({
                     <Icon
                       name="bell-outline"
                       size={21}
-                      color={colors.primary900}
+                      color={appBrand.ink}
                     />
                     {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
                   </Pressable>
@@ -178,7 +174,7 @@ export function TopNavigation({
                 <View style={styles.logoIcon}>
                   <Icon name="medical-bag" size={18} color={colors.primary700} />
                 </View>
-                <Text style={styles.logoText}>PharmaHub</Text>
+                <Text style={styles.logoText}>Medzoos</Text>
               </View>
             </View>
 
@@ -199,7 +195,6 @@ export function TopNavigation({
                   {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
                 </Pressable>
               ) : null}
-
               {showCart ? (
                 <Pressable
                   style={({ pressed }) => [
@@ -208,11 +203,7 @@ export function TopNavigation({
                   ]}
                   onPress={onCartPress}
                   accessibilityLabel="Cart">
-                  <Icon
-                    name="cart-outline"
-                    size={20}
-                    color={colors.iconWhite}
-                  />
+                  <Icon name="cart-outline" size={20} color={colors.iconWhite} />
                   {cartCount > 0 ? (
                     <View style={styles.badge}>
                       <Text style={styles.badgeText}>
@@ -227,25 +218,14 @@ export function TopNavigation({
 
           {showSearch ? (
             <View style={styles.searchBar}>
-              <Icon name="magnify" size={20} color={colors.primary700} />
+              <Icon name="magnify" size={20} color={colors.iconMuted} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search medicines, doctors, labs..."
+                placeholder="Search doctors, medicines..."
                 placeholderTextColor={colors.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                returnKeyType="search"
-                clearButtonMode="while-editing"
               />
-              {searchQuery.length > 0 && Platform.OS === 'android' ? (
-                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                  <Icon
-                    name="close-circle"
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </Pressable>
-              ) : null}
             </View>
           ) : null}
         </View>
@@ -308,6 +288,35 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.88,
     backgroundColor: colors.primary100,
+  },
+  menuBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuPressed: {
+    opacity: 0.78,
+  },
+  menuInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: appBrand.card,
+    borderWidth: 1.5,
+    borderColor: appBrand.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: appBrand.ink,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: { elevation: 1 },
+    }),
   },
   notifDot: {
     position: 'absolute',
@@ -373,17 +382,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: 52,
-    gap: spacing.sm,
+    paddingVertical: STACK_HEADER_ROW_PAD_V,
+    minHeight: 44,
   },
   stackTitle: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.primary900,
-    letterSpacing: -0.2,
+    ...stackScreenTitleStyle,
+    paddingHorizontal: spacing.sm,
   },
   stackCenter: {
     flex: 1,
