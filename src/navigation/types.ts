@@ -115,6 +115,7 @@ export type OrdersStackParamList = {
     doctorName: string;
     doctorImage?: string;
     slot?: string;
+    meetingUrl?: string;
   };
   OrderDetail: { orderRef: string };
   AppointmentChat: { appointmentId: string; doctorName?: string };

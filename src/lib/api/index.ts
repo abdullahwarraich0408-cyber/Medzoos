@@ -32,6 +32,11 @@ type AuthResponse = {
 };
 type HospitalsResponse = { hospitals?: import('../mappers/hospital').RawHospital[] };
 
+export type ShareGrantPayload = {
+  record_type: string;
+  record_id: string;
+};
+
 export type BookAppointmentPayload = {
   doctor_id: string;
   slot: string;
@@ -41,6 +46,7 @@ export type BookAppointmentPayload = {
   preferred_consultation_mode?: 'online' | 'in_person';
   hospital_id?: string;
   practice_location_id?: string;
+  share_grants?: ShareGrantPayload[];
   share_records?: {
     share_prescriptions?: boolean;
     share_lab_reports?: boolean;
@@ -197,6 +203,10 @@ export const doctorsApi = {
       query ? `/doctors/${id}/slots?${query}` : `/doctors/${id}/slots`,
     );
   },
+  getPracticeLocations: (id: string) =>
+    api.get<{ locations?: Record<string, unknown>[] }>(
+      `/doctors/${id}/practice-locations`,
+    ),
   bookAppointment: (data: BookAppointmentPayload) =>
     api.post<{ appointment?: Record<string, unknown> }>(
       '/doctors/appointments',
@@ -206,6 +216,157 @@ export const doctorsApi = {
   getMyAppointments: () =>
     api.get<{ appointments?: Record<string, unknown>[] }>(
       '/doctors/appointments/me',
+      { auth: 'customer' },
+    ),
+  getMyAppointment: (id: string) =>
+    api.get<{ appointment?: Record<string, unknown> }>(
+      `/doctors/appointments/${id}`,
+      { auth: 'customer' },
+    ),
+  cancelAppointment: (id: string) =>
+    api.delete(`/doctors/appointments/${id}`, { auth: 'customer' }),
+  rescheduleAppointment: (
+    id: string,
+    data: { appointment_date: string; slot: string },
+  ) =>
+    api.patch<{ appointment?: Record<string, unknown> }>(
+      `/doctors/appointments/${id}`,
+      data,
+      { auth: 'customer' },
+    ),
+  joinConsultation: (id: string) =>
+    api.post<Record<string, unknown>>(
+      `/doctors/appointments/${id}/join`,
+      {},
+      { auth: 'customer' },
+    ),
+  selectConsultationMode: (id: string, mode: 'online' | 'in_person') =>
+    api.patch<{ appointment?: Record<string, unknown> }>(
+      `/doctors/appointments/${id}/mode`,
+      { mode },
+      { auth: 'customer' },
+    ),
+  getConsultation: (meetingId: string) =>
+    api.get<{ appointment?: Record<string, unknown> }>(
+      `/doctors/consultation/${meetingId}`,
+    ),
+  submitReview: (
+    doctorId: string,
+    data: {
+      appointment_id?: string;
+      rating: number;
+      comment?: string;
+    },
+  ) =>
+    api.post(`/doctors/${doctorId}/reviews`, data, { auth: 'customer' }),
+};
+
+export const followUpsApi = {
+  list: (params: Record<string, string> = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.get<{
+      followUps?: Record<string, unknown>[];
+      follow_ups?: Record<string, unknown>[];
+    }>(query ? `/customer/follow-ups?${query}` : '/customer/follow-ups', {
+      auth: 'customer',
+    });
+  },
+  getById: (id: string) =>
+    api.get<Record<string, unknown>>(`/customer/follow-ups/${id}`, {
+      auth: 'customer',
+    }),
+  getAvailableSlots: (id: string) =>
+    api.get<{
+      recommended_date?: string;
+      recommended_date_slots?: Array<{ slot_id: string; slot: string }>;
+      nearby_dates?: Array<{
+        date: string;
+        slots?: Array<{ slot_id: string; slot: string }>;
+      }>;
+    }>(`/customer/follow-ups/${id}/available-slots`, { auth: 'customer' }),
+  book: (
+    id: string,
+    data: { slot_id: string; mode: string; payment_method?: string },
+  ) =>
+    api.post<Record<string, unknown>>(`/customer/follow-ups/${id}/book`, data, {
+      auth: 'customer',
+    }),
+  decline: (id: string, reason?: string) =>
+    api.post(
+      `/customer/follow-ups/${id}/decline`,
+      { reason },
+      { auth: 'customer' },
+    ),
+};
+
+export const visitDocumentsApi = {
+  list: (appointmentId: string) =>
+    api.get<{ documents?: Record<string, unknown>[] }>(
+      `/customer/appointments/${appointmentId}/documents`,
+      { auth: 'customer' },
+    ),
+  create: (
+    appointmentId: string,
+    data: {
+      document_type: string;
+      title?: string;
+      file_name?: string;
+      file_url: string;
+      mime_type?: string | null;
+      file_size?: number | null;
+    },
+  ) =>
+    api.post(
+      `/customer/appointments/${appointmentId}/documents`,
+      data,
+      { auth: 'customer' },
+    ),
+  fromRecord: (appointmentId: string, recordId: string) =>
+    api.post(
+      `/customer/appointments/${appointmentId}/documents/from-record`,
+      { record_id: recordId },
+      { auth: 'customer' },
+    ),
+  remove: (appointmentId: string, documentId: string) =>
+    api.delete(
+      `/customer/appointments/${appointmentId}/documents/${documentId}`,
+      { auth: 'customer' },
+    ),
+};
+
+export const medicalHistoryApi = {
+  listShareable: () =>
+    api.get<{
+      visit_summaries?: Array<Record<string, unknown>>;
+      prescriptions?: Array<Record<string, unknown>>;
+      lab_reports?: Array<Record<string, unknown>>;
+      medical_documents?: Array<Record<string, unknown>>;
+      visit_documents?: Array<Record<string, unknown>>;
+    }>('/customer/medical-history/shareable', { auth: 'customer' }),
+  listShares: () =>
+    api.get<{ events?: Array<Record<string, unknown>> }>(
+      '/customer/medical-history/shares',
+      { auth: 'customer' },
+    ),
+  shareWithAppointment: (
+    appointmentId: string,
+    grants: ShareGrantPayload[],
+  ) =>
+    api.post(
+      `/customer/medical-history/appointments/${appointmentId}/share`,
+      { grants },
+      { auth: 'customer' },
+    ),
+  revokeAppointmentShares: (appointmentId: string) =>
+    api.post(
+      `/customer/medical-history/appointments/${appointmentId}/revoke`,
+      {},
+      { auth: 'customer' },
+    ),
+  revokeGrant: (grantId: string) =>
+    api.post(
+      `/customer/medical-history/grants/${grantId}/revoke`,
+      {},
       { auth: 'customer' },
     ),
 };

@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius } from '../../../theme';
 import { homeBrand } from '../homeBrand';
+import { BrandGradientFill } from '../../../components/branding/TealGradientFill';
 
 type HomeGreetingProps = {
   firstName: string;
@@ -27,6 +28,7 @@ type HomeGreetingProps = {
 
 /**
  * Full-bleed dark trust header — menu, location, greeting, search.
+ * Brand teal gradient left → right behind content.
  */
 export function HomeGreeting({
   firstName,
@@ -55,76 +57,82 @@ export function HomeGreeting({
     Math.max(insets.top, Platform.OS === 'android' ? 12 : 0) + spacing.sm;
 
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          paddingTop: topPad,
-          paddingLeft: Math.max(insets.left, spacing.lg),
-          paddingRight: Math.max(insets.right, spacing.lg),
-        },
-      ]}>
-      <View style={styles.topRow}>
-        <Pressable
-          style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
-          onPress={onMenuPress}
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-          hitSlop={6}>
-          <Icon name="menu" size={20} color={homeBrand.onMain} />
-        </Pressable>
-
-        <View style={styles.topActions}>
-          {onNotificationsPress ? (
-            <Pressable
-              style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
-              onPress={onNotificationsPress}
-              accessibilityLabel="Notifications"
-              hitSlop={6}>
-              <Icon name="bell-outline" size={18} color={homeBrand.onMain} />
-              {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
-            </Pressable>
-          ) : null}
-
+    <View style={styles.header}>
+      <BrandGradientFill
+        baseColor={homeBrand.header}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View
+        style={[
+          styles.content,
+          {
+            paddingTop: topPad,
+            paddingLeft: Math.max(insets.left, spacing.lg),
+            paddingRight: Math.max(insets.right, spacing.lg),
+          },
+        ]}>
+        <View style={styles.topRow}>
           <Pressable
-            style={({ pressed }) => [styles.locationChip, pressed && styles.pressed]}
-            onPress={onLocationPress}
+            style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
+            onPress={onMenuPress}
             accessibilityRole="button"
-            accessibilityLabel={`Current location ${locationTitle}`}>
-            <Icon name="map-marker" size={14} color={homeBrand.onMain} />
-            <Text style={styles.locationName} numberOfLines={1}>
-              {locationTitle}
-            </Text>
-            <Icon name="chevron-down" size={14} color="rgba(255,255,255,0.8)" />
+            accessibilityLabel="Open menu"
+            hitSlop={6}>
+            <Icon name="menu" size={20} color={homeBrand.onMain} />
+          </Pressable>
+
+          <View style={styles.topActions}>
+            {onNotificationsPress ? (
+              <Pressable
+                style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
+                onPress={onNotificationsPress}
+                accessibilityLabel="Notifications"
+                hitSlop={6}>
+                <Icon name="bell-outline" size={18} color={homeBrand.onMain} />
+                {unreadCount > 0 ? <View style={styles.notifDot} /> : null}
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [styles.locationChip, pressed && styles.pressed]}
+              onPress={onLocationPress}
+              accessibilityRole="button"
+              accessibilityLabel={`Current location ${locationTitle}`}>
+              <Icon name="map-marker" size={14} color={homeBrand.onMain} />
+              <Text style={styles.locationName} numberOfLines={1}>
+                {locationTitle}
+              </Text>
+              <Icon name="chevron-down" size={14} color="rgba(255,255,255,0.8)" />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.greetingBlock}>
+          <Text style={styles.helloText} numberOfLines={1}>
+            Hello, {displayName}
+          </Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            Find the best medical care for you
+          </Text>
+        </View>
+
+        <View style={styles.searchWrap}>
+          <Pressable style={styles.searchBar} onPress={onSubmitSearch}>
+            <Icon name="magnify" size={20} color={homeBrand.muted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search doctors, specialties..."
+              placeholderTextColor={homeBrand.muted}
+              value={searchQuery}
+              onChangeText={onChangeSearch}
+              onSubmitEditing={onSubmitSearch}
+              returnKeyType="search"
+            />
+            <View style={styles.filterBtn}>
+              <Icon name="tune-variant" size={18} color={homeBrand.main} />
+            </View>
           </Pressable>
         </View>
-      </View>
-
-      <View style={styles.greetingBlock}>
-        <Text style={styles.helloText} numberOfLines={1}>
-          Hello, {displayName}
-        </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
-          Find the best medical care for you
-        </Text>
-      </View>
-
-      <View style={styles.searchWrap}>
-        <Pressable style={styles.searchBar} onPress={onSubmitSearch}>
-          <Icon name="magnify" size={20} color={homeBrand.muted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search doctors, specialties..."
-            placeholderTextColor={homeBrand.muted}
-            value={searchQuery}
-            onChangeText={onChangeSearch}
-            onSubmitEditing={onSubmitSearch}
-            returnKeyType="search"
-          />
-          <View style={styles.filterBtn}>
-            <Icon name="tune-variant" size={18} color={homeBrand.main} />
-          </View>
-        </Pressable>
       </View>
     </View>
   );
@@ -135,6 +143,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     backgroundColor: homeBrand.header,
+    overflow: 'hidden',
+  },
+  content: {
+    zIndex: 1,
+    elevation: Platform.OS === 'android' ? 2 : 0,
     paddingBottom: spacing.lg,
   },
   topRow: {

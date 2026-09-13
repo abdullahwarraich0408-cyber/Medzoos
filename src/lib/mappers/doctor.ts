@@ -161,8 +161,8 @@ function mapPracticeLocation(location: RawPracticeLocation): PracticeLocation | 
   const nextDate = getNextAvailableFromSchedule(schedule);
 
   return {
-    id: location.id || location.title || 'loc',
-    hospitalId: location.hospital_id,
+    id: location.id || 'legacy',
+    hospitalId: location.hospital_id || hospital?.id,
     clinicName: location.clinic_name,
     title: location.title || hospital?.name || location.clinic_name || 'Clinic',
     address:
@@ -260,4 +260,125 @@ export function formatConsultations(reviews: number): string {
     return `${Number.isInteger(value) ? value : value.toFixed(1).replace(/\.0$/, '')}k`;
   }
   return String(count);
+}
+
+export type DoctorAppointment = {
+  id: string;
+  doctorId?: string;
+  doctorName?: string;
+  specialty?: string;
+  doctorPhoto?: string;
+  hospital?: string;
+  slot?: string;
+  date: string;
+  dateIso?: string;
+  fee?: number;
+  status?: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  reason?: string;
+  consultationMode?: string | null;
+  preferredMode?: string | null;
+  needsModeSelection: boolean;
+  isOnline: boolean;
+  isInPerson: boolean;
+  meetingId?: string;
+  meetingUrl?: string;
+  consultationNotes?: string;
+  prescription?: Record<string, unknown> | null;
+  review?: Record<string, unknown> | null;
+  canReview: boolean;
+  canJoin: boolean;
+  canChat: boolean;
+  canViewChat: boolean;
+  chatReadOnly: boolean;
+  raw: Record<string, unknown>;
+};
+
+function resolveIsOnlineAppointment(appointment: Record<string, unknown>) {
+  const consultationMode = (appointment.consultation_mode as string) || null;
+  const preferredMode =
+    (appointment.preferred_consultation_mode as string) || null;
+  if (consultationMode === 'in_person') return false;
+  if (consultationMode === 'online') return true;
+  if (preferredMode === 'online') return true;
+  return Boolean(appointment.meeting_id);
+}
+
+export function mapDoctorAppointmentToFrontend(
+  appointment: Record<string, unknown> | null | undefined,
+): DoctorAppointment | null {
+  if (!appointment?.id) return null;
+
+  const doctor = appointment.doctor as Record<string, unknown> | undefined;
+  const date = appointment.appointment_date
+    ? new Date(String(appointment.appointment_date))
+    : null;
+  const consultationMode =
+    (appointment.consultation_mode as string) || null;
+  const preferredMode =
+    (appointment.preferred_consultation_mode as string) || null;
+  const isOnline = resolveIsOnlineAppointment(appointment);
+  const status = String(appointment.status || '');
+  const needsModeSelection =
+    status === 'confirmed' && !consultationMode && !preferredMode;
+  const activeStatuses = ['confirmed', 'in_progress'];
+  const chatStatuses = ['confirmed', 'in_progress', 'completed'];
+  const hasMeeting = Boolean(appointment.meeting_id);
+
+  return {
+    id: String(appointment.id),
+    doctorId: (appointment.doctor_id as string) || (doctor?.id as string),
+    doctorName: doctor?.name as string | undefined,
+    specialty: doctor?.specialty as string | undefined,
+    doctorPhoto: getDoctorPhoto(doctor?.photo_url as string | undefined),
+    hospital: doctor?.hospital as string | undefined,
+    slot: appointment.slot as string | undefined,
+    date: date
+      ? date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : '',
+    dateIso: appointment.appointment_date as string | undefined,
+    fee: appointment.fee as number | undefined,
+    status,
+    paymentMethod: appointment.payment_method as string | undefined,
+    paymentStatus: appointment.payment_status as string | undefined,
+    reason: appointment.reason as string | undefined,
+    consultationMode,
+    preferredMode,
+    needsModeSelection,
+    isOnline,
+    isInPerson: consultationMode === 'in_person',
+    meetingId: appointment.meeting_id as string | undefined,
+    meetingUrl: appointment.meeting_url as string | undefined,
+    consultationNotes: appointment.consultation_notes as string | undefined,
+    prescription: (appointment.prescription as Record<string, unknown>) || null,
+    review: (appointment.review as Record<string, unknown>) || null,
+    canReview: status === 'completed' && !appointment.review,
+    canJoin:
+      activeStatuses.includes(status) &&
+      isOnline &&
+      !needsModeSelection &&
+      hasMeeting,
+    canChat:
+      chatStatuses.includes(status) && isOnline && !needsModeSelection,
+    canViewChat:
+      status !== 'cancelled' &&
+      isOnline &&
+      (chatStatuses.includes(status) ||
+        (status === 'pending' && preferredMode === 'online')),
+    chatReadOnly: status === 'completed',
+    raw: appointment,
+  };
+}
+
+export function mapDoctorAppointmentsToFrontend(
+  appointments: Record<string, unknown>[] = [],
+): DoctorAppointment[] {
+  return appointments
+    .map(mapDoctorAppointmentToFrontend)
+    .filter((item): item is DoctorAppointment => Boolean(item));
 }

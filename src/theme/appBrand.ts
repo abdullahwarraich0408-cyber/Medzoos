@@ -6,6 +6,10 @@ export const appBrand = {
   /** Primary teal (Home header / accents) */
   main: '#105568',
   header: '#105568',
+  /** Soft L→R wash around main (same hue — gentle, no muddy bands) */
+  gradientStart: '#156A7C',
+  gradientMid: '#105568',
+  gradientEnd: '#0D4A58',
   ink: '#0C4554',
   soft: '#E4F0F3',
   mist: '#C5DCE2',

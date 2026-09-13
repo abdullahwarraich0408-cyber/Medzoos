@@ -1,16 +1,26 @@
 import React, { type ReactNode } from 'react';
-import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  Platform,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getStackHeaderPaddingTop } from '../../theme/layout';
-import { stackScreenTitleStyle } from '../../theme/appBrand';
+import { appBrand, stackScreenTitleStyle } from '../../theme/appBrand';
 import { tabHeroBanner, tabHeroCardShadow } from '../../theme/tabHeroBanner';
 import { StackBackButton } from './StackBackButton';
+import { BrandGradientFill } from '../branding/TealGradientFill';
 
 type TabScreenHeroHeaderProps = {
   /** Centered uppercase kicker (e.g. Health vault, Community, You). */
   screenTitle: string;
   pageBackground: string;
-  cardBackground: string;
+  /** Brand card color — gradient only adds depth on top of this. */
+  cardBackground?: string;
   onBackPress?: () => void;
   children: ReactNode;
   /** Optional extra style on the fixed-size card (e.g. flexDirection). */
@@ -18,13 +28,13 @@ type TabScreenHeroHeaderProps = {
 };
 
 /**
- * Shared tab-root header: back + title + fixed-size teal hero card.
- * Keeps Health / Community / You banners aligned in size and position.
+ * Shared tab-root header: back + title + brand card with soft gradient depth.
+ * Gradient is a background layer; card content is a sibling so it never gets covered.
  */
 export function TabScreenHeroHeader({
   screenTitle,
   pageBackground,
-  cardBackground,
+  cardBackground = appBrand.main,
   onBackPress,
   children,
   cardStyle,
@@ -43,6 +53,7 @@ export function TabScreenHeroHeader({
           backgroundColor: pageBackground,
         },
       ]}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <View style={styles.topBar}>
         <StackBackButton onPress={() => onBackPress?.()} />
         <Text style={styles.kicker} pointerEvents="none">
@@ -51,13 +62,12 @@ export function TabScreenHeroHeader({
         <View style={styles.sideSlot} />
       </View>
 
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: cardBackground },
-          cardStyle,
-        ]}>
-        {children}
+      <View style={styles.card}>
+        <BrandGradientFill
+          baseColor={cardBackground}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={[styles.cardContent, cardStyle]}>{children}</View>
       </View>
     </View>
   );
@@ -88,9 +98,15 @@ const styles = StyleSheet.create({
     width: '100%',
     height: tabHeroBanner.height,
     borderRadius: tabHeroBanner.radius,
-    padding: tabHeroBanner.padding,
     overflow: 'hidden',
-    justifyContent: 'center',
+    backgroundColor: appBrand.main,
     ...tabHeroCardShadow,
+  },
+  cardContent: {
+    ...StyleSheet.absoluteFillObject,
+    padding: tabHeroBanner.padding,
+    justifyContent: 'center',
+    zIndex: 1,
+    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
   },
 });

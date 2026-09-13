@@ -23,9 +23,11 @@ import {
 } from '../components/DayCalendarStrip';
 import { CompactDoctorRow } from '../components/CompactDoctorRow';
 import { localDayKey } from '../data/localDay';
-import { useAllOrders } from '../../../lib/hooks/useApi';
+import { useAllOrders, usePatientFollowUps } from '../../../lib/hooks/useApi';
 import { navigateToServices } from '../../../lib/auth/navigation';
 import { appointmentsBrand } from '../appointmentsBrand';
+import { BookFollowUpModal } from '../components/BookFollowUpModal';
+import { formatFollowUpStatusLabel } from '../../../lib/appointmentJourney';
 import type { YouStackParamList } from '../../../navigation/types';
 import { spacing, TAB_BAR_CLEARANCE, radius } from '../../../theme';
 
@@ -48,6 +50,23 @@ export function AppointmentsScreen() {
   const todayKey = useMemo(() => localDayKey(), []);
   const [selectedDay, setSelectedDay] = useState(todayKey);
   const { data: allOrders = [], isLoading } = useAllOrders();
+  const { data: followUps = [] } = usePatientFollowUps();
+  const [bookingFollowUp, setBookingFollowUp] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+
+  const actionableFollowUps = useMemo(
+    () =>
+      (followUps || []).filter(
+        f =>
+          !f.booked_appointment_id &&
+          ['planned', 'notified', 'needs_rebooking', 'overdue'].includes(
+            String(f.status || ''),
+          ),
+      ),
+    [followUps],
+  );
 
   const appointments = useMemo((): AppointmentListItem[] => {
     return allOrders
@@ -171,6 +190,39 @@ export function AppointmentsScreen() {
             />
           ) : (
             <>
+              {actionableFollowUps.length > 0 ? (
+                <View style={styles.followUpBlock}>
+                  <Text style={styles.sectionLabel}>Planned follow-ups</Text>
+                  {actionableFollowUps.map(item => {
+                    const doctor = item.doctor as
+                      | { name?: string; specialty?: string }
+                      | undefined;
+                    return (
+                      <View key={String(item.id)} style={styles.followUpCard}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.followUpTitle}>
+                            {formatFollowUpStatusLabel(String(item.status))}
+                          </Text>
+                          <Text style={styles.hint}>
+                            {doctor?.name
+                              ? `Dr. ${String(doctor.name).replace(/^Dr\.?\s*/i, '')}`
+                              : 'Your doctor'}
+                            {item.recommended_date
+                              ? ` · around ${String(item.recommended_date)}`
+                              : ''}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.primaryBtn}
+                          onPress={() => setBookingFollowUp(item)}>
+                          <Text style={styles.primaryBtnText}>Book</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+
               <View style={styles.sectionHead}>
                 <View style={styles.sectionTitleRow}>
                   <Text style={styles.sectionLabel}>{dayHeading}</Text>
@@ -269,6 +321,26 @@ export function AppointmentsScreen() {
           )}
         </ScrollView>
       </View>
+      <BookFollowUpModal
+        visible={Boolean(bookingFollowUp)}
+        followUp={
+          bookingFollowUp
+            ? {
+                id: String(bookingFollowUp.id),
+                preferred_mode: bookingFollowUp.preferred_mode as
+                  | string
+                  | undefined,
+                recommended_date: bookingFollowUp.recommended_date as
+                  | string
+                  | undefined,
+                doctor: bookingFollowUp.doctor as
+                  | { name?: string }
+                  | undefined,
+              }
+            : null
+        }
+        onClose={() => setBookingFollowUp(null)}
+      />
     </ScreenLayout>
   );
 }
@@ -374,5 +446,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: appointmentsBrand.muted,
     lineHeight: 18,
+  },
+  followUpBlock: { gap: spacing.sm },
+  followUpCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: appointmentsBrand.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: appointmentsBrand.border,
+    padding: spacing.md,
+  },
+  followUpTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: appointmentsBrand.ink,
   },
 });

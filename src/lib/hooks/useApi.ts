@@ -13,6 +13,7 @@ import {
   addressesApi,
   familyVaultApi,
   prescriptionsApi,
+  followUpsApi,
   type BookAppointmentPayload,
   type BookLabTestPayload,
   type CreateLabOrderPayload,
@@ -24,6 +25,8 @@ import { mapVendorsToPharmacies } from '../mappers/vendor';
 import {
   mapDoctorToFrontend,
   mapDoctorsToFrontend,
+  mapDoctorAppointmentToFrontend,
+  mapDoctorAppointmentsToFrontend,
 } from '../mappers/doctor';
 import {
   mapLabTestToFrontend,
@@ -194,9 +197,176 @@ export function useBookDoctorAppointment() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-follow-ups'] });
       queryClient.invalidateQueries({
         queryKey: ['doctor-slots', variables.doctor_id],
       });
+    },
+  });
+}
+
+export function useDoctorAppointments(options: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ['doctor-appointments'],
+    queryFn: async () => {
+      const data = await doctorsApi.getMyAppointments();
+      return mapDoctorAppointmentsToFrontend(
+        (data.appointments || []) as Record<string, unknown>[],
+      );
+    },
+    staleTime: 20_000,
+    ...options,
+  });
+}
+
+export function useDoctorAppointment(
+  id: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: ['doctor-appointments', id],
+    enabled: Boolean(id) && (options.enabled ?? true),
+    queryFn: async () => {
+      const data = await doctorsApi.getMyAppointment(id!);
+      const mapped = mapDoctorAppointmentToFrontend(
+        (data.appointment || data) as Record<string, unknown>,
+      );
+      if (!mapped) throw new Error('Appointment not found');
+      return mapped;
+    },
+    staleTime: 15_000,
+    ...options,
+  });
+}
+
+export function usePatientFollowUps(
+  options: { status?: string; enabled?: boolean } = {},
+) {
+  const { status, ...queryOptions } = options;
+  return useQuery({
+    queryKey: ['patient-follow-ups', status || 'all'],
+    queryFn: async () => {
+      const params: Record<string, string> = status ? { status } : {};
+      const data = await followUpsApi.list(params);
+      return (data.followUps || data.follow_ups || []) as Array<
+        Record<string, unknown>
+      >;
+    },
+    staleTime: 30_000,
+    ...queryOptions,
+  });
+}
+
+export function useFollowUpAvailableSlots(
+  followUpId: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: ['follow-up-slots', followUpId],
+    enabled:
+      options.enabled !== undefined
+        ? Boolean(options.enabled) && Boolean(followUpId)
+        : Boolean(followUpId),
+    queryFn: async () => followUpsApi.getAvailableSlots(followUpId!),
+    staleTime: 15_000,
+  });
+}
+
+export function useBookFollowUp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: {
+      id: string;
+      slot_id: string;
+      mode: string;
+      payment_method?: string;
+    }) => followUpsApi.book(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-follow-ups'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['follow-up-slots'] });
+    },
+  });
+}
+
+export function useCancelDoctorAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => doctorsApi.cancelAppointment(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor-slots'] });
+    },
+  });
+}
+
+export function useRescheduleDoctorAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: {
+      id: string;
+      appointment_date: string;
+      slot: string;
+    }) => doctorsApi.rescheduleAppointment(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor-slots'] });
+    },
+  });
+}
+
+export function useJoinDoctorConsultation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => doctorsApi.joinConsultation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+    },
+  });
+}
+
+export function useSelectConsultationMode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      mode,
+    }: {
+      id: string;
+      mode: 'online' | 'in_person';
+    }) => doctorsApi.selectConsultationMode(id, mode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
+    },
+  });
+}
+
+export function useSubmitDoctorReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      doctorId,
+      ...data
+    }: {
+      doctorId: string;
+      appointment_id?: string;
+      rating: number;
+      comment?: string;
+    }) => doctorsApi.submitReview(doctorId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
     },
   });
 }

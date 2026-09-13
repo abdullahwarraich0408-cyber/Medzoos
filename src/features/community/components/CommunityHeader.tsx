@@ -26,8 +26,6 @@ export function CommunityHeader({
       cardBackground={communityBrand.accent}
       onBackPress={onBackPress}
       cardStyle={styles.cardInner}>
-      <View pointerEvents="none" style={styles.blobA} />
-      <View pointerEvents="none" style={styles.blobB} />
       <View style={styles.heroCopy}>
         <Text style={styles.heroTitle}>{title}</Text>
         <Text style={styles.heroSub} numberOfLines={2}>
@@ -51,28 +49,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  blobA: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(23, 107, 125, 0.4)',
-    top: -40,
-    right: -20,
-  },
-  blobB: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    bottom: -18,
-    left: 28,
-  },
   heroCopy: {
     flex: 1,
     gap: 6,
-    zIndex: 1,
   },
   heroTitle: {
     fontSize: 24,

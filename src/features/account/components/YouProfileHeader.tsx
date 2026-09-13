@@ -44,9 +44,6 @@ export function YouProfileHeader({
       cardBackground={youBrand.accent}
       onBackPress={onBackPress}
       cardStyle={styles.cardInner}>
-      <View pointerEvents="none" style={styles.blobA} />
-      <View pointerEvents="none" style={styles.blobB} />
-
       <View style={styles.heroRow}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{avatarLetters}</Text>
@@ -100,29 +97,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  blobA: {
-    position: 'absolute',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(23, 107, 125, 0.45)',
-    top: -36,
-    right: -24,
-  },
-  blobB: {
-    position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    bottom: -12,
-    left: 24,
-  },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    zIndex: 1,
   },
   avatar: {
     width: 52,

@@ -36,7 +36,7 @@ export function formatFirebaseAuthError(error: unknown): string {
       'Fix (USB):',
       '1. Keep the phone plugged in',
       '2. On your PC run: npm run connect:android',
-      '3. Confirm Backend is running on port 5000',
+      '3. Confirm Backend is running on port 5001',
       '',
       'Then try phone sign-in again with OTP 123456.',
     ].join('\n');

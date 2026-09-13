@@ -93,8 +93,14 @@ function normalizeMedicineStatus(status?: string) {
 
 function normalizeDoctorStatus(status?: string) {
   if (status === 'completed') return 'delivered';
-  if (status === 'cancelled') return 'cancelled';
-  if (status === 'confirmed' || status === 'in_progress') return 'processing';
+  if (status === 'cancelled' || status === 'no_show') return 'cancelled';
+  if (
+    status === 'confirmed' ||
+    status === 'in_progress' ||
+    status === 'checked_in'
+  ) {
+    return 'processing';
+  }
   return 'pending';
 }
 
@@ -158,11 +164,19 @@ function buildDoctorTracking(
   const normalized = normalizeDoctorStatus(status);
   const dateLabel = formatOrderDate(createdAt);
   const isOnline = consultationMode === 'online';
-  const consultationDone = normalized === 'delivered' || status === 'in_progress';
+  const checkedIn = status === 'checked_in';
+  const consultationDone =
+    normalized === 'delivered' ||
+    status === 'in_progress' ||
+    checkedIn;
 
   return [
     { step: 'Appointment Booked', time: dateLabel, done: true },
-    { step: 'Payment Confirmed', time: dateLabel, done: normalized !== 'pending' },
+    {
+      step: 'Doctor Confirmed',
+      time: dateLabel,
+      done: normalized !== 'pending' || status === 'confirmed',
+    },
     {
       step: isOnline ? 'Video Consultation' : 'Clinic Visit',
       time: consultationDone ? dateLabel : 'Scheduled',
@@ -273,8 +287,19 @@ export function mapDoctorAppointmentToOrder(
   const consultationMode =
     (appointment.consultation_mode as string) ||
     (appointment.consultationMode as string) ||
-    'in_person';
-  const isOnline = consultationMode === 'online';
+    null;
+  const preferredMode =
+    (appointment.preferred_consultation_mode as string) ||
+    (appointment.preferredMode as string) ||
+    null;
+  const isOnline =
+    consultationMode === 'online' ||
+    (!consultationMode && preferredMode === 'online') ||
+    (!consultationMode &&
+      preferredMode !== 'in_person' &&
+      Boolean(appointment.meeting_id));
+  const resolvedMode =
+    consultationMode || preferredMode || (isOnline ? 'online' : 'in_person');
   const createdAt =
     (appointment.created_at as string) ||
     (appointment.appointment_date as string);
@@ -299,7 +324,7 @@ export function mapDoctorAppointmentToOrder(
     specialty,
     slot: appointment.slot as string | undefined,
     isOnline,
-    consultationMode,
+    consultationMode: resolvedMode,
     isHospitalVisit: !isOnline,
     items: [
       {
@@ -312,7 +337,7 @@ export function mapDoctorAppointmentToOrder(
     tracking: buildDoctorTracking(
       appointment.status as string,
       createdAt,
-      consultationMode,
+      resolvedMode,
     ),
     deliveryAddress: isOnline ? 'Online — Video consultation' : hospital,
   };

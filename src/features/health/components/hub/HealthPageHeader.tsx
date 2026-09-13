@@ -46,9 +46,6 @@ export function HealthPageHeader({
         cardBackground={healthBrand.accent}
         onBackPress={onBackPress}
         cardStyle={styles.cardInner}>
-        <View pointerEvents="none" style={styles.blobA} />
-        <View pointerEvents="none" style={styles.blobB} />
-
         <View style={styles.heroRow}>
           <View style={styles.heroCopy}>
             <Text style={styles.eyebrow}>{timeGreeting()}</Text>
@@ -112,24 +109,6 @@ const styles = StyleSheet.create({
   cardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  blobA: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(23, 107, 125, 0.4)',
-    top: -40,
-    right: -20,
-  },
-  blobB: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    bottom: -18,
-    left: 28,
   },
   heroRow: {
     flex: 1,

@@ -107,12 +107,24 @@ export function buildDoctorConsultOptions(
         ]
       : [];
 
-  inPersonLocations.forEach(location => {
-    const option = mapPracticeLocationOption(location, doctor);
-    if (!hospitalContext || option.hospitalId === hospitalContext) {
-      options.push(option);
-    }
-  });
+  const mappedInPerson = inPersonLocations.map(location =>
+    mapPracticeLocationOption(location, doctor),
+  );
+
+  let inPersonOptions = hospitalContext
+    ? mappedInPerson.filter(
+        option =>
+          option.hospitalId === hospitalContext ||
+          (!option.hospitalId && doctor.hospitalId === hospitalContext),
+      )
+    : mappedInPerson;
+
+  // Don't block in-clinic booking if hospital filter matched nothing
+  if (hospitalContext && inPersonOptions.length === 0) {
+    inPersonOptions = mappedInPerson;
+  }
+
+  options.push(...inPersonOptions);
 
   return options;
 }

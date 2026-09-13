@@ -3,24 +3,30 @@ import { Platform } from 'react-native';
 /** Production Medzoos API (same as website) */
 const PRODUCTION_API = 'https://backend.medzoos.com/api';
 
-/** Android emulator → host machine localhost */
-const LOCAL_ANDROID_EMULATOR = 'http://10.0.2.2:5000/api';
+/**
+ * Local medzoos-backend port from `.env` (PORT=5001).
+ * macOS often occupies 5000 (Control Center / AirPlay), so local API is 5001.
+ */
+export const LOCAL_API_PORT = 5001;
 
-/** Physical Android over USB (requires: adb reverse tcp:5000 tcp:5000) */
-const LOCAL_ANDROID_USB = 'http://127.0.0.1:5000/api';
+/** Android emulator → host machine localhost */
+const LOCAL_ANDROID_EMULATOR = `http://10.0.2.2:${LOCAL_API_PORT}/api`;
+
+/** Physical Android over USB (requires: adb reverse tcp:5001 tcp:5001) */
+const LOCAL_ANDROID_USB = `http://127.0.0.1:${LOCAL_API_PORT}/api`;
 
 /** iOS simulator → host machine localhost */
-const LOCAL_IOS = 'http://localhost:5000/api';
+const LOCAL_IOS = `http://localhost:${LOCAL_API_PORT}/api`;
 
 /**
- * Set true to use Backend on your PC (port 5000).
+ * Set true to use Backend on your PC.
  * Set false to use the live deployed API.
  */
 export const USE_LOCAL_API = true;
 
 /**
  * How your Android device reaches the PC backend:
- * - `usb`      — phone plugged in via USB + `adb reverse tcp:5000 tcp:5000` (recommended)
+ * - `usb`      — phone plugged in via USB + `adb reverse` (recommended)
  * - `wifi`     — phone on same Wi‑Fi; set LOCAL_DEV_HOST to your PC IPv4
  * - `emulator` — Android Studio emulator (10.0.2.2)
  */
@@ -28,11 +34,11 @@ export const ANDROID_CONNECTION: 'usb' | 'wifi' | 'emulator' = 'usb';
 
 /**
  * Your PC LAN IP — only used when ANDROID_CONNECTION is `wifi`.
- * Find it: Windows `ipconfig` → Wi‑Fi IPv4 (e.g. 172.31.2.189).
+ * Find it: macOS `ipconfig getifaddr en0` or Windows `ipconfig` → Wi‑Fi IPv4.
  */
 export const LOCAL_DEV_HOST = '172.31.2.189';
 
-const localWifiApi = `http://${LOCAL_DEV_HOST}:5000/api`;
+const localWifiApi = `http://${LOCAL_DEV_HOST}:${LOCAL_API_PORT}/api`;
 
 export function getApiBaseUrl(): string {
   if (!USE_LOCAL_API) {

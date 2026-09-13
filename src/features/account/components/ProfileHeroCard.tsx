@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, radius, shadows } from '../../../theme';
 import { healthOsTypography } from '../../../theme/healthOs';
+import { BrandGradientFill } from '../../../components/branding/TealGradientFill';
 
 type ProfileHeroCardProps = {
   firstName: string;
@@ -23,44 +24,52 @@ export function ProfileHeroCard({
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [styles.pressWrap, pressed && styles.cardPressed]}
       onPress={onPress}
       disabled={!onPress}>
-      <View style={styles.gradientBase} />
-      <View style={styles.gradientOverlay} />
-      <View style={styles.decorCircleLarge} />
-      <View style={styles.decorCircleSmall} />
-      <View style={styles.decorIcon}>
-        <Icon name="heart-pulse" size={72} color="rgba(255,255,255,0.1)" />
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <View style={styles.avatarRing}>
-            <View style={styles.avatar}>
-              <Text style={styles.initials}>{initials}</Text>
-            </View>
-          </View>
-          <View style={styles.badge}>
-            <Icon name="shield-check" size={12} color={colors.brandPrimary} />
-            <Text style={styles.badgeText}>Verified member</Text>
-          </View>
+      <View style={styles.card}>
+        <BrandGradientFill
+          baseColor={colors.brandPrimary}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.decorCircleLarge} />
+        <View style={styles.decorCircleSmall} />
+        <View style={styles.decorIcon}>
+          <Icon name="heart-pulse" size={72} color="rgba(255,255,255,0.1)" />
         </View>
 
-        <Text style={styles.greeting}>Hi, {firstName}</Text>
-        <Text style={styles.subtitle}>Manage your health profile</Text>
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Icon name="chart-arc" size={14} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.statLabel}>Family health score</Text>
-            <Text style={styles.statValue}>{score}</Text>
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <View style={styles.avatarRing}>
+              <View style={styles.avatar}>
+                <Text style={styles.initials}>{initials}</Text>
+              </View>
+            </View>
+            <View style={styles.badge}>
+              <Icon name="shield-check" size={12} color={colors.brandPrimary} />
+              <Text style={styles.badgeText}>Verified member</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Icon name="account-group-outline" size={14} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.statLabel}>Family members</Text>
-            <Text style={styles.statValue}>{members}</Text>
+
+          <Text style={styles.greeting}>Hi, {firstName}</Text>
+          <Text style={styles.subtitle}>Manage your health profile</Text>
+
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Icon name="chart-arc" size={14} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.statLabel}>Family health score</Text>
+              <Text style={styles.statValue}>{score}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Icon
+                name="account-group-outline"
+                size={14}
+                color="rgba(255,255,255,0.7)"
+              />
+              <Text style={styles.statLabel}>Family members</Text>
+              <Text style={styles.statValue}>{members}</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -69,26 +78,17 @@ export function ProfileHeroCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
+  pressWrap: {
     borderRadius: radius.xl,
-    overflow: 'hidden',
-    minHeight: 176,
     ...shadows.cardElevated,
   },
-  cardPressed: { opacity: 0.97, transform: [{ scale: 0.995 }] },
-  gradientBase: {
-    ...StyleSheet.absoluteFill,
+  card: {
+    borderRadius: radius.xl,
+    minHeight: 176,
+    overflow: 'hidden',
     backgroundColor: colors.brandPrimary,
   },
-  gradientOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: '38%',
-    backgroundColor: colors.brandHighlight,
-    opacity: 0.4,
-  },
+  cardPressed: { opacity: 0.97, transform: [{ scale: 0.995 }] },
   decorCircleLarge: {
     position: 'absolute',
     width: 130,
@@ -97,101 +97,106 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
     top: -36,
     right: -24,
+    zIndex: 1,
   },
   decorCircleSmall: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: 'rgba(255,255,255,0.06)',
-    bottom: 20,
-    right: 52,
+    bottom: -20,
+    left: 24,
+    zIndex: 1,
   },
   decorIcon: {
     position: 'absolute',
-    right: 8,
-    bottom: 6,
+    right: 12,
+    bottom: 8,
+    opacity: 0.9,
+    zIndex: 1,
   },
   content: {
     padding: spacing.lg,
-    gap: spacing.xs,
+    gap: spacing.sm,
+    zIndex: 2,
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
   },
   avatarRing: {
-    padding: 3,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    fontSize: 20,
+    color: '#FFFFFF',
     fontWeight: '800',
-    color: colors.white,
+    fontSize: 16,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.sm,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: radius.pill,
-    ...shadows.cardSoft,
+    borderRadius: 999,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.brandPrimary,
   },
   greeting: {
     ...healthOsTypography.greeting,
-    fontSize: 22,
-    color: colors.white,
+    fontSize: 26,
+    color: '#FFFFFF',
+    marginTop: 4,
   },
   subtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    marginBottom: spacing.sm,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.82)',
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  stat: { flex: 1, alignItems: 'center', gap: 2 },
+  stat: { flex: 1, gap: 2 },
   statDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    marginHorizontal: spacing.sm,
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginHorizontal: 12,
   },
   statLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    textAlign: 'center',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 });

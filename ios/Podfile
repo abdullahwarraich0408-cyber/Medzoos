@@ -17,6 +17,10 @@ end
 target 'medCare' do
   config = use_native_modules!
 
+  # Firebase / App Check Swift pods need module maps from these deps.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

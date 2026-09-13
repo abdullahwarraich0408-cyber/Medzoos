@@ -21,6 +21,7 @@ import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
 import { SectionHeader } from './components/SectionHeader';
+import { FollowUpRecommendedCard } from './components/FollowUpRecommendedCard';
 import { PROMO_BANNERS, SERVICE_CARDS } from './data/homeData';
 import { useHomeData } from '../../lib/hooks/useHomeData';
 
@@ -247,6 +248,14 @@ export function HomePage() {
             </Pressable>
           ))}
         </View>
+
+        <FollowUpRecommendedCard
+          onOpenAppointments={() =>
+            navigation.navigate('You', {
+              screen: 'Appointments',
+            } as never)
+          }
+        />
 
         {/* Featured Doctors */}
         <SectionHeader

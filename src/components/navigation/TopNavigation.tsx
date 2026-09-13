@@ -18,6 +18,7 @@ import {
 import { appBrand, stackScreenTitleStyle } from '../../theme/appBrand';
 import { smoky } from './SmokyGlass';
 import { StackBackButton } from './StackBackButton';
+import { BrandGradientFill } from '../branding/TealGradientFill';
 
 type TopNavigationProps = {
   mode?: 'main' | 'stack';
@@ -128,6 +129,10 @@ export function TopNavigation({
                     ]}
                     onPress={onCartPress}
                     accessibilityLabel="Cart">
+                    <BrandGradientFill
+                      baseColor={colors.primary700}
+                      style={StyleSheet.absoluteFillObject}
+                    />
                     <Icon name="cart-outline" size={20} color={colors.iconWhite} />
                     {cartCount > 0 ? (
                       <View style={styles.badge}>
@@ -203,6 +208,10 @@ export function TopNavigation({
                   ]}
                   onPress={onCartPress}
                   accessibilityLabel="Cart">
+                  <BrandGradientFill
+                    baseColor={colors.primary700}
+                    style={StyleSheet.absoluteFillObject}
+                  />
                   <Icon name="cart-outline" size={20} color={colors.iconWhite} />
                   {cartCount > 0 ? (
                     <View style={styles.badge}>
@@ -336,6 +345,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary700,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   cartPressed: {
     opacity: 0.9,

@@ -5,12 +5,13 @@ import { colors, radius } from '../theme';
 type ButtonFillProps = {
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** Vertical wash from #0E304B → #185B8B */
+  /** Vertical wash from buttonStart → buttonEnd (existing brand) */
   direction?: 'vertical' | 'horizontal';
 };
 
 /**
  * Button-only fill. Do not use for specialty/category icon backgrounds.
+ * Keeps existing brand button colors — gradient only.
  */
 export function ButtonFill({
   children,
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   wash: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
   },
   washVertical: {
     flexDirection: 'column',

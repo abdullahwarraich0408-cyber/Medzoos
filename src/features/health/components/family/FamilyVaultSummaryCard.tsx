@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, spacing, radius, shadows } from '../../../../theme';
 import { healthOsTypography } from '../../../../theme/healthOs';
+import { BrandGradientFill } from '../../../../components/branding/TealGradientFill';
 
 type FamilyVaultSummaryCardProps = {
   familyName: string;
@@ -19,7 +20,10 @@ export function FamilyVaultSummaryCard({
 }: FamilyVaultSummaryCardProps) {
   return (
     <View style={styles.card}>
-      <View style={styles.gradient} />
+      <BrandGradientFill
+        baseColor={colors.brandPrimary}
+        style={StyleSheet.absoluteFillObject}
+      />
       <View style={styles.content}>
         <View style={styles.left}>
           <Text style={styles.label}>Family Health Vault</Text>
@@ -27,12 +31,12 @@ export function FamilyVaultSummaryCard({
           <View style={styles.metaRow}>
             {familyScore != null ? (
               <View style={styles.metaPill}>
-                <Icon name="chart-arc" size={12} color={colors.brandPrimary} />
+                <Icon name="chart-arc" size={12} color={colors.white} />
                 <Text style={styles.metaText}>Score {familyScore}</Text>
               </View>
             ) : null}
             <View style={styles.metaPill}>
-              <Icon name="account-group-outline" size={12} color={colors.brandPrimary} />
+              <Icon name="account-group-outline" size={12} color={colors.white} />
               <Text style={styles.metaText}>{memberCount} members</Text>
             </View>
           </View>
@@ -49,14 +53,10 @@ export function FamilyVaultSummaryCard({
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.xl,
-    overflow: 'hidden',
     marginBottom: spacing.md,
-    ...shadows.cardElevated,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFill,
+    overflow: 'hidden',
     backgroundColor: colors.brandPrimary,
-    opacity: 0.95,
+    ...shadows.cardElevated,
   },
   content: {
     flexDirection: 'row',
@@ -64,6 +64,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
     padding: spacing.lg,
+    zIndex: 1,
+    elevation: 2,
   },
   left: { flex: 1, gap: spacing.xs },
   label: {

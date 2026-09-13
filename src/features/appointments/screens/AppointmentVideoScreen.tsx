@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,22 @@ import {
   StatusBar,
   Image,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
+import { telehealthApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth/AuthContext';
+import { TelehealthVideoWebView } from '../../../lib/telehealth/TelehealthVideoWebView';
+import {
+  buildJitsiMeetUrl,
+  isDirectMeetUrl,
+  resolveVideoRoomFromAccess,
+} from '../../../lib/telehealth/videoRoom';
 import type { YouStackParamList } from '../../../navigation/types';
 
 type VideoRoute = RouteProp<YouStackParamList, 'AppointmentVideo'>;
@@ -23,22 +32,54 @@ export function AppointmentVideoScreen() {
   const navigation = useNavigation<VideoNav>();
   const route = useRoute<VideoRoute>();
   const insets = useSafeAreaInsets();
-  const { doctorName, doctorImage, appointmentId, meetingUrl } = (route.params || {}) as any;
+  const { user } = useAuth();
+  const { doctorName, doctorImage, appointmentId, meetingUrl } = (route.params ||
+    {}) as {
+    doctorName?: string;
+    doctorImage?: string;
+    appointmentId?: string;
+    meetingUrl?: string;
+  };
 
   const [seconds, setSeconds] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [url, setUrl] = useState(meetingUrl || '');
+  const [webReady, setWebReady] = useState(false);
 
-  useEffect(() => {
-    if (!url && appointmentId) {
-      const cleanId = String(appointmentId).replace(/[^a-zA-Z0-9]/g, '');
-      const roomName = `Medzoos_${cleanId}`;
-      const patientName = encodeURIComponent('Patient');
-      setUrl(`https://meet.element.io/${roomName}#config.prejoinPageEnabled=false&config.requireDisplayName=false&config.disableDeepLinking=true&config.startWithAudioMuted=false&config.startWithVideoMuted=false&userInfo.displayName="${patientName}"`);
+  const videoAccessQuery = useQuery({
+    queryKey: ['appointment-video', appointmentId],
+    queryFn: () => telehealthApi.getVideoAccess(appointmentId!),
+    enabled: Boolean(appointmentId),
+    refetchInterval: 12_000,
+  });
+
+  const resolved = useMemo(
+    () => resolveVideoRoomFromAccess(videoAccessQuery.data),
+    [videoAccessQuery.data],
+  );
+
+  // Prefer Medzoos logged-in patient name — no second video login
+  const patientDisplayName =
+    user?.name || resolved.displayName || 'Patient';
+
+  const url = useMemo(() => {
+    if (!resolved.allowed) return '';
+    if (resolved.embedUrl && isDirectMeetUrl(resolved.embedUrl)) {
+      return resolved.embedUrl;
     }
-  }, [appointmentId, url]);
+    if (resolved.jitsiRoom) {
+      return buildJitsiMeetUrl(
+        resolved.jitsiRoom,
+        patientDisplayName,
+        resolved.host || undefined,
+      );
+    }
+    if (isDirectMeetUrl(meetingUrl)) {
+      return meetingUrl!;
+    }
+    return '';
+  }, [resolved, meetingUrl, patientDisplayName]);
 
   useEffect(() => {
     const timer = setInterval(() => setSeconds(s => s + 1), 1000);
@@ -50,42 +91,30 @@ export function AppointmentVideoScreen() {
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
     const pad = (n: number) => String(n).padStart(2, '0');
-    return hrs > 0 ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
+    return hrs > 0
+      ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+      : `${pad(mins)}:${pad(secs)}`;
   };
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Main Full-Screen Video Background */}
       <View style={StyleSheet.absoluteFill}>
         {url ? (
-          <WebView
-            source={{ uri: url }}
+          <TelehealthVideoWebView
+            url={url}
             style={styles.webVideo}
-            allowsInlineMediaPlayback={true}
-            mediaPlaybackRequiresUserAction={false}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            setSupportMultipleWindows={false}
-            userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            originWhitelist={['*']}
-            onShouldStartLoadWithRequest={(request) => {
-              if (
-                request.url.startsWith('intent:') ||
-                request.url.startsWith('jitsi-meet:') ||
-                request.url.startsWith('market:') ||
-                request.url.includes('play.google.com') ||
-                request.url.includes('apps.apple.com')
-              ) {
-                return false;
-              }
-              return true;
-            }}
+            muted={isMuted}
+            cameraOff={isVideoOff}
+            onReadyChange={setWebReady}
+            loadingLabel="Connecting secure session…"
           />
         ) : (
           <View style={styles.fallbackStage}>
-            {doctorImage ? (
+            {videoAccessQuery.isLoading ? (
+              <ActivityIndicator color="#14B8A6" size="large" />
+            ) : doctorImage ? (
               <Image source={{ uri: doctorImage }} style={styles.fallbackImage} />
             ) : (
               <View style={styles.fallbackAvatar}>
@@ -93,13 +122,26 @@ export function AppointmentVideoScreen() {
               </View>
             )}
             <Text style={styles.fallbackName}>{doctorName || 'Doctor'}</Text>
-            <Text style={styles.fallbackSub}>Video Consultation Room</Text>
+            <Text style={styles.fallbackSub}>
+              {resolved.reason ||
+                (videoAccessQuery.isLoading
+                  ? 'Connecting to secure video room…'
+                  : 'Waiting for doctor to start the consultation')}
+            </Text>
+            <Pressable
+              style={styles.retryBtn}
+              onPress={() => videoAccessQuery.refetch()}>
+              <Text style={styles.retryBtnText}>Retry join</Text>
+            </Pressable>
           </View>
         )}
       </View>
 
-      {/* Top Overlay Controls */}
-      <View style={[styles.topOverlay, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 16) }]}>
+      <View
+        style={[
+          styles.topOverlay,
+          { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 16) },
+        ]}>
         <Pressable
           style={styles.backCircleBtn}
           onPress={() => navigation.goBack()}
@@ -109,34 +151,38 @@ export function AppointmentVideoScreen() {
 
         <View style={styles.timerPill}>
           <View style={styles.redDot} />
-          <Text style={styles.timerText}>{formatTime(seconds)}</Text>
+          <Text style={styles.timerText}>
+            {webReady || !url ? formatTime(seconds) : 'Connecting…'}
+          </Text>
         </View>
       </View>
 
-      {/* Floating Self-View Picture-in-Picture (PiP) Inset */}
-      <View style={[styles.pipContainer, { bottom: insets.bottom + 110 }]}>
-        {isVideoOff ? (
-          <View style={styles.pipAvatarFallback}>
-            <Icon name="camera-off" size={24} color="#94A3B8" />
-            <Text style={styles.pipOffText}>Cam Off</Text>
-          </View>
-        ) : (
-          <View style={styles.pipVideoBox}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }}
-              style={styles.pipImage}
-            />
-            <View style={styles.pipTag}>
-              <Text style={styles.pipTagText}>You</Text>
+      {/* Decorative PiP — don't steal touches from Jitsi */}
+      {!webReady ? (
+        <View
+          style={[styles.pipContainer, { bottom: insets.bottom + 110 }]}
+          pointerEvents="none">
+          {isVideoOff ? (
+            <View style={styles.pipAvatarFallback}>
+              <Icon name="camera-off" size={24} color="#94A3B8" />
+              <Text style={styles.pipOffText}>Cam Off</Text>
             </View>
-          </View>
-        )}
-      </View>
+          ) : (
+            <View style={styles.pipVideoBox}>
+              <View style={styles.pipTag}>
+                <Text style={styles.pipTagText}>You</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      ) : null}
 
-      {/* Bottom Floating Translucent Action Controls Dock */}
-      <View style={[styles.bottomDockContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View
+        style={[
+          styles.bottomDockContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) },
+        ]}>
         <View style={styles.actionDock}>
-          {/* Mute Button */}
           <Pressable
             style={[styles.dockBtn, isMuted && styles.dockBtnActive]}
             onPress={() => setIsMuted(!isMuted)}>
@@ -146,8 +192,6 @@ export function AppointmentVideoScreen() {
               color={isMuted ? '#EF4444' : '#0F172A'}
             />
           </Pressable>
-
-          {/* Camera Button */}
           <Pressable
             style={[styles.dockBtn, isVideoOff && styles.dockBtnActive]}
             onPress={() => setIsVideoOff(!isVideoOff)}>
@@ -157,8 +201,6 @@ export function AppointmentVideoScreen() {
               color={isVideoOff ? '#EF4444' : '#0F172A'}
             />
           </Pressable>
-
-          {/* Speaker Button */}
           <Pressable
             style={[styles.dockBtn, !isSpeakerOn && styles.dockBtnActive]}
             onPress={() => setIsSpeakerOn(!isSpeakerOn)}>
@@ -168,11 +210,7 @@ export function AppointmentVideoScreen() {
               color={!isSpeakerOn ? '#EF4444' : '#0F172A'}
             />
           </Pressable>
-
-          {/* End Call Button */}
-          <Pressable
-            style={styles.endCallBtn}
-            onPress={() => navigation.goBack()}>
+          <Pressable style={styles.endCallBtn} onPress={() => navigation.goBack()}>
             <Icon name="phone-hangup" size={24} color="#FFFFFF" />
           </Pressable>
         </View>
@@ -182,28 +220,21 @@ export function AppointmentVideoScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  webVideo: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
+  root: { flex: 1, backgroundColor: '#000000' },
+  webVideo: { flex: 1, width: '100%', backgroundColor: '#000000' },
   fallbackStage: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#0F172A',
-    padding: 24,
+    paddingHorizontal: 28,
+    gap: 10,
   },
   fallbackImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 8,
   },
   fallbackAvatar: {
     width: 120,
@@ -212,17 +243,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
   },
   fallbackName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 6,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#F8FAFC',
   },
   fallbackSub: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  retryBtn: {
+    marginTop: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#14B8A6',
+  },
+  retryBtnText: {
+    color: '#042F2E',
+    fontWeight: '700',
+    fontSize: 13,
   },
   topOverlay: {
     position: 'absolute',
@@ -232,141 +276,109 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    zIndex: 20,
+    paddingHorizontal: 16,
   },
   backCircleBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
   },
   timerPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(15,23,42,0.72)',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 999,
   },
   redDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#EF4444',
   },
   timerText: {
     color: '#FFFFFF',
-    fontSize: 13,
     fontWeight: '700',
-    fontVariant: ['tabular-nums'],
+    fontSize: 12,
   },
   pipContainer: {
     position: 'absolute',
-    right: 20,
-    width: 110,
-    height: 150,
-    borderRadius: 16,
+    right: 16,
+    width: 96,
+    height: 128,
+    borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-    zIndex: 15,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   pipVideoBox: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
+    flex: 1,
     backgroundColor: '#1E293B',
-  },
-  pipImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  pipTag: {
-    position: 'absolute',
-    bottom: 6,
-    left: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  pipTagText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
   },
   pipAvatarFallback: {
     flex: 1,
     backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
   pipOffText: {
     color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  pipTag: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  pipTagText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   bottomDockContainer: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     alignItems: 'center',
-    zIndex: 20,
   },
   actionDock: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingHorizontal: 20,
+    gap: 14,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 40,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
+    borderRadius: 28,
   },
   dockBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dockBtnActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: '#FEE2E2',
   },
   endCallBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
   },
 });

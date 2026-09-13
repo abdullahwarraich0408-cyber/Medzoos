@@ -1,6 +1,6 @@
 import { colors, spacing, radius, shadows } from '../../../theme';
 import { healthOs } from '../../../theme/healthOs';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,10 @@ import { startStripeCheckout } from '../../../lib/payments/stripeCheckout';
 import { DoctorSlotPicker } from './DoctorSlotPicker';
 import { BookingAuthModal } from './BookingAuthModal';
 import { ConsultOptionRow } from './ConsultOptionRow';
+import { ShareMedicalHistoryStep } from './ShareMedicalHistoryStep';
+import type { ShareGrantPayload } from '../../../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { medicalHistoryApi } from '../../../lib/api';
 
 type AppointmentFlowProps = {
   doctor: Doctor;
@@ -257,6 +261,7 @@ export function AppointmentFlow({
     useNavigation<NativeStackNavigationProp<DoctorsStackParamList>>();
   const { user, isAuthenticated } = useAuth();
   const bookAppointment = useBookDoctorAppointment();
+  const queryClient = useQueryClient();
 
   const allOptions = useMemo(
     () => buildDoctorConsultOptions(doctor, hospitalId),
@@ -287,20 +292,49 @@ export function AppointmentFlow({
   const [selectedDate, setSelectedDate] = useState(
     toLocalDateValue(new Date()),
   );
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cod'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'pay_at_clinic'>(
+    'stripe',
+  );
   const [stripeUrl, setStripeUrl] = useState<string | null>(null);
   const [payingOnline, setPayingOnline] = useState(false);
-  const [sharePrescriptions, setSharePrescriptions] = useState(true);
-  const [shareLabReports, setShareLabReports] = useState(true);
-  const [shareMedicines, setShareMedicines] = useState(true);
-  const [shareDocuments, setShareDocuments] = useState(false);
+  const [shareKeys, setShareKeys] = useState<string[]>([]);
   const [purpose, setPurpose] = useState<'consultation' | 'procedure'>(
     'consultation',
   );
   const [patientName, setPatientName] = useState(user?.name || '');
   const [patientPhone, setPatientPhone] = useState(user?.phone || '');
 
+  // Options can resolve after mount — keep selection in sync for in-clinic entry
+  useEffect(() => {
+    if (!defaultOption) return;
+    setSelectedOption(prev => {
+      if (!prev) return defaultOption;
+      const stillValid = allOptions.some(option => option.id === prev.id);
+      return stillValid ? prev : defaultOption;
+    });
+  }, [defaultOption, allOptions]);
+
+  useEffect(() => {
+    if (user?.name) {
+      setPatientName(prev => prev.trim() || user.name || '');
+    }
+    if (user?.phone) {
+      setPatientPhone(prev => prev.trim() || user.phone || '');
+    }
+  }, [user?.name, user?.phone]);
+
   const consultType = selectedOption?.type;
+  const isInPerson = consultType === 'in_person';
+
+  // In-clinic defaults to pay-at-clinic; online must use Stripe
+  useEffect(() => {
+    if (isInPerson) {
+      setPaymentMethod(prev => (prev === 'stripe' ? 'pay_at_clinic' : prev));
+    } else if (consultType === 'online') {
+      setPaymentMethod('stripe');
+    }
+  }, [consultType, isInPerson]);
+
   const appointmentDateIso = useMemo(
     () =>
       selectedSlot
@@ -315,39 +349,132 @@ export function AppointmentFlow({
   );
 
   const handleSlotContinue = () => {
+    if (!selectedOption) {
+      Alert.alert(
+        'Choose consultation',
+        'Please choose online or in-clinic consultation first.',
+      );
+      return;
+    }
     if (!selectedSlot) {
       Alert.alert('Select a slot', 'Please select a time slot to continue.');
+      return;
+    }
+    if (!selectedDate) {
+      Alert.alert('Select a date', 'Please select an appointment date.');
       return;
     }
     setStep(2);
   };
 
+  const buildShareGrants = async (): Promise<ShareGrantPayload[]> => {
+    if (!shareKeys.length) return [];
+    const shareable =
+      queryClient.getQueryData<
+        Awaited<ReturnType<typeof medicalHistoryApi.listShareable>>
+      >(['shareable-medical-history']) ||
+      (await medicalHistoryApi.listShareable().catch(() => undefined));
+    return shareKeys
+      .map(key => {
+        const [record_type, ...rest] = key.split(':');
+        const record_id = rest.join(':');
+        if (!record_type || !record_id) return null;
+        return { record_type, record_id };
+      })
+      .filter(Boolean) as ShareGrantPayload[];
+  };
+
+  const resolvePracticeLocationId = () => {
+    const value = String(selectedOption?.practiceLocationId || '').trim();
+    if (
+      !value ||
+      value === 'legacy' ||
+      value === 'loc' ||
+      value === 'null' ||
+      value === 'undefined'
+    ) {
+      return undefined;
+    }
+    return value;
+  };
+
+  const resolveHospitalId = () => {
+    return (
+      selectedOption?.hospitalId ||
+      doctor.hospitalId ||
+      doctor.hospitalData?.id ||
+      undefined
+    );
+  };
+
   const submitBooking = async () => {
-    if (!consultType || !selectedOption || !selectedSlot) {
-      Alert.alert('Missing details', 'Please complete all booking details.');
+    if (!selectedOption) {
+      Alert.alert(
+        'Missing consultation type',
+        'Please choose online or in-clinic consultation.',
+      );
       return;
+    }
+    if (!selectedOption.type) {
+      Alert.alert(
+        'Missing consultation type',
+        'Please choose online or in-clinic consultation.',
+      );
+      return;
+    }
+    if (!selectedSlot) {
+      Alert.alert('Missing time slot', 'Please go back and select a time slot.');
+      setStep(1);
+      return;
+    }
+    if (!selectedDate || !appointmentDateIso) {
+      Alert.alert('Missing date', 'Please go back and select an appointment date.');
+      setStep(1);
+      return;
+    }
+    if (!patientName.trim()) {
+      Alert.alert('Patient name required', 'Please enter the patient name.');
+      setStep(2);
+      return;
+    }
+    if (selectedOption.type === 'in_person') {
+      const practiceLocationId = resolvePracticeLocationId();
+      const hospitalId = resolveHospitalId();
+      if (!practiceLocationId && !hospitalId && !doctor.hospital) {
+        Alert.alert(
+          'Clinic required',
+          'This in-clinic booking needs a hospital/clinic. Please choose a clinic location.',
+        );
+        setShowOptionModal(true);
+        return;
+      }
     }
 
     setPayingOnline(true);
     try {
+      const share_grants = await buildShareGrants();
+      const practiceLocationId = resolvePracticeLocationId();
+      const hospitalId = resolveHospitalId();
+      const method =
+        selectedOption.type === 'online'
+          ? 'stripe'
+          : paymentMethod === 'stripe'
+            ? 'stripe'
+            : 'pay_at_clinic';
+
       const result = await bookAppointment.mutateAsync({
         doctor_id: doctor.id,
         slot: selectedSlot,
-        payment_method: paymentMethod === 'stripe' ? 'stripe' : 'cod',
+        payment_method: method,
         appointment_date: appointmentDateIso,
         reason:
           purpose === 'consultation'
             ? 'Normal Consultation'
             : 'Surgery / Procedure Visit',
-        preferred_consultation_mode: consultType,
-        hospital_id: selectedOption.hospitalId || undefined,
-        practice_location_id: selectedOption.practiceLocationId || undefined,
-        share_records: {
-          share_prescriptions: sharePrescriptions,
-          share_lab_reports: shareLabReports,
-          share_medicines: shareMedicines,
-          share_documents: shareDocuments,
-        },
+        preferred_consultation_mode: selectedOption.type,
+        hospital_id: hospitalId || undefined,
+        practice_location_id: practiceLocationId,
+        share_grants: share_grants.length ? share_grants : undefined,
       });
 
       const booked =
@@ -359,7 +486,7 @@ export function AppointmentFlow({
           '',
       );
 
-      if (paymentMethod === 'stripe') {
+      if (method === 'stripe') {
         if (!appointmentId) {
           throw new Error('Appointment created but missing id for Stripe payment.');
         }
@@ -371,7 +498,7 @@ export function AppointmentFlow({
         return;
       }
 
-      setStep(3);
+      setStep(4);
     } catch (error) {
       Alert.alert(
         'Booking failed',
@@ -393,7 +520,7 @@ export function AppointmentFlow({
       return;
     }
 
-    await submitBooking();
+    setStep(3);
   };
 
   if (!selectedOption) {
@@ -414,7 +541,7 @@ export function AppointmentFlow({
           fee={selectedOption.fee}
           onChangeConsult={() => setShowOptionModal(true)}
         />
-      ) : step === 2 ? (
+      ) : step === 2 || step === 3 ? (
         <View style={styles.doctorHeader}>
           <Image source={{ uri: doctor.photo }} style={styles.doctorPhoto} />
           <View style={styles.doctorInfo}>
@@ -536,47 +663,11 @@ export function AppointmentFlow({
             </TouchableOpacity>
           ))}
 
-          <Text style={styles.sectionTitle}>Share health records with doctor?</Text>
+          <Text style={styles.sectionTitle}>Share health records?</Text>
           <Text style={styles.fieldHint}>
-            The doctor sees their own history with you, plus only what you share here.
+            Next step lets you pick exact visit summaries, prescriptions, and
+            lab reports to share with this doctor.
           </Text>
-          {(
-            [
-              {
-                id: 'rx' as const,
-                label: 'Previous prescriptions',
-                value: sharePrescriptions,
-                set: setSharePrescriptions,
-              },
-              {
-                id: 'labs' as const,
-                label: 'Lab reports',
-                value: shareLabReports,
-                set: setShareLabReports,
-              },
-              {
-                id: 'meds' as const,
-                label: 'Current medicines',
-                value: shareMedicines,
-                set: setShareMedicines,
-              },
-              {
-                id: 'docs' as const,
-                label: 'Other medical documents',
-                value: shareDocuments,
-                set: setShareDocuments,
-              },
-            ] as const
-          ).map(item => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.radioRow, item.value && styles.radioRowActive]}
-              onPress={() => item.set(!item.value)}
-              activeOpacity={0.85}>
-              <View style={[styles.radio, item.value && styles.radioActive]} />
-              <Text style={styles.radioLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
 
           <Text style={[styles.sectionTitle, styles.paymentTitle]}>
             Select payment method
@@ -589,15 +680,17 @@ export function AppointmentFlow({
                 note: `PKR ${selectedOption.fee.toLocaleString()}`,
               },
               {
-                id: 'cod' as const,
+                id: 'pay_at_clinic' as const,
                 label:
-                  consultType === 'in_person'
+                  isInPerson
                     ? 'Pay cash at clinic'
                     : 'Pay after consultation',
                 note: `PKR ${selectedOption.fee.toLocaleString()}`,
               },
             ] as const
-          ).map(method => (
+          )
+            .filter(method => (consultType === 'online' ? method.id === 'stripe' : true))
+            .map(method => (
             <TouchableOpacity
               key={method.id}
               style={[
@@ -656,8 +749,8 @@ export function AppointmentFlow({
               ) : (
                 <Text style={styles.primaryBtnText}>
                   {paymentMethod === 'stripe'
-                    ? 'Confirm & pay with Stripe'
-                    : 'Confirm booking'}
+                    ? 'Continue to share & pay'
+                    : 'Continue'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -673,6 +766,23 @@ export function AppointmentFlow({
       )}
 
       {step === 3 && (
+        <View style={[styles.stepBody, { paddingHorizontal: layout.pad }]}>
+          <ShareMedicalHistoryStep
+            doctorName={doctor.name}
+            selectedKeys={shareKeys}
+            onChangeSelectedKeys={setShareKeys}
+            onBack={() => setStep(2)}
+            onSkip={() => {
+              setShareKeys([]);
+              submitBooking();
+            }}
+            onShareAndContinue={() => submitBooking()}
+            isSubmitting={bookAppointment.isPending || payingOnline}
+          />
+        </View>
+      )}
+
+      {step === 4 && (
         <View style={styles.successWrap}>
           <View style={styles.successIcon}>
             <Icon name="check" size={32} color={colors.statusSuccess} />
@@ -734,7 +844,7 @@ export function AppointmentFlow({
         onClose={() => setShowAuthModal(false)}
         onSuccess={() => {
           setShowAuthModal(false);
-          submitBooking();
+          setStep(3);
         }}
         doctor={doctor}
         consultOption={selectedOption}
@@ -747,7 +857,7 @@ export function AppointmentFlow({
         checkoutUrl={stripeUrl}
         onPaid={() => {
           setStripeUrl(null);
-          setStep(3);
+          setStep(4);
         }}
         onCancelled={() => {
           setStripeUrl(null);
