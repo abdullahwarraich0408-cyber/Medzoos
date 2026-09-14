@@ -783,30 +783,81 @@ export function AppointmentFlow({
       )}
 
       {step === 4 && (
-        <View style={styles.successWrap}>
-          <View style={styles.successIcon}>
-            <Icon name="check" size={32} color={colors.statusSuccess} />
+        <View
+          style={[
+            styles.stepBody,
+            styles.successSheet,
+            {
+              marginHorizontal: layout.isTablet ? 0 : -layout.pad,
+              paddingHorizontal: layout.pad,
+              borderRadius: layout.isTablet ? 28 : undefined,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              minHeight: layout.isTall ? Math.min(layout.height * 0.42, 380) : undefined,
+            },
+          ]}>
+          <View style={styles.successWrap}>
+            <View
+              style={[
+                styles.successIcon,
+                layout.isCompact && styles.successIconCompact,
+              ]}>
+              <Icon
+                name="check"
+                size={layout.isCompact ? 28 : 32}
+                color={colors.statusSuccess}
+              />
+            </View>
+            <Text
+              style={[
+                styles.successTitle,
+                { fontSize: layout.font.name > 24 ? 22 : layout.isCompact ? 18 : 20 },
+              ]}>
+              Appointment Booked
+            </Text>
+            <Text
+              style={[
+                styles.successSub,
+                { fontSize: layout.isCompact ? 13 : 14 },
+              ]}>
+              Your {consultType === 'online' ? 'online' : 'in-clinic'} appointment
+              with {doctor.name} is pending confirmation.
+            </Text>
+            <Text style={styles.successDate}>
+              {formatBookingDate(selectedDate)} · {selectedSlot}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.primaryBtn,
+                styles.successBtn,
+                layout.isTablet && styles.primaryBtnTablet,
+              ]}
+              onPress={() => navigation.navigate('ConsultHome')}
+              activeOpacity={0.85}>
+              <Text
+                style={[styles.primaryBtnText, { fontSize: layout.font.cta }]}
+                numberOfLines={1}>
+                Back to Doctors
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.secondaryBtn,
+                styles.successBtn,
+                layout.isTablet && styles.primaryBtnTablet,
+              ]}
+              onPress={() => navigateToOrders(navigation)}
+              activeOpacity={0.85}>
+              <Text
+                style={[
+                  styles.secondaryBtnText,
+                  { fontSize: layout.isCompact ? 14 : 15 },
+                ]}
+                numberOfLines={1}>
+                View Appointments
+              </Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.successTitle}>Appointment Booked</Text>
-          <Text style={styles.successSub}>
-            Your {consultType === 'online' ? 'online' : 'in-clinic'} appointment
-            with {doctor.name} is pending confirmation.
-          </Text>
-          <Text style={styles.successDate}>
-            {formatBookingDate(selectedDate)} · {selectedSlot}
-          </Text>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => navigation.navigate('ConsultHome')}
-            activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Back to Doctors</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => navigateToOrders(navigation)}
-            activeOpacity={0.85}>
-            <Text style={styles.secondaryBtnText}>View Appointments</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -1012,6 +1063,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 28,
+    paddingHorizontal: spacing.xl,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   primaryBtnTablet: {
     alignSelf: 'center',
@@ -1026,6 +1080,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: bookingUi.white,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
   },
   doctorHeader: {
     flexDirection: 'row',
@@ -1247,10 +1303,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.neutral500,
   },
+  successSheet: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   successWrap: {
     alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-    paddingHorizontal: spacing.lg,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xs,
+    gap: spacing.sm,
   },
   successIcon: {
     width: 64,
@@ -1259,41 +1323,60 @@ const styles = StyleSheet.create({
     backgroundColor: colors.statusSuccessBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  successIconCompact: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   successTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.inkHeadline,
-    marginBottom: spacing.sm,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
   successSub: {
     fontSize: 14,
     color: colors.neutral500,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   successDate: {
     fontSize: 13,
     color: colors.neutral500,
-    marginBottom: spacing.xl,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  successBtn: {
+    marginTop: spacing.sm,
+    minHeight: 52,
+    height: undefined,
+    paddingVertical: spacing.md,
   },
   secondaryBtn: {
-    height: 48,
-    borderRadius: radius.md,
+    minHeight: 52,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.primary700,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.sm,
     paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     alignSelf: 'stretch',
+    width: '100%',
+    backgroundColor: colors.primary100,
   },
   secondaryBtnText: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.brandPrimary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
   },
   modalOverlay: {
     flex: 1,

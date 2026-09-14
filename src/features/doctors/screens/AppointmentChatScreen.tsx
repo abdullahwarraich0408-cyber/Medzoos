@@ -11,13 +11,18 @@ import {
   ActivityIndicator,
   Linking,
   Image,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../../../components/layout/ScreenLayout';
-import { KeyboardAvoidingContainer } from '../../../components/keyboard';
+import {
+  KeyboardAvoidingContainer,
+  useKeyboardBottomInset,
+} from '../../../components/keyboard';
 import { RequireAuthGate } from '../../auth/components/RequireAuthGate';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import {
@@ -157,12 +162,61 @@ function HeaderActionButton({
   );
 }
 
+function ChatComposer({
+  draft,
+  onChangeDraft,
+  onSend,
+  sending = false,
+  disabled = false,
+}: {
+  draft: string;
+  onChangeDraft: (value: string) => void;
+  onSend: () => void;
+  sending?: boolean;
+  disabled?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const keyboardInset = useKeyboardBottomInset();
+  const bottomPad =
+    keyboardInset > 0 ? spacing.sm : Math.max(insets.bottom, spacing.sm);
+
+  return (
+    <View style={[styles.inputBar, { paddingBottom: bottomPad }]}>
+      <TextInput
+        style={styles.input}
+        value={draft}
+        onChangeText={onChangeDraft}
+        placeholder="Type a message..."
+        placeholderTextColor={colors.textMuted}
+        multiline
+        maxLength={2000}
+        textAlignVertical="center"
+        blurOnSubmit={false}
+      />
+      <TouchableOpacity
+        style={[
+          styles.sendBtn,
+          (!draft.trim() || sending || disabled) && styles.sendBtnDisabled,
+        ]}
+        onPress={onSend}
+        disabled={!draft.trim() || sending || disabled}>
+        {sending ? (
+          <ActivityIndicator size="small" color={colors.white} />
+        ) : (
+          <Icon name="send" size={20} color={colors.white} />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 function DemoChatContent() {
   const route = useRoute<ChatRoute>();
   const navigation = useNavigation<ChatNav>();
-  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<MappedMessage>>(null);
   const [draft, setDraft] = useState('');
+  const keyboardInset = useKeyboardBottomInset();
 
   const demo = getDemoAppointment(route.params.appointmentId);
   const [messages, setMessages] = useState<MappedMessage[]>(() =>
@@ -180,11 +234,20 @@ function DemoChatContent() {
     }
   }, [messages.length]);
 
+  useEffect(() => {
+    if (keyboardInset > 0) {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      });
+    }
+  }, [keyboardInset]);
+
   const doctorTitle = shortDoctorName(
     route.params.doctorName || demo?.doctorName || 'Doctor',
   );
 
   const dateStamp = `Today, ${formatTime(new Date().toISOString())}`;
+  const hPad = width < 360 ? spacing.md : spacing.lg;
 
   const handleSend = () => {
     const text = draft.trim();
@@ -232,9 +295,11 @@ function DemoChatContent() {
           />
         ) : undefined
       }>
-      <KeyboardAvoidingContainer style={styles.flex} subtractSafeArea>
+      <KeyboardAvoidingContainer style={styles.flex} extraPadding={4}>
         {demo?.isOnline ? (
-          <TouchableOpacity style={styles.videoBtn} onPress={openVideo}>
+          <TouchableOpacity
+            style={[styles.videoBtn, { marginHorizontal: hPad }]}
+            onPress={openVideo}>
             <Icon name="video" size={18} color={colors.white} />
             <Text style={styles.videoBtnText}>Join video consultation</Text>
           </TouchableOpacity>
@@ -242,9 +307,12 @@ function DemoChatContent() {
 
         <FlatList
           ref={listRef}
+          style={styles.flex}
           data={messages}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: hPad }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           ListHeaderComponent={
             <View style={styles.datePillWrap}>
               <View style={styles.datePill}>
@@ -258,27 +326,11 @@ function DemoChatContent() {
           }
         />
 
-        <View
-          style={[
-            styles.inputBar,
-            { paddingBottom: Math.max(insets.bottom, spacing.sm) },
-          ]}>
-          <TextInput
-            style={styles.input}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            maxLength={2000}
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, !draft.trim() && styles.sendBtnDisabled]}
-            onPress={handleSend}
-            disabled={!draft.trim()}>
-            <Icon name="send" size={20} color={colors.white} />
-          </TouchableOpacity>
-        </View>
+        <ChatComposer
+          draft={draft}
+          onChangeDraft={setDraft}
+          onSend={handleSend}
+        />
       </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
@@ -288,9 +340,10 @@ function LiveChatContent() {
   const route = useRoute<ChatRoute>();
   const { appointmentId, doctorName: paramName } = route.params;
   const { user } = useAuth();
-  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<MappedMessage>>(null);
   const [draft, setDraft] = useState('');
+  const keyboardInset = useKeyboardBottomInset();
 
   const { data, isLoading, isError } = useAppointmentChat(appointmentId);
   const sendMessage = useSendAppointmentMessage(appointmentId);
@@ -311,6 +364,14 @@ function LiveChatContent() {
     }
   }, [messages.length]);
 
+  useEffect(() => {
+    if (keyboardInset > 0) {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      });
+    }
+  }, [keyboardInset]);
+
   const doctorTitle = useMemo(() => {
     const raw =
       paramName ||
@@ -321,6 +382,7 @@ function LiveChatContent() {
   }, [paramName, labels.doctorName, data?.appointment?.doctor?.name]);
 
   const avatarUrl = data?.appointment?.doctor?.photo_url || null;
+  const hPad = width < 360 ? spacing.md : spacing.lg;
 
   const dateStamp = useMemo(() => {
     const first = messages.find(m => m.createdAt)?.createdAt;
@@ -378,9 +440,9 @@ function LiveChatContent() {
           avatarUrl={avatarUrl}
         />
       }>
-      <KeyboardAvoidingContainer style={styles.flex} subtractSafeArea>
+      <KeyboardAvoidingContainer style={styles.flex} extraPadding={4}>
         {access?.reason && (
-          <View style={styles.notice}>
+          <View style={[styles.notice, { paddingHorizontal: hPad }]}>
             <Icon
               name={readOnly ? 'information-outline' : 'clock-outline'}
               size={18}
@@ -391,7 +453,9 @@ function LiveChatContent() {
         )}
 
         {canJoinVideo && (
-          <TouchableOpacity style={styles.videoBtn} onPress={handleJoinVideo}>
+          <TouchableOpacity
+            style={[styles.videoBtn, { marginHorizontal: hPad }]}
+            onPress={handleJoinVideo}>
             <Icon name="video" size={18} color={colors.white} />
             <Text style={styles.videoBtnText}>Join video consultation</Text>
           </TouchableOpacity>
@@ -408,9 +472,17 @@ function LiveChatContent() {
         ) : (
           <FlatList
             ref={listRef}
+            style={styles.flex}
             data={messages}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingHorizontal: hPad },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+            }
             ListHeaderComponent={
               <View style={styles.datePillWrap}>
                 <View style={styles.datePill}>
@@ -430,37 +502,14 @@ function LiveChatContent() {
           />
         )}
 
-        {!readOnly && access?.allowed && (
-          <View
-            style={[
-              styles.inputBar,
-              { paddingBottom: Math.max(insets.bottom, spacing.sm) },
-            ]}>
-            <TextInput
-              style={styles.input}
-              value={draft}
-              onChangeText={setDraft}
-              placeholder="Type a message..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={2000}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendBtn,
-                (!draft.trim() || sendMessage.isPending) &&
-                  styles.sendBtnDisabled,
-              ]}
-              onPress={handleSend}
-              disabled={!draft.trim() || sendMessage.isPending}>
-              {sendMessage.isPending ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <Icon name="send" size={20} color={colors.white} />
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+        {!readOnly && access?.allowed ? (
+          <ChatComposer
+            draft={draft}
+            onChangeDraft={setDraft}
+            onSend={handleSend}
+            sending={sendMessage.isPending}
+          />
+        ) : null}
       </KeyboardAvoidingContainer>
     </ScreenLayout>
   );
@@ -581,7 +630,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContent: {
-    padding: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     flexGrow: 1,
   },
@@ -612,12 +661,15 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     backgroundColor: colors.surfaceBlue,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    lineHeight: 18,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   bubbleBlock: {
     marginBottom: spacing.md,
-    maxWidth: '82%',
+    maxWidth: '85%',
     gap: 4,
   },
   bubbleBlockMine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
@@ -645,16 +697,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    width: '100%',
   },
   input: {
     flex: 1,
+    minWidth: 0,
     minHeight: 44,
-    maxHeight: 100,
+    maxHeight: 120,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.xl,
@@ -671,6 +725,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary700,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   sendBtnDisabled: { opacity: 0.5 },
 });

@@ -1,7 +1,11 @@
 import { Platform } from 'react-native';
 
-/** Production Medzoos API (same as website) */
-const PRODUCTION_API = 'https://backend.medzoos.com/api';
+/**
+ * Live Medzoos API — same URL as the website
+ * (`Frontend/.env.local.example` → NEXT_PUBLIC_API_URL).
+ * Verified: https://backend.medzoos.com/api/health
+ */
+export const PRODUCTION_API = 'https://backend.medzoos.com/api';
 
 /**
  * Local medzoos-backend port from `.env` (PORT=5001).
@@ -19,13 +23,16 @@ const LOCAL_ANDROID_USB = `http://127.0.0.1:${LOCAL_API_PORT}/api`;
 const LOCAL_IOS = `http://localhost:${LOCAL_API_PORT}/api`;
 
 /**
- * Set true to use Backend on your PC.
- * Set false to use the live deployed API.
+ * Debug only: hit the PC backend.
+ * Release / production builds (`__DEV__ === false`) always use PRODUCTION_API.
+ * Flip to `false` in debug if you want Metro to talk to live as well.
  */
-export const USE_LOCAL_API = true;
+const USE_LOCAL_API_IN_DEV = true;
+
+export const USE_LOCAL_API = __DEV__ && USE_LOCAL_API_IN_DEV;
 
 /**
- * How your Android device reaches the PC backend:
+ * How your Android device reaches the PC backend (debug only):
  * - `usb`      — phone plugged in via USB + `adb reverse` (recommended)
  * - `wifi`     — phone on same Wi‑Fi; set LOCAL_DEV_HOST to your PC IPv4
  * - `emulator` — Android Studio emulator (10.0.2.2)
@@ -58,8 +65,12 @@ export function getApiBaseUrl(): string {
   return localWifiApi;
 }
 
+export function getSocketUrl(): string {
+  return getApiBaseUrl().replace(/\/api\/?$/, '');
+}
+
 /** Logged in dev to confirm which API the app uses */
 export function getApiConnectionLabel(): string {
-  if (!USE_LOCAL_API) return 'Production API';
+  if (!USE_LOCAL_API) return `Production · ${PRODUCTION_API}`;
   return getApiBaseUrl();
 }

@@ -1,0 +1,1 @@
+/Users/apple/react native/HubFrontend/Medzoos/android/app/build/intermediates/cxx/RelWithDebInfo/2c6f3o4j/obj/arm64-v8a

@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Keyboard, Platform, type KeyboardEvent } from 'react-native';
+import {
+  Dimensions,
+  Keyboard,
+  Platform,
+  type KeyboardEvent,
+} from 'react-native';
 
 /**
  * Tracks keyboard height for edge-to-edge Android (where adjustResize is a no-op
  * once WindowCompat.setDecorFitsSystemWindows(window, false) is set) and iOS.
+ *
+ * Uses keyboard top (screenY) vs window height so the composer is not covered.
  */
 export function useKeyboardBottomInset(enabled = true): number {
   const [inset, setInset] = useState(0);
@@ -19,12 +26,17 @@ export function useKeyboardBottomInset(enabled = true): number {
     const hideEvent =
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const onShow = (e: KeyboardEvent) => {
-      setInset(e.endCoordinates.height);
+    const resolveInset = (e: KeyboardEvent) => {
+      const winH = Dimensions.get('window').height;
+      const fromScreenY = winH - e.endCoordinates.screenY;
+      // Prefer geometry over reported height — more reliable on edge-to-edge Android.
+      const next = Math.max(e.endCoordinates.height, fromScreenY, 0);
+      setInset(Math.round(next));
     };
+
     const onHide = () => setInset(0);
 
-    const showSub = Keyboard.addListener(showEvent, onShow);
+    const showSub = Keyboard.addListener(showEvent, resolveInset);
     const hideSub = Keyboard.addListener(hideEvent, onHide);
     return () => {
       showSub.remove();
