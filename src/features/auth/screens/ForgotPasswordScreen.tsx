@@ -47,6 +47,7 @@ export function ForgotPasswordScreen() {
         title="Password Reset Sent."
         subtitle="Please check your email in a few minutes — we've sent you a password recovery link."
         badge="PATIENT APP"
+        showBack={false}
         headerGraphic={
           <View style={styles.resetGraphic}>
             <Icon name="shield-lock-outline" size={48} color={authUi.accent} />
@@ -68,7 +69,8 @@ export function ForgotPasswordScreen() {
     <AuthScreenLayout
       title="Reset Password"
       subtitle="Enter your email address to receive recovery instructions."
-      badge="PATIENT APP">
+      badge="PATIENT APP"
+      showBack={false}>
       <AuthInput
         label="Email Address"
         icon="email-outline"

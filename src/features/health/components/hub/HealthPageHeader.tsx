@@ -11,8 +11,8 @@ type HealthPageHeaderProps = {
   firstName?: string;
   healthScore?: number;
   /**
-   * - simple: in-page title (Community / Copilot)
-   * - vault: Health-tab creative hero (light, not Home-like)
+   * - simple: in-page title
+   * - vault: Health-tab hero (same AuthGradientHeader as Home)
    * - hero: legacy score card
    */
   variant?: 'simple' | 'vault' | 'brand' | 'hero';

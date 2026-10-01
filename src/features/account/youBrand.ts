@@ -1,20 +1,22 @@
 /**
- * You / Profile brand — same teal as Home header (#105568),
- * with its own personal-hub layout identity.
+ * You / Profile brand — same DoctorApp / Home teal system.
  */
 export const youBrand = {
-  ink: '#0C4554',
-  accent: '#105568',
-  accentDeep: '#0C4554',
-  accentSoft: '#176B7D',
-  soft: '#E4F0F3',
-  mist: '#C5DCE2',
-  glaze: '#D7E8ED',
+  ink: '#10233F',
+  accent: '#006D72',
+  accentDeep: '#003E42',
+  accentSoft: '#00A3A8',
+  soft: '#EAF8F8',
+  mist: '#DDF6F2',
+  glaze: '#EAF8F8',
   page: '#FFFFFF',
   card: '#FFFFFF',
-  muted: '#5B7A85',
-  border: 'rgba(16, 85, 104, 0.14)',
+  muted: '#56657A',
+  border: 'rgba(0, 109, 114, 0.14)',
   onAccent: '#FFFFFF',
   danger: '#B42318',
   dangerSoft: '#FEE4E2',
+  gradientStart: '#00A3A8',
+  gradientMid: '#006D72',
+  gradientEnd: '#003E42',
 } as const;

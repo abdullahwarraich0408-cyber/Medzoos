@@ -22,15 +22,15 @@ import { getTabRootScreen } from '../../navigation/tabBarVisibility';
 
 const COPILOT_MARK = require('../../assets/branding/tab-copilot-mark.png');
 
-/** Tab bar brand — same teal as Home / Doctors (#105568). */
+/** Tab bar brand — same DoctorApp / Home teal. */
 const tabBrand = {
-  ink: '#0C4554',
-  accent: '#105568',
-  soft: '#E4F0F3',
-  mist: '#C5DCE2',
+  ink: '#10233F',
+  accent: '#006D72',
+  soft: '#EAF8F8',
+  mist: '#DDF6F2',
   card: '#FFFFFF',
-  muted: '#7A929C',
-  border: 'rgba(16, 85, 104, 0.14)',
+  muted: '#56657A',
+  border: 'rgba(0, 109, 114, 0.14)',
   onAccent: '#FFFFFF',
 } as const;
 
@@ -226,125 +226,135 @@ export function BottomTabBar({
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}>
       {visible ? (
-        <View
-          style={[styles.wrapper, { paddingBottom: bottomPad }]}
-          pointerEvents="box-none">
-          <View style={styles.barStage} pointerEvents="box-none">
-            <View style={styles.floatingBar}>
-              <View style={styles.barInner} pointerEvents="auto">
-                {TABS.map((tab, index) => {
-                  const route = state.routes.find(r => r.name === tab.name);
-                  if (!route) return null;
+        <>
+          {/* Fill Android/iOS system nav inset with same white as the tab pill */}
+          <View
+            style={[
+              styles.systemNavFill,
+              { height: Math.max(insets.bottom, 12) },
+            ]}
+            pointerEvents="none"
+          />
+          <View
+            style={[styles.wrapper, { paddingBottom: bottomPad }]}
+            pointerEvents="box-none">
+            <View style={styles.barStage} pointerEvents="box-none">
+              <View style={styles.floatingBar}>
+                <View style={styles.barInner} pointerEvents="auto">
+                  {TABS.map((tab, index) => {
+                    const route = state.routes.find(r => r.name === tab.name);
+                    if (!route) return null;
 
-                  const isFocused = activeIndex === index;
+                    const isFocused = activeIndex === index;
 
-                  if (tab.isCenter) {
+                    if (tab.isCenter) {
+                      return (
+                        <View key={tab.name} style={styles.centerSlot}>
+                          <Text
+                            style={[
+                              styles.centerLabel,
+                              isFocused && styles.centerLabelActive,
+                            ]}>
+                            {tab.label}
+                          </Text>
+                          {isFocused ? (
+                            <View style={styles.activeDot} />
+                          ) : (
+                            <View style={styles.activeDotSpacer} />
+                          )}
+                        </View>
+                      );
+                    }
+
                     return (
-                      <View key={tab.name} style={styles.centerSlot}>
-                        <Text
-                          style={[
-                            styles.centerLabel,
-                            isFocused && styles.centerLabelActive,
-                          ]}>
-                          {tab.label}
-                        </Text>
-                        {isFocused ? (
-                          <View style={styles.activeDot} />
-                        ) : (
-                          <View style={styles.activeDotSpacer} />
-                        )}
-                      </View>
+                      <SideTab
+                        key={tab.name}
+                        label={tab.label}
+                        icon={tab.icon}
+                        iconFocused={tab.iconFocused}
+                        isFocused={isFocused}
+                        disabled={!visible}
+                        accessibilityLabel={
+                          descriptors[route.key]?.options
+                            .tabBarAccessibilityLabel ?? tab.label
+                        }
+                        onPress={() => handleTabPress(index, isFocused)}
+                        onLongPress={() =>
+                          navigation.emit({
+                            type: 'tabLongPress',
+                            target: route.key,
+                          })
+                        }
+                      />
                     );
-                  }
+                  })}
+                </View>
+              </View>
 
-                  return (
-                    <SideTab
-                      key={tab.name}
-                      label={tab.label}
-                      icon={tab.icon}
-                      iconFocused={tab.iconFocused}
-                      isFocused={isFocused}
-                      disabled={!visible}
-                      accessibilityLabel={
-                        descriptors[route.key]?.options
-                          .tabBarAccessibilityLabel ?? tab.label
-                      }
-                      onPress={() => handleTabPress(index, isFocused)}
-                      onLongPress={() =>
-                        navigation.emit({
-                          type: 'tabLongPress',
-                          target: route.key,
-                        })
-                      }
-                    />
-                  );
-                })}
+              <View style={styles.centerFabSlot} pointerEvents="box-none">
+                <Pressable
+                  style={styles.centerFab}
+                  onPress={() => handleTabPress(centerIndex, centerFocused)}
+                  onPressIn={() =>
+                    Animated.spring(fabScale, {
+                      toValue: 0.94,
+                      useNativeDriver: true,
+                      friction: 6,
+                    }).start()
+                  }
+                  onPressOut={() =>
+                    Animated.spring(fabScale, {
+                      toValue: 1,
+                      useNativeDriver: true,
+                      friction: 5,
+                    }).start()
+                  }
+                  onLongPress={() => {
+                    const route = state.routes.find(r => r.name === 'Copilot');
+                    if (route) {
+                      navigation.emit({
+                        type: 'tabLongPress',
+                        target: route.key,
+                      });
+                    }
+                  }}
+                  disabled={!visible}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    selected: centerFocused,
+                    disabled: !visible,
+                  }}
+                  accessibilityLabel="Medzoos">
+                  <Animated.View
+                    style={[
+                      styles.centerRing,
+                      centerFocused && styles.centerRingActive,
+                      { transform: [{ scale: fabScale }] },
+                    ]}>
+                    <View
+                      style={[
+                        styles.centerBtn,
+                        centerFocused && styles.centerBtnActive,
+                      ]}>
+                      <Image
+                        source={COPILOT_MARK}
+                        style={styles.centerLogo}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </Animated.View>
+                </Pressable>
               </View>
             </View>
-
-            <View style={styles.centerFabSlot} pointerEvents="box-none">
-              <Pressable
-                style={styles.centerFab}
-                onPress={() => handleTabPress(centerIndex, centerFocused)}
-                onPressIn={() =>
-                  Animated.spring(fabScale, {
-                    toValue: 0.94,
-                    useNativeDriver: true,
-                    friction: 6,
-                  }).start()
-                }
-                onPressOut={() =>
-                  Animated.spring(fabScale, {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    friction: 5,
-                  }).start()
-                }
-                onLongPress={() => {
-                  const route = state.routes.find(r => r.name === 'Copilot');
-                  if (route) {
-                    navigation.emit({
-                      type: 'tabLongPress',
-                      target: route.key,
-                    });
-                  }
-                }}
-                disabled={!visible}
-                accessibilityRole="button"
-                accessibilityState={{
-                  selected: centerFocused,
-                  disabled: !visible,
-                }}
-                accessibilityLabel="Medzoos">
-                <Animated.View
-                  style={[
-                    styles.centerRing,
-                    centerFocused && styles.centerRingActive,
-                    { transform: [{ scale: fabScale }] },
-                  ]}>
-                  <View
-                    style={[
-                      styles.centerBtn,
-                      centerFocused && styles.centerBtnActive,
-                    ]}>
-                    <Image
-                      source={COPILOT_MARK}
-                      style={styles.centerLogo}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </Animated.View>
-              </Pressable>
-            </View>
           </View>
-        </View>
+        </>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  /** Floats over screen content — no solid band behind the pill. */
+  /** Floats over screen content — white system-nav fill sits under the pill. */
   shell: {
     position: 'absolute',
     left: 0,
@@ -360,6 +370,13 @@ const styles = StyleSheet.create({
     height: 0,
     overflow: 'hidden',
     opacity: 0,
+  },
+  systemNavFill: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: tabBrand.card,
   },
   wrapper: {
     ...StyleSheet.absoluteFill,
@@ -458,13 +475,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingBottom: 0,
-    paddingTop: 30,
+    paddingTop: 14,
   },
   centerFabSlot: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: TAB_BAR_HEIGHT - 20,
+    /** Slightly above the pill — not a tall floating lift */
+    bottom: TAB_BAR_HEIGHT - 30,
     alignItems: 'center',
     zIndex: 20,
   },

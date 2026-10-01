@@ -6,8 +6,6 @@ import {
   Pressable,
   View,
   RefreshControl,
-  StatusBar,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -138,34 +136,30 @@ export function CommunityHomeScreen() {
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={communityBrand.page}
+      backgroundColor={communityBrand.gradientStart}
       embedSafeAreaInChildren>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
+      <CommunityHeader
+        title="Community"
+        subtitle={communityCopy.pageHint}
+        onBackPress={() =>
+          navigateToMainTabs(navigation, 'Home', 'Dashboard')
+        }
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={communityBrand.accent}
-            colors={[communityBrand.accent]}
-          />
-        }>
-        <CommunityHeader
-          title="Community"
-          subtitle={communityCopy.pageHint}
-          onBackPress={() =>
-            navigateToMainTabs(navigation, 'Home', 'Dashboard')
-          }
-        />
 
+      <View style={styles.contentSheet}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={communityBrand.accent}
+              colors={[communityBrand.accent]}
+            />
+          }>
         <View style={styles.body}>
           <CommunitySegmentTabs
             segments={SEGMENTS}
@@ -403,14 +397,24 @@ export function CommunityHomeScreen() {
             />
           )}
         </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  contentSheet: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: communityBrand.page,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
+    paddingTop: spacing.lg,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
     gap: spacing.lg,
   },

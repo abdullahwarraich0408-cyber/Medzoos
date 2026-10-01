@@ -4,8 +4,8 @@ import { spacing } from './spacing';
 /** Inner height of the floating tab pill (icons + labels). */
 export const TAB_BAR_HEIGHT = 64;
 
-/** Extra space so the raised Copilot button does not cover screen content. */
-export const TAB_BAR_CENTER_LIFT = 24;
+/** Extra space so the slightly raised Medzoos button clears content. */
+export const TAB_BAR_CENTER_LIFT = 10;
 
 /**
  * Scroll padding so content clears the floating (overlay) tab bar.

@@ -1,18 +1,25 @@
-﻿import React, { ReactNode } from 'react';
+﻿import React, { ReactNode, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  Animated,
+  Easing,
   Image,
-  StatusBar,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from '../../../components/keyboard';
 import { StackBackButton } from '../../../components/navigation/StackBackButton';
+import { authLayout } from '../authLayout';
 import { authUi } from '../authUi';
+import { AuthGradientHeader } from './AuthGradientHeader';
 
 const wordmark = require('../../../assets/branding/splash-wordmark.png');
+
+/** Matches DoctorApp header bottom radius (radius.xl = 20). */
+const HEADER_RADIUS = 20;
 
 type AuthScreenLayoutProps = {
   title: string;
@@ -28,6 +35,7 @@ type AuthScreenLayoutProps = {
   showTrust?: boolean;
   heroTitle?: string;
   heroSubtitle?: string;
+  headerAction?: { label: string; onPress: () => void };
 };
 
 export function AuthScreenLayout({
@@ -44,6 +52,27 @@ export function AuthScreenLayout({
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const portalLabel = (kicker || badge).toUpperCase();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const { s, pagePad, logoWidth, logoHeight, isCompact } = authLayout;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 460,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
 
   const handleBack = () => {
     if (onBack) {
@@ -55,53 +84,136 @@ export function AuthScreenLayout({
     }
   };
 
+  // Slightly taller header for brand presence
+  const headerPadTop = insets.top + (isCompact ? 12 : 16);
+  const headerPadBottom = isCompact ? 20 : 26;
+
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={authUi.bg} translucent />
+      <AuthGradientHeader
+        style={[
+          styles.header,
+          {
+            paddingTop: headerPadTop,
+            paddingBottom: headerPadBottom,
+            borderBottomLeftRadius: HEADER_RADIUS,
+            borderBottomRightRadius: HEADER_RADIUS,
+          },
+        ]}>
+        <View style={[styles.headerInner, { paddingHorizontal: pagePad }]}>
+          {showBack ? (
+            <View style={styles.headerTopRow}>
+              <StackBackButton onPress={handleBack} light />
+            </View>
+          ) : null}
+
+          {showBrand ? (
+            <Animated.View
+              style={[
+                styles.brandBlock,
+                {
+                  gap: s(12),
+                  marginTop: showBack ? 0 : s(6),
+                  opacity: fadeAnim,
+                  transform: [
+                    {
+                      translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [6, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}>
+              <View
+                style={[
+                  styles.logoCard,
+                  {
+                    paddingHorizontal: s(20),
+                    paddingVertical: s(12),
+                  },
+                ]}>
+                <Image
+                  source={wordmark}
+                  style={{ width: logoWidth, height: logoHeight }}
+                  resizeMode="contain"
+                  accessibilityLabel="Medzoos"
+                />
+              </View>
+              <Text style={[styles.portalBadgeText, { fontSize: s(11) }]}>
+                {portalLabel}
+              </Text>
+            </Animated.View>
+          ) : null}
+        </View>
+      </AuthGradientHeader>
+
       <KeyboardAwareScrollView
         style={styles.flex}
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + 24,
-            paddingBottom: Math.max(insets.bottom, 24) + 180,
+            paddingHorizontal: pagePad,
+            paddingTop: s(isCompact ? 16 : 18),
+            paddingBottom: Math.max(insets.bottom, 16) + s(24),
           },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        extraScrollHeight={40}>
-        {showBack ? (
-          <View style={styles.backWrap}>
-            <StackBackButton onPress={handleBack} />
+        extraScrollHeight={56}>
+        <Animated.View
+          style={[
+            styles.content,
+            {
+              paddingHorizontal: s(18),
+              paddingTop: s(22),
+              paddingBottom: s(18),
+              opacity: slideAnim,
+              transform: [
+                {
+                  translateY: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [14, 0],
+                  }),
+                },
+              ],
+            },
+          ]}>
+          <View
+            style={[
+              styles.headerTextWrap,
+              { marginBottom: s(22), gap: s(5) },
+            ]}>
+            {headerGraphic}
+            <Text
+              style={[
+                styles.title,
+                {
+                  fontSize: s(isCompact ? 22 : 24),
+                  lineHeight: s(isCompact ? 28 : 30),
+                  letterSpacing: -0.55,
+                },
+              ]}
+              numberOfLines={2}>
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    fontSize: s(13),
+                    lineHeight: s(19),
+                    marginTop: s(1),
+                  },
+                ]}>
+                {subtitle}
+              </Text>
+            ) : null}
           </View>
-        ) : (
-          <View style={styles.backSpacer} />
-        )}
 
-        {showBrand ? (
-          <View style={styles.logoContainer}>
-            <View style={styles.logoGlow} />
-            <View style={styles.logoCard}>
-              <Image
-                source={wordmark}
-                style={styles.logoImage}
-                resizeMode="contain"
-                accessibilityLabel="Medzoos"
-              />
-            </View>
-            <View style={styles.portalBadge}>
-              <Text style={styles.portalBadgeText}>{portalLabel}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        <View style={styles.headerTextWrap}>
-          {headerGraphic}
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-
-        <View style={styles.formContainer}>{children}</View>
+          <View style={[styles.formContainer, { gap: s(15) }]}>{children}</View>
+        </Animated.View>
       </KeyboardAwareScrollView>
     </View>
   );
@@ -115,87 +227,79 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 24,
+  header: {
+    width: '100%',
+    zIndex: 1,
+  },
+  headerInner: {
+    width: '100%',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 36,
+    marginBottom: 2,
   },
-  backWrap: {
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  backSpacer: {
-    height: 8,
-    alignSelf: 'stretch',
-  },
-  logoContainer: {
+  brandBlock: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
-    position: 'relative',
-  },
-  logoGlow: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(16, 85, 104, 0.08)',
+    paddingBottom: 4,
+    gap: 8,
   },
   logoCard: {
     backgroundColor: authUi.white,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(16, 85, 104, 0.22)',
-    shadowColor: authUi.ink,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 4,
+    borderRadius: 18,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#003E42',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+      },
+      android: { elevation: 5 },
+    }),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoImage: {
-    width: 150,
-    height: 38,
-  },
-  portalBadge: {
-    marginTop: 10,
-    backgroundColor: 'rgba(16, 85, 104, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 85, 104, 0.18)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
   portalBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: authUi.accent,
-    letterSpacing: 1.2,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 1.7,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    width: '100%',
+    backgroundColor: authUi.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: authUi.inputBorder,
+    ...Platform.select({
+      ios: {
+        shadowColor: authUi.ink,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+      },
+      android: { elevation: 2 },
+    }),
   },
   headerTextWrap: {
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 6,
+    alignItems: 'flex-start',
     width: '100%',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontWeight: Platform.OS === 'ios' ? '700' : '700',
     color: authUi.ink,
-    letterSpacing: -0.55,
-    textAlign: 'center',
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
   },
   subtitle: {
-    fontSize: 14,
+    fontWeight: '400',
     color: authUi.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 290,
+    letterSpacing: 0.15,
   },
   formContainer: {
     width: '100%',
-    gap: 10,
   },
 });

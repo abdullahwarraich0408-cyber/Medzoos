@@ -7,8 +7,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  StatusBar,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,10 +43,10 @@ function AccountHomeLoading() {
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={youBrand.page}
+      backgroundColor={youBrand.gradientStart}
       embedSafeAreaInChildren>
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={youBrand.accent} />
+        <ActivityIndicator size="large" color={youBrand.onAccent} />
       </View>
     </ScreenLayout>
   );
@@ -88,59 +86,56 @@ function GuestAccountHome({
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={youBrand.page}
+      backgroundColor={youBrand.gradientStart}
       embedSafeAreaInChildren>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
+      <YouProfileHeader
+        displayName="Guest"
+        isVerified={false}
+        onEditProfile={() => navigation.navigate('SignIn')}
+        onFamilyMembers={() => navigation.navigate('SignIn')}
+        onBackPress={() =>
+          navigateToMainTabs(drawerNavigation, 'Home', 'Dashboard')
+        }
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        <YouProfileHeader
-          displayName="Guest"
-          isVerified={false}
-          onEditProfile={() => navigation.navigate('SignIn')}
-          onFamilyMembers={() => navigation.navigate('SignIn')}
-          onBackPress={() =>
-            navigateToMainTabs(drawerNavigation, 'Home', 'Dashboard')
-          }
-        />
 
-        <View style={styles.body}>
-          <Text style={styles.guestTitle}>{youCopy.guestTitle}</Text>
-          <Text style={styles.guestSubtitle}>{youCopy.guestMessage}</Text>
+      <View style={styles.contentSheet}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.body}>
+            <Text style={styles.guestTitle}>{youCopy.guestTitle}</Text>
+            <Text style={styles.guestSubtitle}>{youCopy.guestMessage}</Text>
 
-          <View style={styles.actions}>
-            <PrimaryAction
-              icon="login"
-              title="Sign in"
-              onPress={() => navigation.navigate('SignIn')}
-            />
-            <PrimaryAction
-              icon="account-plus-outline"
-              title="Create account"
-              onPress={() => navigation.navigate('Register')}
-              variant="neutral"
-            />
-          </View>
-
-          <CollapsibleSection title="Browse without signing in">
-            {ACCOUNT_QUICK_LINKS.map(item => (
-              <SimpleRow
-                key={item.id}
-                icon={item.icon}
-                iconColor={item.iconColor}
-                title={item.title}
-                message={item.subtitle}
-                onPress={() => handleQuickLink(item)}
+            <View style={styles.actions}>
+              <PrimaryAction
+                icon="login"
+                title="Sign in"
+                onPress={() => navigation.navigate('SignIn')}
               />
-            ))}
-          </CollapsibleSection>
-        </View>
-      </ScrollView>
+              <PrimaryAction
+                icon="account-plus-outline"
+                title="Create account"
+                onPress={() => navigation.navigate('Register')}
+                variant="neutral"
+              />
+            </View>
+
+            <CollapsibleSection title="Browse without signing in">
+              {ACCOUNT_QUICK_LINKS.map(item => (
+                <SimpleRow
+                  key={item.id}
+                  icon={item.icon}
+                  iconColor={item.iconColor}
+                  title={item.title}
+                  message={item.subtitle}
+                  onPress={() => handleQuickLink(item)}
+                />
+              ))}
+            </CollapsibleSection>
+          </View>
+        </ScrollView>
+      </View>
     </ScreenLayout>
   );
 }
@@ -196,51 +191,48 @@ function AuthenticatedAccountHome({
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={youBrand.page}
+      backgroundColor={youBrand.gradientStart}
       embedSafeAreaInChildren>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
+      <YouProfileHeader
+        displayName={displayName}
+        isVerified={isVerified}
+        onEditProfile={() => handleProfileAction(YOU_PROFILE_ACTIONS[0])}
+        onFamilyMembers={() => handleProfileAction(YOU_PROFILE_ACTIONS[1])}
+        onBackPress={() =>
+          navigateToMainTabs(drawerNavigation, 'Home', 'Dashboard')
+        }
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
-        <YouProfileHeader
-          displayName={displayName}
-          isVerified={isVerified}
-          onEditProfile={() => handleProfileAction(YOU_PROFILE_ACTIONS[0])}
-          onFamilyMembers={() => handleProfileAction(YOU_PROFILE_ACTIONS[1])}
-          onBackPress={() =>
-            navigateToMainTabs(drawerNavigation, 'Home', 'Dashboard')
-          }
-        />
 
-        <View style={styles.body}>
-          <YouLinkSection
-            title="My activity"
-            items={YOU_ACTIVITY_LINKS}
-            onPressItem={item => {
-              const link = YOU_ACTIVITY_LINKS.find(l => l.id === item.id);
-              if (link) handleActivityPress(link);
-            }}
-          />
+      <View style={styles.contentSheet}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.body}>
+            <YouLinkSection
+              title="My activity"
+              items={YOU_ACTIVITY_LINKS}
+              onPressItem={item => {
+                const link = YOU_ACTIVITY_LINKS.find(l => l.id === item.id);
+                if (link) handleActivityPress(link);
+              }}
+            />
 
-          <AccountSettingsGroup onPressItem={handleSettingsPress} />
+            <AccountSettingsGroup onPressItem={handleSettingsPress} />
 
-          <EmergencySupportStrip onPress={handleEmergency} />
+            <EmergencySupportStrip onPress={handleEmergency} />
 
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={onLogout}
-            activeOpacity={0.85}>
-            <Icon name="logout" size={18} color={youBrand.danger} />
-            <Text style={styles.logoutText}>Sign out</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              style={styles.logoutBtn}
+              onPress={onLogout}
+              activeOpacity={0.85}>
+              <Icon name="logout" size={18} color={youBrand.danger} />
+              <Text style={styles.logoutText}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
     </ScreenLayout>
   );
 }
@@ -300,10 +292,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  contentSheet: {
+    flex: 1,
+    width: '100%',
     backgroundColor: youBrand.page,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
   },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
+    paddingTop: spacing.lg,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
     gap: spacing.lg,
   },

@@ -1,22 +1,21 @@
 /**
- * App-wide visual system — matches Home.
- * Use these for screen washes and primary accents so every surface stays consistent.
+ * App-wide visual system — DoctorApp / Medzoos auth teal.
+ * Use for headers, accents, and L→R brand washes.
  */
 export const appBrand = {
-  /** Primary teal (Home header / accents) */
-  main: '#105568',
-  header: '#105568',
-  /** Soft L→R wash around main (same hue — gentle, no muddy bands) */
-  gradientStart: '#156A7C',
-  gradientMid: '#105568',
-  gradientEnd: '#0D4A58',
-  ink: '#0C4554',
-  soft: '#E4F0F3',
-  mist: '#C5DCE2',
-  muted: '#5B7A85',
-  border: 'rgba(16, 85, 104, 0.14)',
+  /** Primary teal (DoctorApp) */
+  main: '#006D72',
+  header: '#006D72',
+  /** Same stops as DoctorApp GreenGradientHeader / auth headers */
+  gradientStart: '#00A3A8',
+  gradientMid: '#006D72',
+  gradientEnd: '#003E42',
+  ink: '#10233F',
+  soft: '#EAF8F8',
+  mist: '#DDF6F2',
+  muted: '#56657A',
+  border: 'rgba(0, 109, 114, 0.14)',
   onMain: '#FFFFFF',
-  /** Base screen wash — same as Home */
   page: '#FFFFFF',
   card: '#FFFFFF',
 } as const;

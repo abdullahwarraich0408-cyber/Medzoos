@@ -8,16 +8,17 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { appBrand } from '../../theme/appBrand';
+import { authUi } from '../authUi';
 
-type BrandGradientFillProps = {
+type AuthGradientHeaderProps = {
   style?: StyleProp<ViewStyle>;
-  /** Prefer putting text/actions as siblings above this fill — children are optional. */
   children?: React.ReactNode;
-  contentStyle?: StyleProp<ViewStyle>;
-  /** Mid stop override; defaults to DoctorApp primary. */
-  baseColor?: string;
 };
+
+/** Same stops as DoctorApp GreenGradientHeader */
+const GRAD_LEFT = '#00A3A8';
+const GRAD_MID = '#006D72';
+const GRAD_RIGHT = '#003E42';
 
 const BANDS = [
   '#00A3A8',
@@ -47,6 +48,7 @@ function hasNativeSvgGradient(): boolean {
           getConfig('RNSVGSvgView'),
       );
     }
+    // Legacy Paper API
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const has = (UIManager as any).hasViewManagerConfig;
     if (typeof has === 'function') {
@@ -59,38 +61,29 @@ function hasNativeSvgGradient(): boolean {
 }
 
 /**
- * Smooth L→R DoctorApp teal gradient (same as auth headers).
- * Uses native SVG when linked; otherwise View bands (no crash).
+ * DoctorApp-identical L→R teal gradient when native SVG is linked.
+ * Falls back to View color bands so Sign In never crashes mid-render.
  */
-export function BrandGradientFill({
-  style,
-  children,
-  contentStyle,
-  baseColor = appBrand.gradientMid,
-}: BrandGradientFillProps) {
+export function AuthGradientHeader({ style, children }: AuthGradientHeaderProps) {
   const useSvg = useMemo(() => hasNativeSvgGradient(), []);
-  const gradId = `brand-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const gradId = `authHdr-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const [layout, setLayout] = useState({ width: 0, height: 0 });
 
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (
       width > 0 &&
       height > 0 &&
-      (width !== size.width || height !== size.height)
+      (width !== layout.width || height !== layout.height)
     ) {
-      setSize({ width, height });
+      setLayout({ width, height });
     }
   };
 
-  const mid = baseColor || appBrand.gradientMid;
-  const { width: w, height: h } = size;
+  const { width: w, height: h } = layout;
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: mid }, style]}
-      onLayout={onLayout}
-      pointerEvents={children ? 'box-none' : 'none'}>
+    <View style={[styles.container, style]} onLayout={onLayout}>
       {useSvg && w > 0 && h > 0 ? (
         <Svg width={w} height={h} style={styles.svg} pointerEvents="none">
           <Defs>
@@ -101,9 +94,9 @@ export function BrandGradientFill({
               x2={w}
               y2="0"
               gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor={appBrand.gradientStart} />
-              <Stop offset="0.5" stopColor={mid} />
-              <Stop offset="1" stopColor={appBrand.gradientEnd} />
+              <Stop offset="0" stopColor={GRAD_LEFT} />
+              <Stop offset="0.5" stopColor={GRAD_MID} />
+              <Stop offset="1" stopColor={GRAD_RIGHT} />
             </LinearGradient>
           </Defs>
           <Rect x={0} y={0} width={w} height={h} fill={`url(#${gradId})`} />
@@ -115,25 +108,21 @@ export function BrandGradientFill({
           ))}
         </View>
       )}
-
-      {children != null ? (
-        <View style={[styles.content, contentStyle]} pointerEvents="box-none">
-          {children}
-        </View>
-      ) : null}
+      {children}
     </View>
   );
 }
 
-/** @deprecated Use BrandGradientFill */
-export const TealGradientFill = BrandGradientFill;
-
 const styles = StyleSheet.create({
   container: {
+    position: 'relative',
     overflow: 'hidden',
+    backgroundColor: authUi.gradientStart,
   },
   svg: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   wash: {
     ...StyleSheet.absoluteFillObject,
@@ -142,8 +131,5 @@ const styles = StyleSheet.create({
   band: {
     flex: 1,
     height: '100%',
-  },
-  content: {
-    ...StyleSheet.absoluteFillObject,
   },
 });

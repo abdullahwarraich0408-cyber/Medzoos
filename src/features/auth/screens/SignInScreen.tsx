@@ -11,10 +11,10 @@ import {
   AuthDivider,
   AuthLink,
   AuthPrimaryButton,
-  AuthSecondaryButton,
 } from '../components/AuthButtons';
 import { SocialLogin } from '../components/SocialLogin';
 import { continueAfterAuth } from '../../../lib/auth/needsProfileCompletion';
+import { authLayout } from '../authLayout';
 import { authUi } from '../authUi';
 
 export function SignInScreen() {
@@ -28,6 +28,7 @@ export function SignInScreen() {
     {},
   );
   const [loading, setLoading] = useState(false);
+  const { s } = authLayout;
 
   const afterAuth = (
     sessionUser?: { name?: string | null; email?: string | null } | null,
@@ -60,8 +61,8 @@ export function SignInScreen() {
 
   return (
     <AuthScreenLayout
-      title="Sign In to Medzoos"
-      subtitle="Access your patient care workspace securely."
+      title="Welcome Back"
+      subtitle="Sign in to continue your care journey"
       badge="PATIENT APP"
       showBack={false}>
       <AuthInput
@@ -88,69 +89,79 @@ export function SignInScreen() {
         error={errors.password}
       />
 
-      <View style={styles.optionsRow}>
-        <Pressable
-          style={styles.checkboxRow}
-          onPress={() => setRememberMe(v => !v)}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: rememberMe }}>
-          <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
-            {rememberMe ? (
-              <Icon name="check" size={12} color={authUi.white} />
-            ) : null}
-          </View>
-          <Text style={styles.checkboxLabel}>Remember for 30 days</Text>
-        </Pressable>
-        <AuthLink onPress={() => navigation.navigate('ForgotPassword')}>
-          Forgot Password
-        </AuthLink>
-      </View>
+      <Pressable
+        style={[styles.checkboxRow, { gap: s(8) }]}
+        onPress={() => setRememberMe(v => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: rememberMe }}>
+        <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+          {rememberMe ? (
+            <Icon name="check" size={s(11)} color={authUi.white} />
+          ) : null}
+        </View>
+        <Text style={[styles.checkboxLabel, { fontSize: s(12), letterSpacing: 0.1 }]}>
+          Remember for 30 days
+        </Text>
+      </Pressable>
 
       <AuthPrimaryButton
         label="Sign In"
         loading={loading}
         loadingLabel="Signing In..."
         onPress={submit}
+        showArrow
       />
-      <AuthSecondaryButton
-        label="Create New Account"
-        onPress={() => navigation.navigate('Register')}
-      />
-      <AuthDivider />
+
+      <AuthLink muted onPress={() => navigation.navigate('ForgotPassword')}>
+        Forgot your password?
+      </AuthLink>
+
+      <AuthDivider label="Or sign in with" />
       <SocialLogin onSuccess={afterAuth} />
+
+      <View style={[styles.footerRow, { gap: s(6), marginTop: s(4) }]}>
+        <Text style={[styles.footerMuted, { fontSize: s(13), letterSpacing: 0.1 }]}>
+          New to Medzoos?
+        </Text>
+        <AuthLink onPress={() => navigation.navigate('Register')}>
+          Create account
+        </AuthLink>
+      </View>
     </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  optionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 6,
-  },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1,
+    width: 17,
+    height: 17,
+    borderRadius: 4,
+    borderWidth: 1.5,
     borderColor: authUi.inputBorder,
-    backgroundColor: authUi.inputBg,
+    backgroundColor: authUi.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: authUi.medicalBlue,
+    backgroundColor: authUi.accent,
     borderColor: authUi.accent,
   },
   checkboxLabel: {
-    fontSize: 12,
     color: authUi.muted,
-    fontWeight: '600',
+    fontWeight: '500',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 2,
+  },
+  footerMuted: {
+    color: authUi.muted,
+    fontWeight: '400',
   },
 });

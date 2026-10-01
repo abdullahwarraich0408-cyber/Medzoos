@@ -108,7 +108,8 @@ export function RegisterScreen() {
     <AuthScreenLayout
       title="Sign Up to Medzoos"
       subtitle="Create a new patient care account."
-      badge="PATIENT APP">
+      badge="PATIENT APP"
+      showBack={false}>
       <AuthInput
         label="Full Name"
         icon="account-outline"

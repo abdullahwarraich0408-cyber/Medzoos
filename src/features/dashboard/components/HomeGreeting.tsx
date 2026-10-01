@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius } from '../../../theme';
 import { homeBrand } from '../homeBrand';
-import { BrandGradientFill } from '../../../components/branding/TealGradientFill';
+import { AuthGradientHeader } from '../../auth/components/AuthGradientHeader';
 
 type HomeGreetingProps = {
   firstName: string;
@@ -27,8 +27,8 @@ type HomeGreetingProps = {
 };
 
 /**
- * Full-bleed dark trust header — menu, location, greeting, search.
- * Brand teal gradient left → right behind content.
+ * Full-bleed trust header — same AuthGradientHeader as Sign In
+ * (#00A3A8 → #006D72 → #003E42, left → right).
  */
 export function HomeGreeting({
   firstName,
@@ -47,7 +47,6 @@ export function HomeGreeting({
 
   const locationTitle = useMemo(() => {
     const label = (locationLabel || 'Pakistan').trim();
-    // Prefer city/area only — drop long address tails
     const short = label.split(',')[0]?.trim() || label;
     if (short.length <= 14) return short;
     return `${short.slice(0, 12).trim()}…`;
@@ -57,20 +56,17 @@ export function HomeGreeting({
     Math.max(insets.top, Platform.OS === 'android' ? 12 : 0) + spacing.sm;
 
   return (
-    <View style={styles.header}>
-      <BrandGradientFill
-        baseColor={homeBrand.header}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: topPad,
-            paddingLeft: Math.max(insets.left, spacing.lg),
-            paddingRight: Math.max(insets.right, spacing.lg),
-          },
-        ]}>
+    <AuthGradientHeader
+      style={[
+        styles.header,
+        {
+          paddingTop: topPad,
+          paddingBottom: spacing.lg,
+          paddingLeft: Math.max(insets.left, spacing.lg),
+          paddingRight: Math.max(insets.right, spacing.lg),
+        },
+      ]}>
+      <View style={styles.content}>
         <View style={styles.topRow}>
           <Pressable
             style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
@@ -84,7 +80,10 @@ export function HomeGreeting({
           <View style={styles.topActions}>
             {onNotificationsPress ? (
               <Pressable
-                style={({ pressed }) => [styles.iconOutline, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.iconOutline,
+                  pressed && styles.pressed,
+                ]}
                 onPress={onNotificationsPress}
                 accessibilityLabel="Notifications"
                 hitSlop={6}>
@@ -94,7 +93,10 @@ export function HomeGreeting({
             ) : null}
 
             <Pressable
-              style={({ pressed }) => [styles.locationChip, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.locationChip,
+                pressed && styles.pressed,
+              ]}
               onPress={onLocationPress}
               accessibilityRole="button"
               accessibilityLabel={`Current location ${locationTitle}`}>
@@ -102,7 +104,11 @@ export function HomeGreeting({
               <Text style={styles.locationName} numberOfLines={1}>
                 {locationTitle}
               </Text>
-              <Icon name="chevron-down" size={14} color="rgba(255,255,255,0.8)" />
+              <Icon
+                name="chevron-down"
+                size={14}
+                color="rgba(255,255,255,0.8)"
+              />
             </Pressable>
           </View>
         </View>
@@ -134,7 +140,7 @@ export function HomeGreeting({
           </Pressable>
         </View>
       </View>
-    </View>
+    </AuthGradientHeader>
   );
 }
 
@@ -142,13 +148,10 @@ const styles = StyleSheet.create({
   header: {
     width: '100%',
     alignSelf: 'stretch',
-    backgroundColor: homeBrand.header,
-    overflow: 'hidden',
   },
   content: {
+    position: 'relative',
     zIndex: 1,
-    elevation: Platform.OS === 'android' ? 2 : 0,
-    paddingBottom: spacing.lg,
   },
   topRow: {
     flexDirection: 'row',

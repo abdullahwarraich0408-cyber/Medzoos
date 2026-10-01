@@ -6,6 +6,8 @@ import { appBrand } from '../../theme/appBrand';
 type StackBackButtonProps = {
   onPress: () => void;
   accessibilityLabel?: string;
+  /** For dark / gradient headers — translucent white chip. */
+  light?: boolean;
 };
 
 /**
@@ -14,6 +16,7 @@ type StackBackButtonProps = {
 export function StackBackButton({
   onPress,
   accessibilityLabel = 'Go back',
+  light = false,
 }: StackBackButtonProps) {
   return (
     <Pressable
@@ -22,11 +25,11 @@ export function StackBackButton({
       accessibilityLabel={accessibilityLabel}
       hitSlop={8}
       style={({ pressed }) => [styles.hit, pressed && styles.pressed]}>
-      <View style={styles.inner}>
+      <View style={[styles.inner, light && styles.innerLight]}>
         <Icon
           name="chevron-left"
           size={26}
-          color={appBrand.main}
+          color={light ? '#FFFFFF' : appBrand.main}
           style={styles.icon}
         />
       </View>
@@ -62,6 +65,16 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
       },
       android: { elevation: 1 },
+    }),
+  },
+  innerLight: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.32)',
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0,
+      },
+      android: { elevation: 0 },
     }),
   },
   icon: {

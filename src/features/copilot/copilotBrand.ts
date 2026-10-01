@@ -1,24 +1,27 @@
 /**
- * Medzoos AI Chat brand — same teal as Home / Doctors (#105568).
+ * Medzoos AI Chat brand — same DoctorApp / Home teal system.
  */
 export const copilotBrand = {
-  ink: '#0C4554',
-  accent: '#105568',
-  accentDeep: '#0C4554',
-  accentSoft: '#176B7D',
-  soft: '#E4F0F3',
-  mist: '#C5DCE2',
-  glaze: '#D7E8ED',
+  ink: '#10233F',
+  accent: '#006D72',
+  accentDeep: '#003E42',
+  accentSoft: '#00A3A8',
+  soft: '#EAF8F8',
+  mist: '#DDF6F2',
+  glaze: '#EAF8F8',
   page: '#FFFFFF',
   card: '#FFFFFF',
-  muted: '#5B7A85',
-  border: 'rgba(16, 85, 104, 0.14)',
+  muted: '#56657A',
+  border: 'rgba(0, 109, 114, 0.14)',
   onAccent: '#FFFFFF',
-  chip: '#E8F3F6',
+  chip: '#EAF8F8',
   success: '#1F7A65',
   successSoft: '#E3F5EF',
   danger: '#B42318',
   dangerSoft: '#FCEBEA',
   warning: '#B45309',
   warningSoft: '#FFF7ED',
+  gradientStart: '#00A3A8',
+  gradientMid: '#006D72',
+  gradientEnd: '#003E42',
 } as const;

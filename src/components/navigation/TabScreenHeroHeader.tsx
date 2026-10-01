@@ -3,81 +3,77 @@ import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
   Platform,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getStackHeaderPaddingTop } from '../../theme/layout';
-import { appBrand, stackScreenTitleStyle } from '../../theme/appBrand';
-import { tabHeroBanner, tabHeroCardShadow } from '../../theme/tabHeroBanner';
+import { spacing } from '../../theme';
+import { appBrand } from '../../theme/appBrand';
+import { tabHeroBanner } from '../../theme/tabHeroBanner';
 import { StackBackButton } from './StackBackButton';
-import { BrandGradientFill } from '../branding/TealGradientFill';
+import { AuthGradientHeader } from '../../features/auth/components/AuthGradientHeader';
 
 type TabScreenHeroHeaderProps = {
   /** Centered uppercase kicker (e.g. Health vault, Community, You). */
   screenTitle: string;
-  pageBackground: string;
-  /** Brand card color — gradient only adds depth on top of this. */
+  /** @deprecated Ignored — header uses the same AuthGradientHeader as Home / Sign In. */
+  pageBackground?: string;
+  /** @deprecated Ignored — gradient stops match Sign In / Home. */
   cardBackground?: string;
   onBackPress?: () => void;
   children: ReactNode;
-  /** Optional extra style on the fixed-size card (e.g. flexDirection). */
+  /** Optional extra style on the hero body. */
   cardStyle?: StyleProp<ViewStyle>;
+  /** Optional trailing control (e.g. Medzoos new-chat). */
+  headerRight?: ReactNode;
 };
 
 /**
- * Shared tab-root header: back + title + brand card with soft gradient depth.
- * Gradient is a background layer; card content is a sibling so it never gets covered.
+ * Shared tab-root header — same AuthGradientHeader wash as Home & Sign In
+ * (#00A3A8 → #006D72 → #003E42, left → right). Content sits inside the gradient.
  */
 export function TabScreenHeroHeader({
   screenTitle,
-  pageBackground,
-  cardBackground = appBrand.main,
   onBackPress,
   children,
   cardStyle,
+  headerRight,
 }: TabScreenHeroHeaderProps) {
   const insets = useSafeAreaInsets();
-  const topPad = getStackHeaderPaddingTop(insets.top);
+  const topPad =
+    Math.max(insets.top, Platform.OS === 'android' ? 12 : 0) + spacing.sm;
 
   return (
-    <View
+    <AuthGradientHeader
       style={[
-        styles.shell,
+        styles.header,
         {
           paddingTop: topPad,
+          paddingBottom: tabHeroBanner.shellPaddingBottom,
           paddingLeft: Math.max(insets.left, tabHeroBanner.horizontalInset),
           paddingRight: Math.max(insets.right, tabHeroBanner.horizontalInset),
-          backgroundColor: pageBackground,
         },
       ]}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <View style={styles.topBar}>
-        <StackBackButton onPress={() => onBackPress?.()} />
-        <Text style={styles.kicker} pointerEvents="none">
+        <StackBackButton light onPress={() => onBackPress?.()} />
+        <Text style={styles.kicker} pointerEvents="none" numberOfLines={1}>
           {screenTitle}
         </Text>
-        <View style={styles.sideSlot} />
+        <View style={styles.sideSlot}>
+          {headerRight ?? <View style={styles.sidePlaceholder} />}
+        </View>
       </View>
 
-      <View style={styles.card}>
-        <BrandGradientFill
-          baseColor={cardBackground}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={[styles.cardContent, cardStyle]}>{children}</View>
-      </View>
-    </View>
+      <View style={[styles.heroBody, cardStyle]}>{children}</View>
+    </AuthGradientHeader>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: {
+  header: {
     width: '100%',
-    paddingBottom: tabHeroBanner.shellPaddingBottom,
-    gap: tabHeroBanner.shellGap,
+    alignSelf: 'stretch',
   },
   topBar: {
     flexDirection: 'row',
@@ -87,26 +83,27 @@ const styles = StyleSheet.create({
   },
   kicker: {
     flex: 1,
-    ...stackScreenTitleStyle,
     marginHorizontal: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: appBrand.onMain,
+    textAlign: 'center',
   },
   sideSlot: {
+    minWidth: 44,
+    height: 44,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  sidePlaceholder: {
     width: 44,
     height: 44,
   },
-  card: {
-    width: '100%',
-    height: tabHeroBanner.height,
-    borderRadius: tabHeroBanner.radius,
-    overflow: 'hidden',
-    backgroundColor: appBrand.main,
-    ...tabHeroCardShadow,
-  },
-  cardContent: {
-    ...StyleSheet.absoluteFillObject,
-    padding: tabHeroBanner.padding,
-    justifyContent: 'center',
+  heroBody: {
+    marginTop: tabHeroBanner.shellGap,
+    minHeight: 112,
     zIndex: 1,
-    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
   },
 });

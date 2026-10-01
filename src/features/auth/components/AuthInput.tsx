@@ -6,8 +6,10 @@ import {
   StyleSheet,
   TextInputProps,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { authLayout } from '../authLayout';
 import { authUi } from '../authUi';
 
 type AuthInputProps = TextInputProps & {
@@ -31,25 +33,39 @@ export function AuthInput({
   const [visible, setVisible] = useState(false);
   const [focused, setFocused] = useState(false);
   const secure = Boolean(isPassword || secureTextEntry) && !visible;
+  const { s, isCompact } = authLayout;
+  const fieldH = s(isCompact ? 46 : 48);
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text
+        style={[
+          styles.label,
+          { fontSize: s(12), marginBottom: s(8), letterSpacing: 0.2 },
+        ]}>
+        {label}
+      </Text>
       <View
         style={[
           styles.inputRow,
+          {
+            height: fieldH,
+            borderRadius: 12,
+            paddingHorizontal: s(14),
+            gap: s(10),
+          },
           focused && styles.inputFocused,
           error ? styles.inputError : null,
         ]}>
         {icon ? (
           <Icon
             name={icon}
-            size={18}
+            size={s(17)}
             color={focused ? authUi.accent : authUi.iconMuted}
           />
         ) : null}
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, { fontSize: s(14), letterSpacing: 0.1 }, style]}
           placeholderTextColor={authUi.iconMuted}
           secureTextEntry={secure}
           onFocus={event => {
@@ -70,57 +86,53 @@ export function AuthInput({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Icon
               name={visible ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
+              size={s(18)}
               color={authUi.iconMuted}
             />
           </TouchableOpacity>
         ) : null}
       </View>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { fontSize: s(12), marginTop: s(6) }]}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 6,
     width: '100%',
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: authUi.muted,
-    marginBottom: 6,
-    marginTop: 4,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
     borderWidth: 1,
     borderColor: authUi.inputBorder,
-    borderRadius: 16,
-    backgroundColor: authUi.inputBg,
-    paddingHorizontal: 16,
-    gap: 10,
+    backgroundColor: authUi.white,
   },
   inputFocused: {
     borderColor: authUi.accent,
-    backgroundColor: authUi.inputFocusBg,
+    backgroundColor: authUi.iceBlue,
   },
   inputError: {
     borderColor: authUi.errorBorder,
+    backgroundColor: authUi.errorBg,
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontWeight: '400',
     color: authUi.ink,
     paddingVertical: 0,
     paddingHorizontal: 0,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
   },
   error: {
-    marginTop: 6,
-    fontSize: 12,
     fontWeight: '600',
     color: authUi.errorText,
   },

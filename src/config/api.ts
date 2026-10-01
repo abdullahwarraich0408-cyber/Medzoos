@@ -8,15 +8,14 @@ import { Platform } from 'react-native';
 export const PRODUCTION_API = 'https://backend.medzoos.com/api';
 
 /**
- * Local medzoos-backend port from `.env` (PORT=5001).
- * macOS often occupies 5000 (Control Center / AirPlay), so local API is 5001.
+ * Local medzoos-backend port from `.env` (PORT=5000).
  */
-export const LOCAL_API_PORT = 5001;
+export const LOCAL_API_PORT = 5000;
 
 /** Android emulator → host machine localhost */
 const LOCAL_ANDROID_EMULATOR = `http://10.0.2.2:${LOCAL_API_PORT}/api`;
 
-/** Physical Android over USB (requires: adb reverse tcp:5001 tcp:5001) */
+/** Physical Android over USB (requires: adb reverse tcp:5000 tcp:5000) */
 const LOCAL_ANDROID_USB = `http://127.0.0.1:${LOCAL_API_PORT}/api`;
 
 /** iOS simulator → host machine localhost */

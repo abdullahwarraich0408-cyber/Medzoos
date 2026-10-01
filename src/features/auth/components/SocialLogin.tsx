@@ -3,6 +3,7 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import { formatFirebaseAuthError } from '../../../lib/auth/firebaseErrors';
+import { authLayout } from '../authLayout';
 import { authUi } from '../authUi';
 
 type SocialLoginProps = {
@@ -15,6 +16,8 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
   const { loginWithGoogle, loginWithApple } = useAuth();
   const [loading, setLoading] = useState<'google' | 'apple' | ''>('');
   const [error, setError] = useState('');
+  const { s, isCompact } = authLayout;
+  const btnH = s(isCompact ? 44 : 46);
 
   const run = async (
     provider: 'google' | 'apple',
@@ -34,67 +37,60 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
 
   return (
     <View style={styles.wrap}>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TouchableOpacity
-        style={styles.btn}
-        onPress={() => run('google', loginWithGoogle)}
-        disabled={Boolean(loading)}
-        accessibilityRole="button"
-        accessibilityLabel="Sign in with Google">
-        <Icon name="google" size={18} color="#EA4335" />
-        <Text style={styles.btnText}>
-          {loading === 'google' ? 'Connecting...' : 'Sign In With Google'}
-        </Text>
-      </TouchableOpacity>
-      {Platform.OS === 'ios' ? (
+      {error ? <Text style={[styles.error, { fontSize: s(12) }]}>{error}</Text> : null}
+      <View style={[styles.row, { gap: s(10) }]}>
         <TouchableOpacity
-          style={[styles.btn, styles.apple]}
-          onPress={() => run('apple', loginWithApple)}
+          style={[styles.btn, { height: btnH, borderRadius: 12 }]}
+          onPress={() => run('google', loginWithGoogle)}
           disabled={Boolean(loading)}
           accessibilityRole="button"
-          accessibilityLabel="Continue with Apple">
-          <Icon name="apple" size={18} color={authUi.white} />
-          <Text style={styles.appleText}>
-            {loading === 'apple' ? 'Connecting...' : 'Continue with Apple'}
+          accessibilityLabel="Sign in with Google">
+          <Icon name="google" size={s(16)} color="#EA4335" />
+          <Text style={[styles.btnText, { fontSize: s(13) }]}>
+            {loading === 'google' ? 'Connecting...' : 'Google'}
           </Text>
         </TouchableOpacity>
-      ) : null}
+        {Platform.OS === 'ios' ? (
+          <TouchableOpacity
+            style={[styles.btn, { height: btnH, borderRadius: 12 }]}
+            onPress={() => run('apple', loginWithApple)}
+            disabled={Boolean(loading)}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Apple">
+            <Icon name="apple" size={s(16)} color={authUi.ink} />
+            <Text style={[styles.btnText, { fontSize: s(13) }]}>
+              {loading === 'apple' ? 'Connecting...' : 'Apple'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: 10,
+    gap: 8,
     width: '100%',
   },
+  row: {
+    flexDirection: 'row',
+  },
   btn: {
-    height: 52,
-    borderRadius: 16,
+    flex: 1,
     borderWidth: 1,
     borderColor: authUi.inputBorder,
-    backgroundColor: authUi.inputBg,
+    backgroundColor: authUi.white,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-  },
-  apple: {
-    backgroundColor: '#082B3F',
-    borderColor: '#184D67',
+    gap: 8,
   },
   btnText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: authUi.ink,
   },
-  appleText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: authUi.white,
-  },
   error: {
-    fontSize: 12,
     fontWeight: '600',
     color: authUi.errorText,
     lineHeight: 18,

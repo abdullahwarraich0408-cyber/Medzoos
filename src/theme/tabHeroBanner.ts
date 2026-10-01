@@ -3,16 +3,16 @@ import { spacing } from './spacing';
 import { appBrand } from './appBrand';
 
 /**
- * Shared metrics for Health / Community / You tab hero cards.
- * Same size + same shell position so tab switches feel aligned.
+ * Shared metrics for Health / Community / You / Medzoos tab hero headers.
+ * Matches Home full-bleed gradient shell spacing.
  */
 export const tabHeroBanner = {
-  /** Fixed card height — fits You (avatar + actions) and Health/Community content. */
-  height: 160,
-  radius: 28,
+  /** Soft floor for hero copy area under the title row */
+  height: 120,
+  radius: 0,
   padding: spacing.lg,
   shellGap: spacing.md,
-  shellPaddingBottom: spacing.md,
+  shellPaddingBottom: spacing.lg,
   horizontalInset: spacing.lg,
   shadowColor: appBrand.main,
 } as const;

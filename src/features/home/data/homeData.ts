@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from 'react-native';
 import { iconScheme } from '../../../theme';
-import { homeBrand } from '../../dashboard/homeBrand';
+import { homeBannerPalette } from '../../dashboard/homeBrand';
 
 export type HomeSlideAction =
   | 'prescription'
@@ -49,7 +49,7 @@ export const HOME_HERO_SLIDES: HomePromoSlide[] = [
     title: 'Upload a prescription',
     description: 'Order medicines securely in a few taps.',
     cta: 'Upload now',
-    bg: homeBrand.bannerMid,
+    bg: homeBannerPalette[0],
     action: 'prescription',
     badge: 'Secure',
     image: IMAGE_BY_ACTION.prescription,
@@ -60,7 +60,7 @@ export const HOME_HERO_SLIDES: HomePromoSlide[] = [
     title: 'Talk to a doctor today',
     description: 'Online or in-clinic — book in minutes.',
     cta: 'Find a doctor',
-    bg: homeBrand.bannerDeep,
+    bg: homeBannerPalette[1],
     action: 'doctors',
     badge: 'Online',
     image: IMAGE_BY_ACTION.doctors,
@@ -71,7 +71,7 @@ export const HOME_HERO_SLIDES: HomePromoSlide[] = [
     title: 'Order medicines fast',
     description: 'Search from trusted pharmacies.',
     cta: 'Shop medicines',
-    bg: homeBrand.bannerSoft,
+    bg: homeBannerPalette[2],
     action: 'medicines',
     badge: 'Delivery',
     image: IMAGE_BY_ACTION.medicines,
@@ -82,7 +82,7 @@ export const HOME_HERO_SLIDES: HomePromoSlide[] = [
     title: 'Book lab tests easily',
     description: 'Home sampling where you need it.',
     cta: 'Book a test',
-    bg: homeBrand.bannerMid,
+    bg: homeBannerPalette[3],
     action: 'labs',
     badge: 'Home sampling',
     image: IMAGE_BY_ACTION.labs,
@@ -97,7 +97,7 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
     title: 'Flat 25% off on medicines',
     description: 'Save on medicines from pharmacies.',
     cta: 'Shop now',
-    bg: homeBrand.bannerMid,
+    bg: homeBannerPalette[0],
     action: 'medicines',
     badge: '25% OFF',
     image: IMAGE_BY_ACTION.medicines,
@@ -108,7 +108,7 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
     title: 'First consult from home',
     description: 'Book an online doctor consultation.',
     cta: 'Book now',
-    bg: homeBrand.bannerDeep,
+    bg: homeBannerPalette[1],
     action: 'doctors',
     badge: 'Online',
     image: IMAGE_BY_ACTION.doctors,
@@ -119,7 +119,7 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
     title: 'Lab tests with home sampling',
     description: 'Book diagnostic tests near you.',
     cta: 'Book test',
-    bg: homeBrand.bannerSoft,
+    bg: homeBannerPalette[2],
     action: 'labs',
     badge: 'Home sampling',
     image: IMAGE_BY_ACTION.labs,
@@ -130,7 +130,7 @@ export const HOME_OFFER_SLIDES: HomePromoSlide[] = [
     title: 'Hospital care, booked fast',
     description: 'Book visits at leading hospitals.',
     cta: 'Find hospitals',
-    bg: homeBrand.bannerDeep,
+    bg: homeBannerPalette[3],
     action: 'hospitals',
     badge: 'Book visit',
     image: IMAGE_BY_ACTION.hospitals,

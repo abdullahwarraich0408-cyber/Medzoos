@@ -1,7 +1,9 @@
 package com.medcare
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -17,6 +19,12 @@ class MainActivity : ReactActivity() {
     super.onCreate(savedInstanceState)
     setTheme(R.style.AppTheme)
     WindowCompat.setDecorFitsSystemWindows(window, false)
+    // Match app tab bar container — solid white system navigation strip
+    window.navigationBarColor = Color.WHITE
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+      isAppearanceLightNavigationBars = true
+      isAppearanceLightStatusBars = true
+    }
   }
 
   override fun createReactActivityDelegate(): ReactActivityDelegate =

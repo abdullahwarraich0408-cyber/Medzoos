@@ -3,8 +3,7 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  StatusBar,
-  Platform,
+  View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +17,7 @@ import { useHealthHubOverview } from './hooks/useHealthHubOverview';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { navigateToMainTabs } from '../../lib/auth/navigation';
 import type { HealthStackParamList } from '../../navigation/types';
-import { TAB_BAR_CLEARANCE } from '../../theme';
+import { TAB_BAR_CLEARANCE, spacing } from '../../theme';
 import { calmLayout } from '../../theme/calmLayout';
 import { healthBrand } from './healthBrand';
 
@@ -60,68 +59,74 @@ export function HealthHomePage() {
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={healthBrand.page}
+      backgroundColor={healthBrand.gradientStart}
       embedSafeAreaInChildren>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
+      <HealthPageHeader
+        variant="vault"
+        firstName={firstName}
+        title={firstName || 'Your vault'}
+        subtitle="Records, medicines, and care history — kept calm and clear."
+        onBackPress={handleBackPress}
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={healthBrand.accent}
-            colors={[healthBrand.accent]}
+
+      <View style={styles.contentSheet}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={healthBrand.accent}
+              colors={[healthBrand.accent]}
+            />
+          }>
+          <HealthAttentionSection items={attention} navigation={navigation} />
+
+          <HealthQuickActionGrid
+            navigation={navigation}
+            badges={overview.badges}
           />
-        }>
-        <HealthPageHeader
-          variant="vault"
-          firstName={firstName}
-          title={firstName || 'Your vault'}
-          subtitle="Records, medicines, and care history — kept calm and clear."
-          onBackPress={handleBackPress}
-        />
 
-        <HealthAttentionSection items={attention} navigation={navigation} />
+          {overview.activeMedicines.length > 0 ? (
+            <HealthActiveMedsStrip
+              medicines={overview.activeMedicines.slice(0, 2)}
+              onSeeAll={() => navigation.navigate('MedicinesList')}
+              onMedicinePress={medicineId =>
+                navigation.navigate('MedicineDetail', { medicineId })
+              }
+            />
+          ) : null}
 
-        <HealthQuickActionGrid
-          navigation={navigation}
-          badges={overview.badges}
-        />
-
-        {overview.activeMedicines.length > 0 ? (
-          <HealthActiveMedsStrip
-            medicines={overview.activeMedicines.slice(0, 2)}
-            onSeeAll={() => navigation.navigate('MedicinesList')}
-            onMedicinePress={medicineId =>
-              navigation.navigate('MedicineDetail', { medicineId })
-            }
+          <HealthActivityTimeline
+            items={overview.activity}
+            onViewHistory={() => navigation.navigate('HealthHistory')}
           />
-        ) : null}
-
-        <HealthActivityTimeline
-          items={overview.activity}
-          onViewHistory={() => navigation.navigate('HealthHistory')}
-        />
-      </ScrollView>
+        </ScrollView>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  contentSheet: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: healthBrand.page,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
   scroll: {
     flex: 1,
     backgroundColor: 'transparent',
   },
   scrollContent: {
+    paddingHorizontal: calmLayout.screenPadding,
+    paddingTop: spacing.lg,
     paddingBottom: TAB_BAR_CLEARANCE + calmLayout.contentBottom,
-    gap: 28,
-    width: '100%',
+    gap: calmLayout.sectionGap,
   },
 });

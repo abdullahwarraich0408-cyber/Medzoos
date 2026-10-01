@@ -16,6 +16,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenLayout } from '../../components/layout/ScreenLayout';
+import { TabScreenHeroHeader } from '../../components/navigation/TabScreenHeroHeader';
 import { KeyboardAvoidingContainer } from '../../components/keyboard';
 import { CollapsibleSection, SimpleMessage } from '../../design-system';
 import { CopilotMessageBubble } from './components/CopilotMessageBubble';
@@ -23,6 +24,7 @@ import { copilotCopy } from '../../lib/copy/uiMessages';
 import { useCopilot } from '../../lib/copilot/useCopilot';
 import type { CopilotAction } from '../../lib/copilot/types';
 import {
+  navigateToMainTabs,
   navigateToServices,
   navigateToTabScreen,
 } from '../../lib/auth/navigation';
@@ -171,53 +173,64 @@ export function CopilotHomeScreen() {
 
   return (
     <ScreenLayout
-      title="Medzoos"
-      showSearch={false}
-      showCart={false}
-      backgroundColor={copilotBrand.page}
-      headerRight={
-        <Pressable
-          onPress={handleNewChat}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Start new chat"
-          style={styles.newChatBtn}>
-          <Icon
-            name="square-edit-outline"
-            size={20}
-            color={copilotBrand.accent}
-          />
-        </Pressable>
-      }>
-      <KeyboardAvoidingContainer style={styles.flex}>
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled">
-          {phase ? (
-            <View style={styles.statusPill}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>{phase}</Text>
-            </View>
-          ) : null}
-
-          {messages.length > 0 ? (
-            <Pressable
-              style={styles.newChatBanner}
-              onPress={handleNewChat}
-              accessibilityRole="button">
-              <Icon name="plus" size={16} color={copilotBrand.accent} />
-              <Text style={styles.newChatBannerText}>New chat</Text>
-            </Pressable>
-          ) : null}
-
-          {isLoading && messages.length === 0 ? (
-            <ActivityIndicator
-              color={copilotBrand.accent}
-              style={styles.loader}
+      hideHeader
+      backgroundColor={copilotBrand.gradientStart}
+      embedSafeAreaInChildren>
+      <TabScreenHeroHeader
+        screenTitle="Medzoos"
+        onBackPress={() => navigateToMainTabs(navigation, 'Home', 'Dashboard')}
+        headerRight={
+          <Pressable
+            onPress={handleNewChat}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Start new chat"
+            style={styles.newChatBtn}>
+            <Icon
+              name="square-edit-outline"
+              size={20}
+              color={copilotBrand.onAccent}
             />
-          ) : null}
+          </Pressable>
+        }
+        cardStyle={styles.heroInner}>
+        <Text style={styles.heroKicker}>AI health assistant</Text>
+        <Text style={styles.heroTitle}>How can Medzoos help?</Text>
+        <Text style={styles.heroSub} numberOfLines={2}>
+          Ask about symptoms, find care, or get next-step guidance.
+        </Text>
+      </TabScreenHeroHeader>
+
+      <View style={styles.contentSheet}>
+        <KeyboardAvoidingContainer style={styles.flex}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled">
+            {phase ? (
+              <View style={styles.statusPill}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>{phase}</Text>
+              </View>
+            ) : null}
+
+            {messages.length > 0 ? (
+              <Pressable
+                style={styles.newChatBanner}
+                onPress={handleNewChat}
+                accessibilityRole="button">
+                <Icon name="plus" size={16} color={copilotBrand.accent} />
+                <Text style={styles.newChatBannerText}>New chat</Text>
+              </Pressable>
+            ) : null}
+
+            {isLoading && messages.length === 0 ? (
+              <ActivityIndicator
+                color={copilotBrand.accent}
+                style={styles.loader}
+              />
+            ) : null}
 
           {messages.map(msg => (
             <CopilotMessageBubble
@@ -242,20 +255,6 @@ export function CopilotHomeScreen() {
 
           {messages.length === 0 && isReady ? (
             <>
-              <View style={styles.welcomeCard}>
-                <View style={styles.welcomeOrb} />
-                <View style={styles.welcomeIcon}>
-                  <Icon
-                    name="robot-outline"
-                    size={22}
-                    color={copilotBrand.accent}
-                  />
-                </View>
-                <Text style={styles.welcomeKicker}>AI health assistant</Text>
-                <Text style={styles.welcomeTitle}>How can Medzoos help?</Text>
-                <Text style={styles.welcomeBody}>{copilotCopy.welcome}</Text>
-              </View>
-
               <Text style={styles.examplesLabel}>Try asking</Text>
               <View style={styles.examples}>
                 {QUICK_EXAMPLES.map(example => (
@@ -314,6 +313,7 @@ export function CopilotHomeScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingContainer>
+      </View>
     </ScreenLayout>
   );
 }
@@ -339,6 +339,35 @@ function phaseLabel(phase: string): string {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  contentSheet: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: copilotBrand.page,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+  heroInner: {
+    gap: 4,
+  },
+  heroKicker: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.72)',
+    letterSpacing: 0.3,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.35,
+    color: copilotBrand.onAccent,
+  },
+  heroSub: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.82)',
+  },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
     paddingHorizontal: spacing.lg,
@@ -375,9 +404,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: copilotBrand.soft,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
-    borderColor: copilotBrand.border,
+    borderColor: 'rgba(255,255,255,0.32)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -400,52 +429,6 @@ const styles = StyleSheet.create({
   },
 
   loader: { marginVertical: spacing.xl },
-
-  welcomeCard: {
-    backgroundColor: copilotBrand.accent,
-    borderRadius: 22,
-    padding: spacing.lg,
-    overflow: 'hidden',
-    gap: 6,
-  },
-  welcomeOrb: {
-    position: 'absolute',
-    top: -36,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  welcomeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: copilotBrand.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  welcomeKicker: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.78)',
-  },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.35,
-    color: copilotBrand.onAccent,
-  },
-  welcomeBody: {
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.86)',
-    marginTop: 2,
-  },
 
   examplesLabel: {
     fontSize: 13,

@@ -183,7 +183,7 @@ export function HealthDashboardPage() {
   return (
     <ScreenLayout
       hideHeader
-      backgroundColor={homeBrand.header}
+      backgroundColor={homeBrand.gradientStart}
       embedSafeAreaInChildren>
       <HomeGreeting
         firstName={firstName}
@@ -219,12 +219,14 @@ export function HealthDashboardPage() {
           <HomePromoCarousel slides={slides} onPressSlide={handleHeroSlide} />
           <HomeCareActions onAction={handleContentAction} />
           <HomeCampaignBanners onAction={handleContentAction} />
-          <HomeRecentVisits
-            visits={recentVisits}
-            onSeeAll={nav.goToAppointments}
-            onVisitPress={() => nav.goToAppointments()}
-            onEmptyCta={() => nav.goToServicesScreen('DoctorsList')}
-          />
+          {recentVisits.length > 0 ? (
+            <HomeRecentVisits
+              visits={recentVisits}
+              onSeeAll={nav.goToAppointments}
+              onVisitPress={() => nav.goToAppointments()}
+              onEmptyCta={() => nav.goToServicesScreen('DoctorsList')}
+            />
+          ) : null}
           <HomeCheckupSchedule
             doctorOrders={upcomingDoctorOrders}
             labBookings={health.upcomingBookings}

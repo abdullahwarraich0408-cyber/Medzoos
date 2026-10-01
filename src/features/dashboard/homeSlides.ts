@@ -11,7 +11,7 @@ import {
   hasSeenHomePosters,
   markHomePostersSeen,
 } from '../home/homeVisitStorage';
-import { homeBrand } from './homeBrand';
+import { homeBannerPalette, homeBrand } from './homeBrand';
 
 const ACTIONS: HomeSlideAction[] = [
   'prescription',
@@ -23,6 +23,20 @@ const ACTIONS: HomeSlideAction[] = [
 
 /** Default banner wash — matches local posters (never legacy #17618E). */
 export const DEFAULT_HOME_SLIDE_BG = homeBrand.bannerMid;
+
+/** Keep API banner fills on-brand and bright (swap dark hexes for palette). */
+function brightSlideBg(hex: string | undefined | null, index: number): string {
+  const fallback = homeBannerPalette[index % homeBannerPalette.length];
+  const raw = (hex || '').trim();
+  const h = raw.startsWith('#') ? raw.slice(1) : raw;
+  if (h.length !== 6 || !/^[0-9a-fA-F]+$/.test(h)) return fallback;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (luminance < 0.48) return fallback;
+  return `#${h.toLowerCase()}`;
+}
 
 /** One resolution per process so splash prefetch and Home share the same cache key. */
 let audiencePromise: Promise<HomeSlideAudience> | null = null;
@@ -66,7 +80,10 @@ function resolveImageUrl(value?: string | null) {
   return url;
 }
 
-export function mapHomeSlideDto(dto: HomeSlideDto): HomePromoSlide {
+export function mapHomeSlideDto(
+  dto: HomeSlideDto,
+  index = 0,
+): HomePromoSlide {
   const action = ACTIONS.includes(dto.action as HomeSlideAction)
     ? (dto.action as HomeSlideAction)
     : 'doctors';
@@ -76,7 +93,7 @@ export function mapHomeSlideDto(dto: HomeSlideDto): HomePromoSlide {
     title: dto.title,
     cta: dto.cta,
     action,
-    bg: dto.bg || DEFAULT_HOME_SLIDE_BG,
+    bg: brightSlideBg(dto.bg, index),
     label: dto.label || undefined,
     description: dto.description || undefined,
     badge: dto.badge || undefined,
@@ -88,5 +105,7 @@ export async function fetchHomePromoSlides(
   audience: HomeSlideAudience,
 ): Promise<HomePromoSlide[]> {
   const data = await homeSlidesApi.list(audience);
-  return (data.slides || []).map(mapHomeSlideDto);
+  return (data.slides || []).map((slide, index) =>
+    mapHomeSlideDto(slide, index),
+  );
 }
